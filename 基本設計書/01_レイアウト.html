@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<!-- saved from url=(0141)file:///D:/JAVA/AI%20projects/ST%20System/%E5%9F%BA%E6%9C%AC%E8%A8%AD%E8%A8%88%E6%9B%B8/01_%E3%83%AC%E3%82%A4%E3%82%A2%E3%82%A6%E3%83%88.html -->
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ST管理システム - 仮画面レイアウト</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  background: #f0f2f5;
+  color: rgba(0,0,0,0.85);
+  font-size: 14px;
+  line-height: 1.5715;
+}
+
+/* ===== Screen Switcher Bar ===== */
+.screen-switcher {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+  background: #001529; color: #fff; padding: 0 24px;
+  display: flex; align-items: center; gap: 4px; height: 40px;
+  font-size: 12px;
+}
+.screen-switcher span.label { color: rgba(255,255,255,0.45); margin-right: 8px; }
+.screen-switcher button {
+  background: transparent; color: rgba(255,255,255,0.65); border: 1px solid transparent;
+  padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;
+  transition: all 0.2s;
+}
+.screen-switcher button:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.screen-switcher button.active { color: #fff; background: #1890ff; border-color: #1890ff; }
+
+/* ===== Screen Container ===== */
+.screen { display: none; padding-top: 40px; }
+.screen.active { display: block; }
+
+/* ===== 1. Login Screen ===== */
+.login-wrapper {
+  min-height: calc(100vh - 40px); display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.login-card {
+  background: #fff; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  padding: 48px 40px 36px; width: 400px;
+}
+.login-card .logo { text-align: center; margin-bottom: 32px; }
+.login-card .logo .icon { width: 56px; height: 56px; background: #1890ff; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 28px; font-weight: bold; }
+.login-card .logo h1 { font-size: 22px; margin-top: 12px; color: rgba(0,0,0,0.85); font-weight: 600; }
+.login-card .logo p { font-size: 13px; color: rgba(0,0,0,0.45); margin-top: 4px; }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: rgba(0,0,0,0.65); font-weight: 500; }
+.form-group input {
+  width: 100%; height: 40px; padding: 0 12px; border: 1px solid #d9d9d9; border-radius: 6px;
+  font-size: 14px; transition: border-color 0.2s; outline: none;
+}
+.form-group input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+.login-error { background: #fff2f0; border: 1px solid #ffccc7; border-radius: 4px; padding: 8px 12px; color: #ff4d4f; font-size: 13px; margin-bottom: 20px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 24px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; white-space: nowrap; }
+.btn-primary { width: 100%; background: #1890ff; color: #fff; }
+.btn-primary:hover { background: #40a9ff; }
+.btn-default { background: #fff; color: rgba(0,0,0,0.65); border-color: #d9d9d9; }
+.btn-default:hover { color: #1890ff; border-color: #1890ff; }
+.btn-danger { background: #fff; color: #ff4d4f; border-color: #ff4d4f; }
+.btn-danger:hover { background: #ff4d4f; color: #fff; }
+.btn-success { background: #52c41a; color: #fff; }
+.btn-success:hover { background: #73d13d; }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+.btn-link { background: none; color: #1890ff; border: none; padding: 0; height: auto; }
+.btn-link.danger { color: #ff4d4f; }
+.btn-link:hover { color: #40a9ff; }
+.btn-group { display: flex; gap: 8px; }
+
+/* ===== 2. Main Layout ===== */
+.layout { display: flex; min-height: calc(100vh - 40px); }
+.sidebar {
+  width: 220px; background: #001529; color: #fff; flex-shrink: 0;
+  display: flex; flex-direction: column;
+}
+.sidebar .logo-area { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar .logo-area .icon { width: 36px; height: 36px; background: #1890ff; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; vertical-align: middle; }
+.sidebar .logo-area span { margin-left: 10px; font-size: 16px; font-weight: 600; vertical-align: middle; }
+.sidebar nav { flex: 1; padding: 8px 0; }
+.sidebar nav .menu-item {
+  display: flex; align-items: center; padding: 12px 24px; color: rgba(255,255,255,0.65);
+  cursor: pointer; transition: all 0.2s; gap: 10px; font-size: 14px;
+}
+.sidebar nav .menu-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.sidebar nav .menu-item.active { color: #fff; background: #1890ff; }
+.sidebar nav .menu-item .icon { width: 16px; text-align: center; font-size: 14px; }
+.header {
+  height: 56px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  display: flex; align-items: center; justify-content: flex-end; padding: 0 24px; gap: 16px;
+}
+.header .user-name { color: rgba(0,0,0,0.65); font-size: 14px; }
+.content-area { flex: 1; display: flex; flex-direction: column; }
+.page-content { flex: 1; padding: 24px; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.page-content::-webkit-scrollbar { display: none; }
+
+/* ===== Page Common ===== */
+.page-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: rgba(0,0,0,0.85); }
+.card { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+.card-body { padding: 24px; }
+.card-header { padding: 16px 24px; border-bottom: 1px solid #f0f0f0; font-weight: 600; font-size: 16px; }
+.search-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+.search-bar input, .search-bar select {
+  height: 36px; padding: 0 12px; border: 1px solid #d9d9d9; border-radius: 6px;
+  font-size: 13px; outline: none; background: #fff;
+}
+.search-bar input:focus, .search-bar select:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+.search-bar input { width: 180px; }
+.search-bar select { min-width: 120px; }
+.spacer { flex: 1; }
+
+/* ===== Table ===== */
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  background: #fafafa; padding: 12px 16px; text-align: left; font-weight: 600;
+  font-size: 13px; color: rgba(0,0,0,0.85); border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+tbody td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+tbody tr:hover { background: #fafafa; }
+.status-tag {
+  display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 12px; line-height: 20px;
+}
+.tag-draft { background: #fffbe6; color: #d48806; border: 1px solid #ffe58f; }
+.tag-sent { background: #e6f7ff; color: #096dd9; border: 1px solid #91d5ff; }
+.tag-paid { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+.tag-present { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+.tag-absent { background: #fff2f0; color: #cf1322; border: 1px solid #ffa39e; }
+.tag-leave { background: #e6f7ff; color: #096dd9; border: 1px solid #91d5ff; }
+.pagination { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding-top: 16px; font-size: 13px; color: rgba(0,0,0,0.65); }
+.pagination button {
+  width: 32px; height: 32px; border: 1px solid #d9d9d9; border-radius: 4px;
+  background: #fff; cursor: pointer; font-size: 12px; transition: all 0.2s;
+}
+.pagination button:hover { color: #1890ff; border-color: #1890ff; }
+.pagination button.active { background: #1890ff; color: #fff; border-color: #1890ff; }
+.pagination select { height: 32px; border: 1px solid #d9d9d9; border-radius: 4px; padding: 0 8px; font-size: 13px; }
+
+/* ===== Modal Overlay ===== */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center; z-index: 10000;
+}
+.modal {
+  background: #fff; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  width: 640px; max-height: 80vh; display: flex; flex-direction: column;
+}
+.modal.wide { width: 800px; }
+
+/* Security notice banner */
+.security-notice {
+  background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px;
+  padding: 8px 16px; font-size: 12px; color: #ad6800;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+}
+.security-notice .lock-icon { font-size: 16px; }
+
+/* Masked bank account display */
+.masked-account { font-family: monospace; letter-spacing: 1px; color: rgba(0,0,0,0.45); }
+.account-revealed { color: rgba(0,0,0,0.85); }
+
+/* Verification overlay */
+.verify-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55); z-index: 10001;
+  display: flex; align-items: center; justify-content: center;
+}
+.verify-box {
+  background: #fff; border-radius: 8px; padding: 32px; width: 360px;
+  text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.verify-box h3 { margin-bottom: 16px; font-size: 16px; }
+.verify-box p { font-size: 13px; color: rgba(0,0,0,0.55); margin-bottom: 16px; }
+.verify-box input { width: 100%; height: 40px; padding: 0 12px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; text-align: center; margin-bottom: 16px; }
+.verify-box .btn { width: 100px; }
+.modal-header {
+  padding: 16px 24px; border-bottom: 1px solid #f0f0f0;
+  font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header .close { background: none; border: none; font-size: 18px; cursor: pointer; color: rgba(0,0,0,0.45); padding: 4px; }
+.modal-header .close:hover { color: rgba(0,0,0,0.85); }
+.modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 12px 24px; border-top: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-shrink: 0; white-space: nowrap; }
+.modal-footer .btn { width: 100px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-row .full { grid-column: 1 / -1; }
+.form-group.small label { font-size: 13px; color: rgba(0,0,0,0.65); display: block; margin-bottom: 4px; }
+.form-group.small input, .form-group.small select, .form-group.small textarea {
+  width: 100%; height: 36px; padding: 0 12px; border: 1px solid #d9d9d9;
+  border-radius: 6px; font-size: 13px; outline: none; background: #fff;
+}
+.form-group.small textarea { height: 72px; padding: 8px 12px; resize: vertical; }
+.form-group.small input:focus, .form-group.small select:focus, .form-group.small textarea:focus {
+  border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2);
+}
+.form-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #f0f0f0; }
+.form-section h4 { margin-bottom: 12px; color: rgba(0,0,0,0.65); font-size: 14px; }
+
+/* ===== Upload Area ===== */
+.upload-area {
+  border: 1px dashed #d9d9d9; border-radius: 6px; padding: 16px;
+  text-align: center; color: rgba(0,0,0,0.45); cursor: pointer; transition: border-color 0.2s;
+}
+.upload-area:hover { border-color: #1890ff; }
+.file-list { margin-top: 8px; }
+.file-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+.file-item .name { color: #1890ff; }
+
+/* ===== Tabs ===== */
+.tabs { display: flex; border-bottom: 1px solid #f0f0f0; margin-bottom: 16px; }
+.tab { padding: 10px 20px; cursor: pointer; color: rgba(0,0,0,0.65); border-bottom: 2px solid transparent; transition: all 0.2s; font-size: 14px; }
+.tab:hover { color: #1890ff; }
+.tab.active { color: #1890ff; border-bottom-color: #1890ff; }
+
+/* ===== Batch Actions ===== */
+.batch-actions { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+
+/* ===== Year/Month Picker ===== */
+.period-picker { display: flex; gap: 8px; align-items: center; }
+.period-picker select { height: 36px; padding: 0 8px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 13px; }
+.period-picker .separator { color: rgba(0,0,0,0.45); }
+
+/* Hidden default for non-active screens */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ===== Screen Switcher ===== -->
+<div class="screen-switcher">
+  <span class="label">画面切替:</span>
+  <button class="" onclick="switchScreen(&#39;login&#39;)">1. ログイン</button>
+  <button onclick="switchScreen(&#39;employee&#39;)" class="">2. 社員管理</button>
+  <button onclick="switchScreen(&#39;customer&#39;)">3. 顧客管理</button>
+  <button onclick="switchScreen(&#39;attendance&#39;)">4. 勤務管理</button>
+  <button onclick="switchScreen(&#39;invoice&#39;)">5. 請求書・注文書管理</button>
+  <button onclick="switchScreen(&#39;bank&#39;)" class="active">6. 🔒 銀行口座管理</button>
+</div>
+
+<!-- ============================================================ -->
+<!-- 1. ログイン画面 -->
+<!-- ============================================================ -->
+<div id="screen-login" class="screen">
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="logo">
+        <div class="icon">ST</div>
+        <h1>ST管理システム</h1>
+        <p>社員・顧客・勤務・請求書の統合管理</p>
+      </div>
+      <div class="login-error" id="loginError" style="display:none">
+        ユーザー名またはパスワードが間違っています。
+      </div>
+      <div class="form-group">
+        <label>ユーザー名</label>
+        <input type="text" id="username" placeholder="ユーザー名を入力してください" value="admin">
+      </div>
+      <div class="form-group">
+        <label>パスワード</label>
+        <input type="password" id="password" placeholder="パスワードを入力してください" value="admin123">
+      </div>
+      <button class="btn btn-primary" style="margin-top:8px;" onclick="doMockLogin()">ログイン</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2. 社員管理画面 -->
+<!-- ============================================================ -->
+<div id="screen-employee" class="screen">
+  <div class="layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="logo-area">
+        <span class="icon">ST</span><span>ST管理システム</span>
+      </div>
+      <nav>
+        <div class="menu-item active" onclick="switchScreen(&#39;employee&#39;)">
+          <span class="icon">👤</span> 社員管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;customer&#39;)">
+          <span class="icon">🏢</span> 顧客管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;attendance&#39;)">
+          <span class="icon">📅</span> 勤務管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;invoice&#39;)">
+          <span class="icon">📄</span> 請求書・注文書管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;bank&#39;)">
+          <span class="icon">🔒</span> 銀行口座管理
+        </div>
+      </nav>
+    </div>
+    <!-- Main Content -->
+    <div class="content-area">
+      <div class="header">
+        <span class="user-name">👤 管理者 (admin)</span>
+        <button class="btn btn-default btn-sm" onclick="switchScreen(&#39;login&#39;)">ログアウト</button>
+      </div>
+      <div class="page-content">
+        <h2 class="page-title">社員管理</h2>
+        <div class="card">
+          <div class="card-body">
+            <!-- Search Bar -->
+            <div class="search-bar">
+              <input type="text" placeholder="社員番号で検索">
+              <input type="text" placeholder="氏名で検索">
+              <span class="spacer"></span>
+              <button class="btn btn-primary btn-sm" onclick="showModal(&#39;employeeModal&#39;)">＋ 新規登録</button>
+            </div>
+            <!-- Table -->
+            <table>
+              <thead>
+                <tr>
+                  <th>社員番号</th>
+                  <th>氏名</th>
+                  <th>部署</th>
+                  <th>メールアドレス</th>
+                  <th>電話番号</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>EMP001</td><td>山田 太郎</td><td>営業部</td>
+                  <td>yamada@example.com</td><td>090-1111-2222</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;employeeModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>EMP002</td><td>鈴木 花子</td><td>技術部</td>
+                  <td>suzuki@example.com</td><td>090-3333-4444</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;employeeModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>EMP003</td><td>佐藤 健一</td><td>経理部</td>
+                  <td>sato@example.com</td><td>090-5555-6666</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;employeeModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>EMP004</td><td>田中 美咲</td><td>人事部</td>
+                  <td>tanaka@example.com</td><td>090-7777-8888</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;employeeModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>EMP005</td><td>伊藤 大輔</td><td>営業部</td>
+                  <td>ito@example.com</td><td>090-9999-0000</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;employeeModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <!-- Pagination -->
+            <div class="pagination">
+              <span>全 5 件</span>
+              <select><option>10件/ページ</option><option>20件/ページ</option><option>50件/ページ</option></select>
+              <button>&lt;</button>
+              <button class="active">1</button>
+              <button>&gt;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3. 顧客管理画面 -->
+<!-- ============================================================ -->
+<div id="screen-customer" class="screen">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo-area">
+        <span class="icon">ST</span><span>ST管理システム</span>
+      </div>
+      <nav>
+        <div class="menu-item" onclick="switchScreen(&#39;employee&#39;)">
+          <span class="icon">👤</span> 社員管理
+        </div>
+        <div class="menu-item active" onclick="switchScreen(&#39;customer&#39;)">
+          <span class="icon">🏢</span> 顧客管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;attendance&#39;)">
+          <span class="icon">📅</span> 勤務管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;invoice&#39;)">
+          <span class="icon">📄</span> 請求書・注文書管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;bank&#39;)">
+          <span class="icon">🔒</span> 銀行口座管理
+        </div>
+      </nav>
+    </div>
+    <div class="content-area">
+      <div class="header">
+        <span class="user-name">👤 管理者 (admin)</span>
+        <button class="btn btn-default btn-sm" onclick="switchScreen(&#39;login&#39;)">ログアウト</button>
+      </div>
+      <div class="page-content">
+        <h2 class="page-title">顧客管理</h2>
+        <div class="card">
+          <div class="card-body">
+            <!-- Search Bar -->
+            <div class="search-bar">
+              <input type="text" placeholder="顧客番号で検索">
+              <input type="text" placeholder="会社名で検索">
+              <span class="spacer"></span>
+              <button class="btn btn-primary btn-sm" onclick="showModal(&#39;customerModal&#39;)">＋ 新規登録</button>
+            </div>
+            <!-- Table -->
+            <table>
+              <thead>
+                <tr>
+                  <th>顧客番号</th>
+                  <th>会社名</th>
+                  <th>社長名</th>
+                  <th>営業担当</th>
+                  <th>事務担当</th>
+                  <th>取引番号</th>
+                  <th>Webサイト</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>CUS001</td><td>株式会社テクノ東京</td><td>田中 宏</td>
+                  <td>中村 博</td><td>斉藤 雅子</td>
+                  <td><span style="color:#cf1322;font-weight:bold;">BK000001</span></td>
+                  <td><a href="file:///D:/JAVA/AI%20projects/ST%20System/%E5%9F%BA%E6%9C%AC%E8%A8%AD%E8%A8%88%E6%9B%B8/01_%E3%83%AC%E3%82%A4%E3%82%A2%E3%82%A6%E3%83%88.html#" style="color:#1890ff;font-size:12px;">www.techno-tokyo.co.jp</a></td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;customerModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>CUS002</td><td>大阪商事株式会社</td><td>山本 和夫</td>
+                  <td>加藤 恵</td><td>井上 隆</td>
+                  <td><span style="color:#cf1322;font-weight:bold;">BK000003</span></td>
+                  <td><a href="file:///D:/JAVA/AI%20projects/ST%20System/%E5%9F%BA%E6%9C%AC%E8%A8%AD%E8%A8%88%E6%9B%B8/01_%E3%83%AC%E3%82%A4%E3%82%A2%E3%82%A6%E3%83%88.html#" style="color:#1890ff;font-size:12px;">www.osaka-shoji.jp</a></td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;customerModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>CUS003</td><td>名古屋工業有限会社</td><td>伊藤 正和</td>
+                  <td>渡辺 誠</td><td>木村 由美</td>
+                  <td><span style="color:#cf1322;font-weight:bold;">BK000004</span></td>
+                  <td><a href="file:///D:/JAVA/AI%20projects/ST%20System/%E5%9F%BA%E6%9C%AC%E8%A8%AD%E8%A8%88%E6%9B%B8/01_%E3%83%AC%E3%82%A4%E3%82%A2%E3%82%A6%E3%83%88.html#" style="color:#1890ff;font-size:12px;">www.nagoya-kogyo.jp</a></td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;customerModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>CUS004</td><td>福岡システム株式会社</td><td>吉田 和彦</td>
+                  <td>松本 直子</td><td>小川 健太</td>
+                  <td><span style="color:#fa8c16;">未設定</span></td>
+                  <td><a href="file:///D:/JAVA/AI%20projects/ST%20System/%E5%9F%BA%E6%9C%AC%E8%A8%AD%E8%A8%88%E6%9B%B8/01_%E3%83%AC%E3%82%A4%E3%82%A2%E3%82%A6%E3%83%88.html#" style="color:#1890ff;font-size:12px;">www.fukuoka-sys.jp</a></td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;customerModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="pagination">
+              <span>全 4 件</span>
+              <select><option>10件/ページ</option><option>20件/ページ</option></select>
+              <button>&lt;</button><button class="active">1</button><button>&gt;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4. 勤務管理画面 -->
+<!-- ============================================================ -->
+<div id="screen-attendance" class="screen">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo-area">
+        <span class="icon">ST</span><span>ST管理システム</span>
+      </div>
+      <nav>
+        <div class="menu-item" onclick="switchScreen(&#39;employee&#39;)">
+          <span class="icon">👤</span> 社員管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;customer&#39;)">
+          <span class="icon">🏢</span> 顧客管理
+        </div>
+        <div class="menu-item active" onclick="switchScreen(&#39;attendance&#39;)">
+          <span class="icon">📅</span> 勤務管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;invoice&#39;)">
+          <span class="icon">📄</span> 請求書・注文書管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;bank&#39;)">
+          <span class="icon">🔒</span> 銀行口座管理
+        </div>
+      </nav>
+    </div>
+    <div class="content-area">
+      <div class="header">
+        <span class="user-name">👤 管理者 (admin)</span>
+        <button class="btn btn-default btn-sm" onclick="switchScreen(&#39;login&#39;)">ログアウト</button>
+      </div>
+      <div class="page-content">
+        <h2 class="page-title">勤務管理</h2>
+        <div class="card">
+          <div class="card-body">
+            <!-- Filter Bar -->
+            <div class="search-bar">
+              <div class="period-picker">
+                <select><option>2026</option><option>2025</option></select>
+                <span class="separator">年</span>
+                <select><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+                <span class="separator">月</span>
+              </div>
+              <select style="min-width:160px;">
+                <option value="">全社員</option>
+                <option>山田 太郎 (EMP001)</option>
+                <option>鈴木 花子 (EMP002)</option>
+                <option>佐藤 健一 (EMP003)</option>
+              </select>
+              <span class="spacer"></span>
+              <button class="btn btn-success btn-sm">📥 CSVエクスポート</button>
+              <button class="btn btn-primary btn-sm" onclick="showModal(&#39;attendanceModal&#39;)">＋ 新規登録</button>
+            </div>
+            <!-- Table -->
+            <table>
+              <thead>
+                <tr>
+                  <th>日付</th>
+                  <th>社員名</th>
+                  <th>勤務時間 (h)</th>
+                  <th>残業時間 (h)</th>
+                  <th>ステータス</th>
+                  <th>備考</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2026/05/01</td><td>山田 太郎</td><td>8.0</td><td>0.0</td>
+                  <td><span class="status-tag tag-present">出勤</span></td>
+                  <td>-</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;attendanceModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2026/05/01</td><td>鈴木 花子</td><td>8.0</td><td>2.5</td>
+                  <td><span class="status-tag tag-present">出勤</span></td>
+                  <td>システムメンテナンス対応</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;attendanceModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2026/05/01</td><td>佐藤 健一</td><td>0.0</td><td>0.0</td>
+                  <td><span class="status-tag tag-absent">欠勤</span></td>
+                  <td>体調不良のため</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;attendanceModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2026/05/02</td><td>山田 太郎</td><td>8.0</td><td>1.0</td>
+                  <td><span class="status-tag tag-present">出勤</span></td>
+                  <td>-</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;attendanceModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2026/05/02</td><td>鈴木 花子</td><td>0.0</td><td>0.0</td>
+                  <td><span class="status-tag tag-leave">休暇</span></td>
+                  <td>年次有給休暇</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;attendanceModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="pagination">
+              <span>全 5 件</span>
+              <select><option>10件/ページ</option><option>20件/ページ</option></select>
+              <button>&lt;</button><button class="active">1</button><button>&gt;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5. 請求書・注文書管理画面 -->
+<!-- ============================================================ -->
+<div id="screen-invoice" class="screen">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo-area">
+        <span class="icon">ST</span><span>ST管理システム</span>
+      </div>
+      <nav>
+        <div class="menu-item" onclick="switchScreen(&#39;employee&#39;)">
+          <span class="icon">👤</span> 社員管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;customer&#39;)">
+          <span class="icon">🏢</span> 顧客管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;attendance&#39;)">
+          <span class="icon">📅</span> 勤務管理
+        </div>
+        <div class="menu-item active" onclick="switchScreen(&#39;invoice&#39;)">
+          <span class="icon">📄</span> 請求書・注文書管理
+        </div>
+      </nav>
+    </div>
+    <div class="content-area">
+      <div class="header">
+        <span class="user-name">👤 管理者 (admin)</span>
+        <button class="btn btn-default btn-sm" onclick="switchScreen(&#39;login&#39;)">ログアウト</button>
+      </div>
+      <div class="page-content">
+        <h2 class="page-title">請求書・注文書管理</h2>
+        <div class="card">
+          <div class="card-body">
+            <!-- Filter Bar -->
+            <div class="search-bar">
+              <div class="period-picker">
+                <select><option>2026</option><option>2025</option></select>
+                <span class="separator">年</span>
+                <select><option>5</option><option>4</option><option>3</option></select>
+                <span class="separator">月</span>
+              </div>
+              <select style="min-width:180px;">
+                <option value="">全顧客</option>
+                <option>株式会社テクノ東京</option>
+                <option>大阪商事株式会社</option>
+                <option>名古屋工業有限会社</option>
+              </select>
+              <span class="spacer"></span>
+              <button class="btn btn-primary btn-sm" onclick="showModal(&#39;invoiceModal&#39;)">＋ 新規登録</button>
+            </div>
+            <!-- Table -->
+            <table>
+              <thead>
+                <tr>
+                  <th>請求書番号</th>
+                  <th>顧客名</th>
+                  <th>年月</th>
+                  <th>金額 (円)</th>
+                  <th>ステータス</th>
+                  <th>備考</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>INV-2026-0501</td><td>株式会社テクノ東京</td><td>2026年5月</td>
+                  <td style="text-align:right;">1,500,000</td>
+                  <td><span class="status-tag tag-draft">下書き</span></td>
+                  <td>システム開発費用</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;invoiceModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>INV-2026-0502</td><td>大阪商事株式会社</td><td>2026年5月</td>
+                  <td style="text-align:right;">850,000</td>
+                  <td><span class="status-tag tag-sent">送付済</span></td>
+                  <td>サーバー保守費用</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;invoiceModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>INV-2026-0401</td><td>名古屋工業有限会社</td><td>2026年4月</td>
+                  <td style="text-align:right;">2,300,000</td>
+                  <td><span class="status-tag tag-paid">入金済</span></td>
+                  <td>ソフトウェアライセンス</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="showModal(&#39;invoiceModal&#39;)">編集</button>
+                      <button class="btn-link danger">削除</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="pagination">
+              <span>全 3 件</span>
+              <select><option>10件/ページ</option><option>20件/ページ</option></select>
+              <button>&lt;</button><button class="active">1</button><button>&gt;</button>
+            </div>
+
+            <!-- Invoice Detail Tabs (shown when a row is selected) -->
+            <div style="margin-top: 32px; border-top: 1px solid #f0f0f0; padding-top: 24px;">
+              <h3 style="font-size: 16px; margin-bottom: 16px;">📎 請求書詳細: INV-2026-0501</h3>
+              <div class="tabs">
+                <div class="tab active">注文書一覧</div>
+              </div>
+
+              <!-- Order Documents Sub-table -->
+              <div class="batch-actions">
+                <button class="btn btn-primary btn-sm">＋ 注文書アップロード</button>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>ファイル名</th>
+                    <th>サイズ</th>
+                    <th>アップロード日時</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="file-item"><span class="name">注文書_20260501.pdf</span></span></td>
+                    <td>245 KB</td>
+                    <td>2026/05/01 10:30</td>
+                    <td>
+                      <div class="btn-group">
+                        <button class="btn-link">ダウンロード</button>
+                        <button class="btn-link danger">削除</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><span class="file-item"><span class="name">仕様書_v2.xlsx</span></span></td>
+                    <td>180 KB</td>
+                    <td>2026/05/03 14:15</td>
+                    <td>
+                      <div class="btn-group">
+                        <button class="btn-link">ダウンロード</button>
+                        <button class="btn-link danger">削除</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
+
+<!-- Employee Modal -->
+<div id="employeeModal" class="modal-overlay hidden" onclick="if(event.target===this)hideModal(&#39;employeeModal&#39;)">
+  <div class="modal">
+    <div class="modal-header">
+      社員情報編集
+      <button class="close" onclick="hideModal(&#39;employeeModal&#39;)">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group small">
+          <label>社員番号 <span style="color:#ff4d4f;">*</span></label>
+          <input type="text" value="EMP001">
+        </div>
+        <div class="form-group small">
+          <label>氏名 <span style="color:#ff4d4f;">*</span></label>
+          <input type="text" value="山田 太郎">
+        </div>
+        <div class="form-group small">
+          <label>メールアドレス</label>
+          <input type="email" value="yamada@example.com">
+        </div>
+        <div class="form-group small">
+          <label>電話番号</label>
+          <input type="text" value="090-1111-2222">
+        </div>
+        <div class="form-group small full">
+          <label>住所</label>
+          <input type="text" value="東京都新宿区西新宿1-1-1">
+        </div>
+        <div class="form-group small">
+          <label>部署</label>
+          <select><option>営業部</option><option>技術部</option><option>経理部</option><option>人事部</option></select>
+        </div>
+        <div class="form-group small">
+          <label>役職</label>
+          <select><option>部長</option><option>課長</option><option>係長</option><option>一般社員</option></select>
+        </div>
+      </div>
+      <!-- Bank Info Section -->
+      <div class="form-section">
+        <h4>🏦 銀行口座情報</h4>
+        <div class="form-row" style="margin-top:12px;">
+          <div class="form-group small">
+            <label>銀行名</label>
+            <input type="text" value="三菱UFJ銀行">
+          </div>
+          <div class="form-group small">
+            <label>支店名</label>
+            <input type="text" value="新宿支店">
+          </div>
+          <div class="form-group small">
+            <label>口座種類</label>
+            <select><option>普通</option><option>当座</option></select>
+          </div>
+          <div class="form-group small">
+            <label>口座番号</label>
+            <input type="text" value="1234567">
+          </div>
+          <div class="form-group small full">
+            <label>口座名義</label>
+            <input type="text" value="ヤマダ タロウ">
+          </div>
+        </div>
+      </div>
+      <!-- Attachment Section -->
+      <div class="form-section">
+        <h4>📎 添付ファイル</h4>
+        <div class="upload-area" style="margin-top:12px;">
+          ＋ クリックしてアップロード
+        </div>
+        <div class="file-list">
+          <div class="file-item">
+            <span class="name">📄 履歴書.pdf</span>
+            <div class="btn-group">
+              <button class="btn-link">ダウンロード</button>
+              <button class="btn-link danger">削除</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="hideModal(&#39;employeeModal&#39;)">キャンセル</button>
+      <button class="btn btn-primary" onclick="hideModal(&#39;employeeModal&#39;)">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Customer Modal -->
+<div id="customerModal" class="modal-overlay hidden" onclick="if(event.target===this)hideModal(&#39;customerModal&#39;)">
+  <div class="modal wide">
+    <div class="modal-header">
+      顧客情報編集
+      <button class="close" onclick="hideModal(&#39;customerModal&#39;)">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- 会社情報 Section -->
+      <div class="form-row">
+        <div class="form-group small">
+          <label>顧客番号 <span style="color:#ff4d4f;">*</span></label>
+          <input type="text" value="CUS001">
+        </div>
+        <div class="form-group small">
+          <label>会社名 <span style="color:#ff4d4f;">*</span></label>
+          <input type="text" value="株式会社テクノ東京">
+        </div>
+        <div class="form-group small">
+          <label>社長名</label>
+          <input type="text" value="田中 宏">
+        </div>
+        <div class="form-group small">
+          <label>会社Webサイト</label>
+          <input type="text" value="www.techno-tokyo.co.jp" placeholder="https://">
+        </div>
+        <div class="form-group small full">
+          <label>住所</label>
+          <input type="text" value="東京都千代田区丸の内1-1-1">
+        </div>
+      </div>
+
+      <!-- 担当者情報 Section -->
+      <div class="form-section">
+        <h4>👤 営業担当</h4>
+        <div class="form-row" style="margin-top:12px;">
+          <div class="form-group small">
+            <label>氏名</label>
+            <input type="text" value="中村 博">
+          </div>
+          <div class="form-group small">
+            <label>連絡先</label>
+            <input type="text" value="090-1234-5678">
+          </div>
+          <div class="form-group small">
+            <label>メールアドレス</label>
+            <input type="email" value="nakamura@techno.co.jp">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>📋 事務担当</h4>
+        <div class="form-row" style="margin-top:12px;">
+          <div class="form-group small">
+            <label>氏名</label>
+            <input type="text" value="斉藤 雅子">
+          </div>
+          <div class="form-group small">
+            <label>連絡先</label>
+            <input type="text" value="03-1111-2223">
+          </div>
+          <div class="form-group small">
+            <label>メールアドレス</label>
+            <input type="email" value="saito@techno.co.jp">
+          </div>
+        </div>
+      </div>
+
+      <!-- 銀行口座管理 Section（1顧客：多口座） -->
+      <div class="form-section">
+        <h4>🏦 銀行口座一覧</h4>
+        <div class="security-notice" style="margin-top:8px;">
+          <span class="lock-icon">💡</span>
+          1つの顧客に複数の銀行口座を紐付けできます。口座情報は「🔒 銀行口座管理」画面で管理されます。
+        </div>
+        <table style="margin-top:12px;">
+          <thead>
+            <tr>
+              <th>取引番号</th>
+              <th>銀行名称</th>
+              <th>支店番号</th>
+              <th>口座種類</th>
+              <th>口座番号</th>
+              <th>口座名義</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="customerBankTable">
+            <tr>
+              <td><strong>BK000001</strong></td>
+              <td>三菱UFJ銀行</td>
+              <td>038</td>
+              <td>普通</td>
+              <td>****4321</td>
+              <td>カ）テクノトウキョウ</td>
+              <td><button class="btn-link danger" onclick="this.closest(&#39;tr&#39;).remove()">解除</button></td>
+            </tr>
+            <tr>
+              <td><strong>BK000002</strong></td>
+              <td>みずほ銀行</td>
+              <td>890</td>
+              <td>当座</td>
+              <td>****2334</td>
+              <td>カ）テクノトウキョウ</td>
+              <td><button class="btn-link danger" onclick="this.closest(&#39;tr&#39;).remove()">解除</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+          <select id="bankSelectForCustomer" style="min-width:260px;height:36px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;">
+            <option value="">＋ 口座を追加（MASTERから選択）</option>
+            <option value="BK000003">BK000003 — 三井住友銀行 (123)</option>
+            <option value="BK000004">BK000004 — 福岡銀行 (456)</option>
+            <option value="BK000005">BK000005 — 三菱UFJ銀行 (056)</option>
+          </select>
+          <button class="btn btn-default btn-sm" onclick="addBankToCustomer()" style="width:60px;">追加</button>
+        </div>
+        <div style="text-align:right; margin-top:8px;">
+          <button class="btn-link" onclick="hideModal(&#39;customerModal&#39;);switchScreen(&#39;bank&#39;);">
+            🔒 銀行口座管理画面へ
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="hideModal(&#39;customerModal&#39;)">キャンセル</button>
+      <button class="btn btn-primary" onclick="hideModal(&#39;customerModal&#39;)">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6. 銀行口座管理画面（専用ページ） -->
+<!-- ============================================================ -->
+<div id="screen-bank" class="screen active">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo-area">
+        <span class="icon">ST</span><span>ST管理システム</span>
+      </div>
+      <nav>
+        <div class="menu-item" onclick="switchScreen(&#39;employee&#39;)">
+          <span class="icon">👤</span> 社員管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;customer&#39;)">
+          <span class="icon">🏢</span> 顧客管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;attendance&#39;)">
+          <span class="icon">📅</span> 勤務管理
+        </div>
+        <div class="menu-item" onclick="switchScreen(&#39;invoice&#39;)">
+          <span class="icon">📄</span> 請求書・注文書管理
+        </div>
+        <div class="menu-item active" onclick="switchScreen(&#39;bank&#39;)">
+          <span class="icon">🔒</span> 銀行口座管理
+        </div>
+      </nav>
+    </div>
+    <div class="content-area">
+      <div class="header">
+        <span class="user-name">👤 管理者 (admin)</span>
+        <button class="btn btn-default btn-sm" onclick="switchScreen(&#39;login&#39;)">ログアウト</button>
+      </div>
+      <div class="page-content">
+        <h2 class="page-title">🔒 銀行口座管理</h2>
+
+        <!-- Security Notice -->
+        <div class="security-notice" style="margin-bottom:24px;">
+          <span class="lock-icon">🔒</span>
+          銀行口座情報は機密情報です。取引番号（BKxxxxxx）は自動採番。口座番号はマスク表示。表示・操作はすべてログに記録されます。
+        </div>
+
+        <!-- Bank Account Master Table -->
+        <div class="card">
+          <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="white-space:nowrap;">🏦 銀行口座一覧 </span>
+            <button class="btn btn-primary btn-sm" onclick="openBankEditForm();">＋ 新規登録</button>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr>
+                  <th>取引番号</th>
+                  <th>支店番号</th>
+                  <th>銀行名称</th>
+                  <th>口座種類</th>
+                  <th>口座番号</th>
+                  <th>口座名義</th>
+                  <th style="text-align:center;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="bankAccountTableBody">
+                <tr data-torihiki="BK000001">
+                  <td><strong>BK000001</strong></td>
+                  <td>038</td>
+                  <td>三菱UFJ銀行</td>
+                  <td>普通</td>
+                  <td><span class="masked-account" id="accNum_BK000001" data-full="7654321">****4321</span><button class="btn-link" onclick="toggleAccountMask(this,&#39;accNum_BK000001&#39;,&#39;7654321&#39;)" style="margin-left:4px;font-size:11px;">👁 表示</button></td>
+                  <td>カ）テクノトウキョウ</td>
+                  <td style="text-align:center;">
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="editBankAccount(&#39;BK000001&#39;)">編集</button>
+                      <button class="btn-link danger" onclick="confirmDeleteBank(&#39;BK000001&#39;)">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-torihiki="BK000002">
+                  <td><strong>BK000002</strong></td>
+                  <td>890</td>
+                  <td>みずほ銀行</td>
+                  <td>当座</td>
+                  <td><span class="masked-account" id="accNum_BK000002" data-full="1122334">****2334</span><button class="btn-link" onclick="toggleAccountMask(this,&#39;accNum_BK000002&#39;,&#39;1122334&#39;)" style="margin-left:4px;font-size:11px;">👁 表示</button></td>
+                  <td>カ）テクノトウキョウ</td>
+                  <td style="text-align:center;">
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="editBankAccount(&#39;BK000002&#39;)">編集</button>
+                      <button class="btn-link danger" onclick="confirmDeleteBank(&#39;BK000002&#39;)">削除</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-torihiki="BK000003">
+                  <td><strong>BK000003</strong></td>
+                  <td>123</td>
+                  <td>三井住友銀行</td>
+                  <td>普通</td>
+                  <td><span class="masked-account" id="accNum_BK000003" data-full="9876543">****6543</span><button class="btn-link" onclick="toggleAccountMask(this,&#39;accNum_BK000003&#39;,&#39;9876543&#39;)" style="margin-left:4px;font-size:11px;">👁 表示</button></td>
+                  <td>ユ）ナゴヤコウギョウ</td>
+                  <td style="text-align:center;">
+                    <div class="btn-group">
+                      <button class="btn-link" onclick="editBankAccount(&#39;BK000003&#39;)">編集</button>
+                      <button class="btn-link danger" onclick="confirmDeleteBank(&#39;BK000003&#39;)">削除</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Bank Account Edit Form -->
+            <div class="form-section" id="bankEditSection" style="display:none;">
+              <h4 id="bankEditTitle">✏️ 銀行口座を追加</h4>
+              <p style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:8px;">取引番号は保存時に自動採番されます（BKxxxxxx形式）</p>
+              <div class="form-row" style="margin-top:12px;">
+                <div class="form-group small">
+                  <label>支店番号</label>
+                  <input type="text" id="bankBranchCode" placeholder="例: 038">
+                </div>
+                <div class="form-group small">
+                  <label>銀行名称 <span style="color:#ff4d4f;">*</span></label>
+                  <input type="text" id="bankName" placeholder="例: 三菱UFJ銀行">
+                </div>
+                <div class="form-group small">
+                  <label>口座種類 <span style="color:#ff4d4f;">*</span></label>
+                  <select id="bankAccountType">
+                    <option value="">選択してください</option>
+                    <option>普通</option>
+                    <option>当座</option>
+                  </select>
+                </div>
+                <div class="form-group small">
+                  <label>口座番号 <span style="color:#ff4d4f;">*</span></label>
+                  <input type="password" id="bankAccountNumber" placeholder="例: 1234567" autocomplete="off">
+                </div>
+                <div class="form-group small full">
+                  <label>口座名義 <span style="color:#ff4d4f;">*</span></label>
+                  <input type="text" id="bankAccountHolder" placeholder="例: カ）テクノトウキョウ">
+                </div>
+              </div>
+              <div class="btn-group" style="margin-top:12px;justify-content:flex-end;">
+                <button class="btn btn-default" onclick="cancelBankEdit()" style="width:100px;">キャンセル</button>
+                <button class="btn btn-primary" onclick="saveBankAccount()" style="width:100px;">保存</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Attendance Modal -->
+<div id="attendanceModal" class="modal-overlay hidden" onclick="if(event.target===this)hideModal(&#39;attendanceModal&#39;)">
+  <div class="modal" style="width:500px;">
+    <div class="modal-header">
+      勤務情報編集
+      <button class="close" onclick="hideModal(&#39;attendanceModal&#39;)">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group small">
+          <label>社員 <span style="color:#ff4d4f;">*</span></label>
+          <select>
+            <option>山田 太郎 (EMP001)</option>
+            <option>鈴木 花子 (EMP002)</option>
+            <option>佐藤 健一 (EMP003)</option>
+          </select>
+        </div>
+        <div class="form-group small">
+          <label>日付 <span style="color:#ff4d4f;">*</span></label>
+          <input type="date" value="2026-05-01">
+        </div>
+        <div class="form-group small">
+          <label>勤務時間 (h) <span style="color:#ff4d4f;">*</span></label>
+          <input type="number" step="0.5" min="0" max="24" value="8.0">
+        </div>
+        <div class="form-group small">
+          <label>残業時間 (h)</label>
+          <input type="number" step="0.5" min="0" max="12" value="0.0">
+        </div>
+        <div class="form-group small">
+          <label>ステータス <span style="color:#ff4d4f;">*</span></label>
+          <select>
+            <option>出勤</option>
+            <option>欠勤</option>
+            <option>休暇</option>
+          </select>
+        </div>
+        <div class="form-group small full">
+          <label>備考</label>
+          <textarea placeholder="備考を入力してください"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="hideModal(&#39;attendanceModal&#39;)">キャンセル</button>
+      <button class="btn btn-primary" onclick="hideModal(&#39;attendanceModal&#39;)">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice Modal -->
+<div id="invoiceModal" class="modal-overlay hidden" onclick="if(event.target===this)hideModal(&#39;invoiceModal&#39;)">
+  <div class="modal" style="width:500px;">
+    <div class="modal-header">
+      請求書編集
+      <button class="close" onclick="hideModal(&#39;invoiceModal&#39;)">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group small">
+          <label>請求書番号 <span style="color:#ff4d4f;">*</span></label>
+          <input type="text" value="INV-2026-0501">
+        </div>
+        <div class="form-group small">
+          <label>顧客 <span style="color:#ff4d4f;">*</span></label>
+          <select>
+            <option>株式会社テクノ東京</option>
+            <option>大阪商事株式会社</option>
+            <option>名古屋工業有限会社</option>
+          </select>
+        </div>
+        <div class="form-group small">
+          <label>年度</label>
+          <select><option>2026</option><option>2025</option></select>
+        </div>
+        <div class="form-group small">
+          <label>月度</label>
+          <select>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option selected="">5</option><option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option><option>11</option><option>12</option>
+          </select>
+        </div>
+        <div class="form-group small">
+          <label>金額 (円) <span style="color:#ff4d4f;">*</span></label>
+          <input type="number" value="1500000" style="text-align:right;">
+        </div>
+        <div class="form-group small">
+          <label>ステータス</label>
+          <select>
+            <option>下書き</option>
+            <option>送付済</option>
+            <option>入金済</option>
+          </select>
+        </div>
+        <div class="form-group small full">
+          <label>備考</label>
+          <textarea placeholder="備考を入力してください">システム開発費用</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="hideModal(&#39;invoiceModal&#39;)">キャンセル</button>
+      <button class="btn btn-primary" onclick="hideModal(&#39;invoiceModal&#39;)">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Screen switching
+function switchScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('screen-' + name);
+  if (target) target.classList.add('active');
+
+  // Update switcher buttons
+  document.querySelectorAll('.screen-switcher button').forEach(b => b.classList.remove('active'));
+  const btns = document.querySelectorAll('.screen-switcher button');
+  const map = { login:0, employee:1, customer:2, attendance:3, invoice:4, bank:5 };
+  if (map[name] !== undefined) btns[map[name]].classList.add('active');
+}
+
+// Modal toggling
+function showModal(id) {
+  document.getElementById(id).classList.remove('hidden');
+}
+function hideModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+// Mock login
+function doMockLogin() {
+  var u = document.getElementById('username').value;
+  var p = document.getElementById('password').value;
+  if (u === 'admin' && p === 'admin123') {
+    document.getElementById('loginError').style.display = 'none';
+    switchScreen('employee');
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+// Bank Account Management (専用ページ・マスク対応)
+var editingBankId = null;
+
+// Bank account management — pure bank info only, no customer data displayed
+
+// Open bank edit form
+function openBankEditForm() {
+  document.getElementById('bankEditSection').style.display = 'block';
+  document.getElementById('bankEditTitle').textContent = '✏️ 銀行口座を追加';
+  clearBankForm();
+}
+
+// MASTER is independent — no customer filter needed
+function loadBankAccounts() {
+  // In real app, fetch all bank accounts from API (no customer filter).
+  // MASTER records exist independently of business table.
+  cancelBankEdit();
+}
+
+// Toggle masked account number visibility
+function toggleAccountMask(btn, spanId, fullNumber) {
+  var span = document.getElementById(spanId);
+  if (span.classList.contains('account-revealed')) {
+    span.textContent = '****' + fullNumber.slice(-4);
+    span.classList.remove('account-revealed');
+    btn.textContent = '👁 表示';
+  } else {
+    if (confirm('口座番号を表示します。この操作はログに記録されます。続行しますか？')) {
+      span.textContent = fullNumber;
+      span.classList.add('account-revealed');
+      btn.textContent = '🙈 隠す';
+      setTimeout(function() {
+        if (span.classList.contains('account-revealed')) {
+          span.textContent = '****' + fullNumber.slice(-4);
+          span.classList.remove('account-revealed');
+          btn.textContent = '👁 表示';
+        }
+      }, 30000);
+    }
+  }
+}
+
+// Delete confirmation (by 取引番号) — defined below
+
+
+function clearBankForm() {
+  document.getElementById('bankBranchCode').value = '';
+  document.getElementById('bankName').value = '';
+  document.getElementById('bankAccountType').value = '';
+  document.getElementById('bankAccountNumber').value = '';
+  document.getElementById('bankAccountHolder').value = '';
+  editingBankId = null;
+}
+
+function editBankAccount(torihikiNo) {
+  editingBankId = torihikiNo;
+  document.getElementById('bankEditSection').style.display = 'block';
+  document.getElementById('bankEditTitle').textContent = '✏️ 銀行口座を編集（取引番号: ' + torihikiNo + '）';
+  var row = document.querySelector('#bankAccountTableBody tr[data-torihiki="' + torihikiNo + '"]');
+  if (row) {
+    var cells = row.querySelectorAll('td');
+    // cells: [0]取引番号 [1]支店番号 [2]銀行名称 [3]口座種類 [4]口座番号 [5]口座名義 [6]顧客 [7]操作
+    document.getElementById('bankBranchCode').value = cells[1].textContent.trim();
+    document.getElementById('bankName').value = cells[2].textContent.trim();
+    document.getElementById('bankAccountType').value = cells[3].textContent.trim();
+    var accSpan = cells[4].querySelector('.masked-account');
+    if (accSpan) {
+      var full = accSpan.getAttribute('data-full');
+      if (full) document.getElementById('bankAccountNumber').value = full;
+    }
+    document.getElementById('bankAccountHolder').value = cells[5].textContent.trim();
+  }
+}
+
+function saveBankAccount() {
+  var branchCode = document.getElementById('bankBranchCode').value.trim();
+  var name = document.getElementById('bankName').value.trim();
+  var type = document.getElementById('bankAccountType').value;
+  var number = document.getElementById('bankAccountNumber').value.trim();
+  var holder = document.getElementById('bankAccountHolder').value.trim();
+  if (!name || !type || !number || !holder) {
+    alert('すべての必須項目を入力してください。');
+    return;
+  }
+  var masked = '****' + number.slice(-4);
+  if (editingBankId) {
+    var row = document.querySelector('#bankAccountTableBody tr[data-torihiki="' + editingBankId + '"]');
+    if (row) {
+      var cells = row.querySelectorAll('td');
+      cells[1].textContent = branchCode;
+      cells[2].textContent = name;
+      cells[3].textContent = type;
+      cells[4].innerHTML = '<span class="masked-account" id="accNum_' + editingBankId + '" data-full="' + number + '">' + masked + '</span><button class="btn-link" onclick="event.stopPropagation();toggleAccountMask(this,\'accNum_' + editingBankId + '\',\'' + number + '\')" style="margin-left:4px;font-size:11px;">👁 表示</button>';
+      cells[5].textContent = holder;
+    }
+  } else {
+    var tbody = document.getElementById('bankAccountTableBody');
+    // Generate new 取引番号
+    var allRows = tbody.querySelectorAll('tr');
+    var maxNo = 1000;
+    allRows.forEach(function(r) {
+      var tn = r.getAttribute('data-torihiki');
+      if (tn) {
+        var n = parseInt(tn.replace('BK', ''));
+        if (n > maxNo) maxNo = n;
+      }
+    });
+    var newTorihiki = 'BK' + String(maxNo + 1).padStart(6, '0');
+    var newRow = '<tr data-torihiki="' + newTorihiki + '">' +
+      '<td><strong>' + newTorihiki + '</strong></td>' +
+      '<td>' + branchCode + '</td>' +
+      '<td>' + name + '</td>' +
+      '<td>' + type + '</td>' +
+      '<td><span class="masked-account" id="accNum_' + newTorihiki + '" data-full="' + number + '">' + masked + '</span><button class="btn-link" onclick="toggleAccountMask(this,\'accNum_' + newTorihiki + '\',\'' + number + '\')" style="margin-left:4px;font-size:11px;">👁 表示</button></td>' +
+      '<td>' + holder + '</td>' +
+      '<td style="text-align:center;"><div class="btn-group">' +
+      '<button class="btn-link" onclick="editBankAccount(\'' + newTorihiki + '\')">編集</button>' +
+      '<button class="btn-link danger" onclick="confirmDeleteBank(\'' + newTorihiki + '\')">削除</button>' +
+      '</div></td></tr>';
+    tbody.insertAdjacentHTML('beforeend', newRow);
+  }
+  cancelBankEdit();
+}
+
+function confirmDeleteBank(torihikiNo) {
+  if (confirm('取引番号 ' + torihikiNo + ' の銀行口座を削除してもよろしいですか？\nこの操作は取り消せません。')) {
+    var row = document.querySelector('#bankAccountTableBody tr[data-torihiki="' + torihikiNo + '"]');
+    if (row) row.remove();
+  }
+}
+
+// Add bank account to customer in modal (1:N binding)
+function addBankToCustomer() {
+  var sel = document.getElementById('bankSelectForCustomer');
+  var opt = sel.options[sel.selectedIndex];
+  if (!opt.value) return;
+  var tbody = document.getElementById('customerBankTable');
+  // Check duplicate
+  var existing = tbody.querySelectorAll('td:first-child strong');
+  for (var i = 0; i < existing.length; i++) {
+    if (existing[i].textContent === opt.value) { alert('この口座は既に追加されています。'); return; }
+  }
+  var parts = opt.text.split(' — ');
+  var row = '<tr>' +
+    '<td><strong>' + opt.value + '</strong></td>' +
+    '<td>' + parts[1].split(' (')[0] + '</td>' +
+    '<td>' + parts[1].match(/\((\d+)\)/)[1] + '</td>' +
+    '<td>普通</td>' +
+    '<td>****' + Math.floor(Math.random()*9000+1000) + '</td>' +
+    '<td>カ）</td>' +
+    '<td><button class="btn-link danger" onclick="this.closest(\'tr\').remove()">解除</button></td>' +
+    '</tr>';
+  tbody.insertAdjacentHTML('beforeend', row);
+  sel.value = '';
+}
+
+function cancelBankEdit() {
+  document.getElementById('bankEditSection').style.display = 'none';
+  clearBankForm();
+}
+</script>
+
+
+</body></html>

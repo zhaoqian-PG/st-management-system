@@ -1,0 +1,52 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Spring Boot Backend",
+      "request": "launch",
+      "mainClass": "com.stmanagement.StManagementApplication",
+      "projectName": "st-management-backend",
+      "cwd": "${workspaceFolder}/backend",
+      "console": "internalConsole",
+      "env": {
+        "JAVA_HOME": "C:\\Program Files\\Java\\jdk1.8.0_333"
+      }
+    },
+    {
+      "type": "node",
+      "name": "React Frontend",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}/frontend",
+      "console": "integratedTerminal",
+      "env": {
+        "BROWSER": "none"
+      }
+    },
+    {
+      "type": "chrome",
+      "name": "Launch Chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/*"
+      }
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot + React (Full Stack)",
+      "request": "compound",
+      "cwd": "${workspaceFolder}",
+      "configurations": ["Spring Boot Backend", "React Frontend"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack Debug",
+      "configurations": ["Spring Boot Backend", "Launch Chrome"]
+    }
+  ]
+}
