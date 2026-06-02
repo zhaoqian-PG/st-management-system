@@ -2,7 +2,11 @@ package com.stmanagement.service;
 
 import com.stmanagement.dto.BankAccountDTO;
 import com.stmanagement.model.BankAccount;
+import com.stmanagement.model.Customer;
+import com.stmanagement.model.Employee;
 import com.stmanagement.repository.BankAccountRepository;
+import com.stmanagement.repository.CustomerRepository;
+import com.stmanagement.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,124 +26,144 @@ import java.util.stream.Collectors;
 public class BankAccountService {
 
     private final BankAccountRepository bankAccountRepository;
+    private final CustomerRepository customerRepository;
+    private final EmployeeRepository employeeRepository;
     private final EntityManager entityManager;
 
-    /**
-     * Get all bank accounts with optional customer filter and pagination.
-     */
-    public Page<BankAccountDTO> findAll(Long customerId, int page, int size) {
+    public Page<BankAccountDTO> findAll(String category, Long customerId, int page, int size) {
         Specification<BankAccount> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-            if (customerId != null) {
+            if (category != null && !category.isEmpty())
+                predicates.add(cb.equal(root.get("category"), category));
+            if (customerId != null)
                 predicates.add(cb.equal(root.get("customerId"), customerId));
-            }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
-        PageRequest pageable = PageRequest.of(page, size, Sort.by("torihikiNo").ascending());
-        return bankAccountRepository.findAll(spec, pageable).map(this::toDTO);
+        return bankAccountRepository.findAll(spec, PageRequest.of(page, size, Sort.by("torihikiNo").ascending()))
+                .map(this::toDTO);
     }
 
-    /**
-     * Get bank account by ID.
-     */
     public BankAccountDTO findById(Long id) {
-        BankAccount entity = bankAccountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("銀行口座が見つかりません: " + id));
-        return toDTO(entity);
+        return toDTO(bankAccountRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("銀行口座が見つかりません: " + id)));
     }
 
-    /**
-     * Get bank accounts for a specific customer.
-     */
-    public List<BankAccountDTO> findByCustomerId(Long customerId) {
-        return bankAccountRepository.findByCustomerId(customerId)
-                .stream().map(this::toDTO).collect(Collectors.toList());
+    public List<BankAccountDTO> findByCustomerId(Long cid) {
+        return bankAccountRepository.findByCustomerId(cid).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    /**
-     * Create a new bank account.
-     */
+    public List<BankAccountDTO> findByEmployeeId(Long eid) {
+        return bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
+                cb.equal(root.get("employeeId"), eid)).stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
     @Transactional
     public BankAccountDTO create(BankAccountDTO dto) {
-        BankAccount entity = toEntity(dto);
-        entity = bankAccountRepository.save(entity);
-        // Refresh from DB to get auto-generated torihiki_no (insertable=false)
+        BankAccount e = toEntity(dto);
+        e = bankAccountRepository.save(e);
         entityManager.flush();
-        entityManager.refresh(entity);
-        return toDTO(entity);
+        entityManager.refresh(e);
+        return toDTO(e);
     }
 
-    /**
-     * Update an existing bank account.
-     */
     @Transactional
     public BankAccountDTO update(Long id, BankAccountDTO dto) {
-        BankAccount entity = bankAccountRepository.findById(id)
+        BankAccount e = bankAccountRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("銀行口座が見つかりません: " + id));
-        entity.setCustomerId(dto.getCustomerId());
-        entity.setBranchCode(dto.getBranchCode());
-        entity.setBankName(dto.getBankName());
-        entity.setAccountType(dto.getAccountType());
-        entity.setAccountNumber(dto.getAccountNumber());
-        entity.setAccountHolder(dto.getAccountHolder());
-        entity = bankAccountRepository.save(entity);
-        return toDTO(entity);
+        e.setCategory(dto.getCategory());
+        e.setCustomerId(dto.getCustomerId());
+        e.setEmployeeId(dto.getEmployeeId());
+        e.setBranchCode(dto.getBranchCode());
+        e.setBankName(dto.getBankName());
+        e.setAccountType(dto.getAccountType());
+        e.setAccountNumber(dto.getAccountNumber());
+        e.setAccountHolder(dto.getAccountHolder());
+        return toDTO(bankAccountRepository.save(e));
     }
 
-    /**
-     * Delete a bank account.
-     */
     @Transactional
     public void delete(Long id) {
-        if (!bankAccountRepository.existsById(id)) {
+        if (!bankAccountRepository.existsById(id))
             throw new RuntimeException("銀行口座が見つかりません: " + id);
-        }
         bankAccountRepository.deleteById(id);
     }
 
-    /**
-     * Bind a bank account to a customer.
-     */
     @Transactional
-    public void bindToCustomer(Long bankAccountId, Long customerId) {
-        BankAccount entity = bankAccountRepository.findById(bankAccountId)
-                .orElseThrow(() -> new RuntimeException("銀行口座が見つかりません: " + bankAccountId));
-        entity.setCustomerId(customerId);
-        bankAccountRepository.save(entity);
+    public void bindToCustomer(Long id, Long customerId) {
+        BankAccount e = bankAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
+        e.setCategory("CUSTOMER");
+        e.setCustomerId(customerId);
+        e.setEmployeeId(null);
+        bankAccountRepository.save(e);
+        syncCustomerTorihikiNo(customerId);
     }
 
-    /**
-     * Unbind a bank account from its customer.
-     */
     @Transactional
-    public void unbindFromCustomer(Long bankAccountId) {
-        BankAccount entity = bankAccountRepository.findById(bankAccountId)
-                .orElseThrow(() -> new RuntimeException("銀行口座が見つかりません: " + bankAccountId));
-        entity.setCustomerId(null);
-        bankAccountRepository.save(entity);
+    public void unbindFromCustomer(Long id) {
+        BankAccount e = bankAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
+        Long cid = e.getCustomerId();
+        e.setCustomerId(null);
+        bankAccountRepository.save(e);
+        if (cid != null) syncCustomerTorihikiNo(cid);
     }
 
-    private BankAccountDTO toDTO(BankAccount entity) {
-        return BankAccountDTO.builder()
-                .id(entity.getId())
-                .torihikiNo(entity.getTorihikiNo())
-                .customerId(entity.getCustomerId())
-                .branchCode(entity.getBranchCode())
-                .bankName(entity.getBankName())
-                .accountType(entity.getAccountType())
-                .accountNumber(entity.getAccountNumber())
-                .accountHolder(entity.getAccountHolder())
-                .build();
+    @Transactional
+    public void bindToEmployee(Long id, Long employeeId) {
+        BankAccount e = bankAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
+        e.setCategory("EMPLOYEE");
+        e.setEmployeeId(employeeId);
+        e.setCustomerId(null);
+        bankAccountRepository.save(e);
+        syncEmployeeTorihikiNo(employeeId);
+    }
+
+    @Transactional
+    public void unbindFromEmployee(Long id) {
+        BankAccount e = bankAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
+        Long eid = e.getEmployeeId();
+        e.setEmployeeId(null);
+        bankAccountRepository.save(e);
+        if (eid != null) syncEmployeeTorihikiNo(eid);
+    }
+
+    private void syncCustomerTorihikiNo(Long cid) {
+        Customer c = customerRepository.findById(cid).orElse(null);
+        if (c == null) return;
+        List<String> labels = bankAccountRepository.findByCustomerId(cid).stream()
+                .map(ba -> ba.getBankName() + "（" + ba.getBranchCode() + "）")
+                .collect(Collectors.toList());
+        c.setTorihikiNo(labels.isEmpty() ? null : String.join("、", labels));
+        customerRepository.save(c);
+    }
+
+    private void syncEmployeeTorihikiNo(Long eid) {
+        Employee emp = employeeRepository.findById(eid).orElse(null);
+        if (emp == null) return;
+        List<String> labels = bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
+                cb.equal(root.get("employeeId"), eid)).stream()
+                .map(ba -> ba.getBankName() + "（" + ba.getBranchCode() + "）")
+                .collect(Collectors.toList());
+        emp.setTorihikiNo(labels.isEmpty() ? null : String.join("、", labels));
+        employeeRepository.save(emp);
+    }
+
+    private BankAccountDTO toDTO(BankAccount e) {
+        String cn = null, en = null;
+        if (e.getCustomerId() != null) cn = customerRepository.findById(e.getCustomerId()).map(Customer::getCompanyName).orElse(null);
+        if (e.getEmployeeId() != null) en = employeeRepository.findById(e.getEmployeeId()).map(Employee::getName).orElse(null);
+        return BankAccountDTO.builder().id(e.getId()).torihikiNo(e.getTorihikiNo())
+                .category(e.getCategory()).customerId(e.getCustomerId()).employeeId(e.getEmployeeId())
+                .customerName(cn).employeeName(en)
+                .branchCode(e.getBranchCode()).bankName(e.getBankName())
+                .accountType(e.getAccountType()).accountNumber(e.getAccountNumber())
+                .accountHolder(e.getAccountHolder()).build();
     }
 
     private BankAccount toEntity(BankAccountDTO dto) {
-        return BankAccount.builder()
-                .customerId(dto.getCustomerId())
-                .branchCode(dto.getBranchCode())
-                .bankName(dto.getBankName())
-                .accountType(dto.getAccountType())
-                .accountNumber(dto.getAccountNumber())
-                .accountHolder(dto.getAccountHolder())
-                .build();
+        return BankAccount.builder().category(dto.getCategory())
+                .customerId(dto.getCustomerId()).employeeId(dto.getEmployeeId())
+                .branchCode(dto.getBranchCode()).bankName(dto.getBankName())
+                .accountType(dto.getAccountType()).accountNumber(dto.getAccountNumber())
+                .accountHolder(dto.getAccountHolder()).build();
     }
 }

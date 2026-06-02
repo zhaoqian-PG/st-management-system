@@ -42,4 +42,14 @@ export const bankAccountApi = {
   unbindFromCustomer(id) {
     return axios.put(`${API_BASE}/${id}/unbind`);
   },
+  // 社員紐付け
+  bindToEmployee(id, employeeId) {
+    return axios.put(`${API_BASE}/${id}/bind-employee/${employeeId}`);
+  },
+  unbindFromEmployee(id) {
+    return axios.put(`${API_BASE}/${id}/unbind-employee`);
+  },
+  getByEmployeeId(employeeId) {
+    return axios.get(`${API_BASE}/employee/${employeeId}`);
+  },
 };

@@ -19,9 +19,11 @@ public class BankAccountDTO {
 
     private String torihikiNo;
 
+    private String category;
     private Long customerId;
-
+    private Long employeeId;
     private String customerName;
+    private String employeeName;
 
     @NotBlank(message = "支店番号は必須です")
     @Size(max = 10, message = "支店番号は最大10文字です")

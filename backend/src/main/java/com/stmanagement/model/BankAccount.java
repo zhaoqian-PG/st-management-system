@@ -24,8 +24,14 @@ public class BankAccount {
             insertable = false, updatable = false)
     private String torihikiNo;
 
+    @Column(length = 10)
+    private String category;
+
     @Column(name = "customer_id")
     private Long customerId;
+
+    @Column(name = "employee_id")
+    private Long employeeId;
 
     @Column(name = "branch_code", length = 10)
     private String branchCode;
