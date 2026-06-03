@@ -146,7 +146,7 @@ export default function BankAccount() {
         title={`銀行口座一覧（${activeTab === 'CUSTOMER' ? '顧客用' : '社員用'}）`}
         extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>新規登録</Button>}
       >
-        <Table columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 1200 }}
+        <Table columns={columns} dataSource={data} rowKey="id" loading={loading}
           pagination={{ current: page, pageSize: PAGE_SIZE, total, showSizeChanger: false,
             showTotal: (t) => `全 ${t} 件`, onChange: (p) => setPage(p) }} />
       </Card>

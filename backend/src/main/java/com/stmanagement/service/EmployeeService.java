@@ -180,6 +180,27 @@ public class EmployeeService {
                 .joinDate(e.getJoinDate()).birthDate(e.getBirthDate()).build();
     }
 
+    public String exportCsv() {
+        List<Employee> all = employeeRepository.findAll(Sort.by("employeeCode"));
+        StringBuilder sb = new StringBuilder();
+        sb.append("社員番号,氏名,メール,日本電話,部署,役職,入社日,生年月日,日本住所,中国住所,中国電話,緊急連絡先\n");
+        for (Employee e : all) {
+            sb.append(e.getEmployeeCode()).append(",");
+            sb.append(e.getName()).append(",");
+            sb.append(e.getEmail() != null ? e.getEmail() : "").append(",");
+            sb.append(e.getPhone() != null ? e.getPhone() : "").append(",");
+            sb.append(e.getDepartment() != null ? e.getDepartment() : "").append(",");
+            sb.append(e.getPosition() != null ? e.getPosition() : "").append(",");
+            sb.append(e.getJoinDate() != null ? e.getJoinDate() : "").append(",");
+            sb.append(e.getBirthDate() != null ? e.getBirthDate() : "").append(",");
+            sb.append(e.getJapanAddress() != null ? e.getJapanAddress() : "").append(",");
+            sb.append(e.getChinaAddress() != null ? e.getChinaAddress() : "").append(",");
+            sb.append(e.getChinaPhone() != null ? e.getChinaPhone() : "").append(",");
+            sb.append(e.getChinaEmergencyContact() != null ? e.getChinaEmergencyContact() : "").append("\n");
+        }
+        return sb.toString();
+    }
+
     private Employee toEntity(EmployeeDTO d) {
         return Employee.builder().name(d.getName()).email(d.getEmail()).phone(d.getPhone())
                 .japanAddress(d.getJapanAddress()).chinaAddress(d.getChinaAddress())

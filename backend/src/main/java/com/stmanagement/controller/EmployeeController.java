@@ -56,13 +56,22 @@ public class EmployeeController {
     }
 
     @PostMapping("/{id}/upload")
-    public ResponseEntity<?> upload(@PathVariable Long id, @RequestParam("files") MultipartFile[] files) {
+    public ResponseEntity<?> upload(@PathVariable Long id, @RequestParam("files") List<MultipartFile> files) {
         try {
-            List<EmployeeDTO.AttachmentInfo> result = employeeService.uploadFiles(id, files);
+            List<EmployeeDTO.AttachmentInfo> result = employeeService.uploadFiles(id, files.toArray(new MultipartFile[0]));
             return ResponseEntity.ok(ApiResponse.success(result, result.size() + "件のファイルをアップロードしました"));
         } catch (IOException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error("アップロード失敗: " + e.getMessage(), 400));
         }
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<?> exportCsv() {
+        String csv = employeeService.exportCsv();
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=employee_list.csv")
+                .body(csv);
     }
 
     @GetMapping("/attachments/{attachmentId}/download")

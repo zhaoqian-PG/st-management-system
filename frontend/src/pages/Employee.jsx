@@ -25,6 +25,7 @@ export default function Employee() {
   const [availableBanks, setAvailableBanks] = useState([]);
   const [selectedBankId, setSelectedBankId] = useState(null);
   const [attachments, setAttachments] = useState([]);
+  const [pendingFiles, setPendingFiles] = useState([]); // files to upload after create
   const [uploading, setUploading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [form] = Form.useForm();
@@ -34,8 +35,7 @@ export default function Employee() {
     try {
       const res = await employeeApi.list({ page: page - 1, size: PAGE_SIZE, keyword: keyword || undefined });
       const r = res.data.data;
-      setData(r.content || []);
-      setTotal(r.totalElements || 0);
+      setData(r.content || []); setTotal(r.totalElements || 0);
     } catch { message.error('データの取得に失敗しました'); }
     finally { setLoading(false); }
   }, [page, keyword]);
@@ -55,20 +55,16 @@ export default function Employee() {
   };
 
   const handleCreate = () => {
-    setEditingRecord(null); setLinkedBanks([]); setAttachments([]); setSelectedBankId(null);
+    setEditingRecord(null); setLinkedBanks([]); setAttachments([]); setPendingFiles([]); setSelectedBankId(null);
     form.resetFields(); setModalVisible(true); fetchAvailableBanks();
   };
 
   const handleEdit = async (record) => {
-    setEditingRecord(record); setSelectedBankId(null);
+    setEditingRecord(record); setPendingFiles([]); setSelectedBankId(null);
     form.setFieldsValue({ ...record, joinDate: record.joinDate ? dayjs(record.joinDate) : null, birthDate: record.birthDate ? dayjs(record.birthDate) : null });
     setModalVisible(true);
-    // Fetch detail with attachments
-    try {
-      const r = await employeeApi.getById(record.id);
-      setAttachments(r.data.data.attachments || []);
-      setLinkedBanks(r.data.data.bankAccounts || []);
-    } catch { setAttachments([]); setLinkedBanks([]); }
+    try { const r = await employeeApi.getById(record.id); setAttachments(r.data.data.attachments || []); setLinkedBanks(r.data.data.bankAccounts || []); }
+    catch { setAttachments([]); setLinkedBanks([]); }
     await fetchAvailableBanks();
   };
 
@@ -78,14 +74,32 @@ export default function Employee() {
       setFormLoading(true);
       const payload = { ...values, joinDate: values.joinDate ? values.joinDate.format('YYYY-MM-DD') : null, birthDate: values.birthDate ? values.birthDate.format('YYYY-MM-DD') : null };
       let empId = editingRecord?.id;
-      if (editingRecord) { await employeeApi.update(empId, payload); message.success('更新しました'); }
-      else { const r = await employeeApi.create(payload); empId = r.data.data.id; message.success('登録しました'); }
-      if (linkedBanks.length > 0 && empId) {
-        for (const acc of linkedBanks) { if (acc.employeeId !== empId) { try { await bankAccountApi.bindToEmployee(acc.id, empId); } catch (e) {} } }
+
+      if (editingRecord) {
+        await employeeApi.update(empId, payload);
+        // Upload any new files
+        if (pendingFiles.length > 0) { await doUpload(empId, pendingFiles); }
+        message.success('更新しました');
+      } else {
+        const r = await employeeApi.create(payload);
+        empId = r.data.data.id;
+        // Upload files after creation
+        if (pendingFiles.length > 0) { await doUpload(empId, pendingFiles); }
+        // Bind bank accounts
+        if (linkedBanks.length > 0) {
+          for (const acc of linkedBanks) { try { await bankAccountApi.bindToEmployee(acc.id, empId); } catch (e) {} }
+        }
+        message.success('登録しました');
       }
       setModalVisible(false); fetchData();
     } catch (err) { if (err.response?.data?.error) message.error(err.response.data.error); }
     finally { setFormLoading(false); }
+  };
+
+  const doUpload = async (empId, files) => {
+    const fd = new FormData();
+    files.forEach(f => fd.append('files', f));
+    await employeeApi.upload(empId, fd);
   };
 
   const handleDeleteConfirm = (r) => {
@@ -97,9 +111,7 @@ export default function Employee() {
     if (!selectedBankId) return;
     const acc = availableBanks.find(a => a.id === selectedBankId);
     if (!acc) return;
-    setLinkedBanks([...linkedBanks, acc]);
-    setAvailableBanks(availableBanks.filter(a => a.id !== selectedBankId));
-    setSelectedBankId(null);
+    setLinkedBanks([...linkedBanks, acc]); setAvailableBanks(availableBanks.filter(a => a.id !== selectedBankId)); setSelectedBankId(null);
   };
 
   const handleUnbindBank = (bank) => {
@@ -109,27 +121,19 @@ export default function Employee() {
     } else { setLinkedBanks(linkedBanks.filter(a => a.id !== bank.id)); setAvailableBanks([...availableBanks, bank]); }
   };
 
-  const handleUpload = async (files) => {
-    if (!editingRecord) return;
+  const handleUploadForEdit = async (files) => {
+    if (!editingRecord?.id) return;
     setUploading(true);
-    try {
-      const fd = new FormData();
-      files.forEach(f => fd.append('files', f));
-      await employeeApi.upload(editingRecord.id, fd);
-      message.success('アップロードしました');
-      const r = await employeeApi.getById(editingRecord.id);
-      setAttachments(r.data.data.attachments || []);
-    } catch { message.error('失敗'); }
+    try { await doUpload(editingRecord.id, files); const r = await employeeApi.getById(editingRecord.id); setAttachments(r.data.data.attachments || []); message.success('アップロードしました'); }
+    catch { message.error('失敗'); }
     finally { setUploading(false); }
   };
 
-  const handleDownload = (att) => {
-    window.open(`/api/employee/attachments/${att.id}/download`);
-  };
+  const handleDownload = (att) => { window.open(`/api/employee/attachments/${att.id}/download`); };
 
   const handleDeleteAtt = (attId) => {
-    Modal.confirm({ title: 'ファイル削除', content: '削除しますか？', okText: '削除', cancelText: 'キャンセル', centered: true,
-      onOk: async () => { try { await employeeApi.deleteAttachment(attId); setAttachments(attachments.filter(a => a.id !== attId)); message.success('削除しました'); } catch {} } });
+    Modal.confirm({ title: '削除', content: 'このファイルを削除しますか？', okText: '削除', cancelText: 'キャンセル', centered: true,
+      onOk: async () => { try { await employeeApi.deleteAttachment(attId); setAttachments(attachments.filter(a => a.id !== attId)); } catch {} } });
   };
 
   const handleBatchImport = async (file) => {
@@ -138,6 +142,8 @@ export default function Employee() {
     catch { message.error('失敗'); }
     finally { setImporting(false); }
   };
+
+  const handleExportAll = () => { window.open('/api/employee/export'); };
 
   const columns = [
     { title: '社員番号', dataIndex: 'employeeCode', width: 110 },
@@ -179,6 +185,36 @@ export default function Employee() {
     },
   ];
 
+  // File section shown in both create and edit modes
+  const renderFileSection = () => (
+    <SectionTitle>● 添付ファイル</SectionTitle>
+  ) + (
+    editingRecord ? (
+      <>
+        <Table columns={attCols} dataSource={attachments} rowKey="id" size="small" pagination={false}
+          locale={{ emptyText: 'なし' }} style={{ marginBottom: 8 }} />
+        <Upload multiple beforeUpload={(f, fl) => { handleUploadForEdit(fl); return false; }} showUploadList={false}>
+          <Button icon={<UploadOutlined />} loading={uploading}>ファイル選択（複数可）</Button>
+        </Upload>
+      </>
+    ) : (
+      <>
+        {pendingFiles.length > 0 && (
+          <Table dataSource={pendingFiles.map((f, i) => ({ key: i, name: f.name, size: f.size }))} rowKey="key" size="small" pagination={false}
+            columns={[
+              { title: 'ファイル名', dataIndex: 'name' },
+              { title: 'サイズ', dataIndex: 'size', width: 100, render: s => (s / 1024).toFixed(1) + ' KB' },
+              { title: '操作', width: 60, render: (_, __, i) => <Button type="link" danger onClick={() => setPendingFiles(pendingFiles.filter((_, j) => j !== i))}>削除</Button> },
+            ]}
+            style={{ marginBottom: 8 }} />
+        )}
+        <Upload multiple beforeUpload={(f, fl) => { setPendingFiles([...pendingFiles, ...fl]); return false; }} showUploadList={false}>
+          <Button icon={<UploadOutlined />}>ファイル選択（複数可・保存時に登録）</Button>
+        </Upload>
+      </>
+    )
+  );
+
   return (
     <div>
       <h2 style={{ marginBottom: 20 }}><UserOutlined /> 社員管理</h2>
@@ -186,6 +222,7 @@ export default function Employee() {
         <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
           <Input placeholder="社員番号・氏名で検索" value={keyword} onChange={e => { setKeyword(e.target.value); setPage(1); }} style={{ width: 240 }} allowClear />
           <span style={{ flex: 1 }} />
+          <Button icon={<DownloadOutlined />} onClick={handleExportAll}>一括DL</Button>
           <Upload accept=".csv" showUploadList={false} beforeUpload={f => { handleBatchImport(f); return false; }}>
             <Button icon={<UploadOutlined />} loading={importing}>一括登録</Button>
           </Upload>
@@ -230,15 +267,7 @@ export default function Employee() {
             <Button onClick={handleBindBank} disabled={!selectedBankId}>追加</Button>
           </Space>
 
-          {editingRecord && (
-            <>
-              <SectionTitle>● 添付ファイル</SectionTitle>
-              <Table columns={attCols} dataSource={attachments} rowKey="id" size="small" pagination={false} locale={{ emptyText: 'なし' }} style={{ marginBottom: 8 }} />
-              <Upload multiple beforeUpload={(f, fl) => { handleUpload(fl); return false; }} showUploadList={false}>
-                <Button icon={<UploadOutlined />} loading={uploading}>ファイル選択（複数可）</Button>
-              </Upload>
-            </>
-          )}
+          {renderFileSection()}
         </Form>
       </Modal>
     </div>
