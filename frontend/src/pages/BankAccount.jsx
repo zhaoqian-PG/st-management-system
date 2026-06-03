@@ -119,10 +119,6 @@ export default function BankAccount() {
     { title: '口座番号', dataIndex: 'accountNumber', width: 200, render: renderAccountNumber },
     { title: '口座名義', dataIndex: 'accountHolder', width: 180 },
     {
-      title: '紐付先', dataIndex: 'customerName', width: 180, ellipsis: true,
-      render: (text, record) => record.employeeName || text || <span style={{ color: 'rgba(0,0,0,0.25)' }}>未紐付</span>,
-    },
-    {
       title: '操作', width: 140, fixed: 'right',
       render: (_, record) => (
         <Space>

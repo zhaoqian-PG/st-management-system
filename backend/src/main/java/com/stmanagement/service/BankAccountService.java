@@ -113,8 +113,24 @@ public class BankAccountService {
         e.setCategory("EMPLOYEE");
         e.setEmployeeId(employeeId);
         e.setCustomerId(null);
+        // If first bank for this employee, set as default
+        long count = bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
+                cb.equal(root.get("employeeId"), employeeId)).stream().count();
+        if (count == 0) e.setIsDefault(true);
         bankAccountRepository.save(e);
         syncEmployeeTorihikiNo(employeeId);
+    }
+
+    @Transactional
+    public void setDefaultForEmployee(Long id, Long employeeId) {
+        // Unset all others first
+        List<BankAccount> all = bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
+                cb.equal(root.get("employeeId"), employeeId));
+        for (BankAccount a : all) { a.setIsDefault(false); bankAccountRepository.save(a); }
+        // Set this one as default
+        BankAccount e = bankAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
+        e.setIsDefault(true);
+        bankAccountRepository.save(e);
     }
 
     @Transactional
@@ -156,7 +172,7 @@ public class BankAccountService {
                 .customerName(cn).employeeName(en)
                 .branchCode(e.getBranchCode()).bankName(e.getBankName())
                 .accountType(e.getAccountType()).accountNumber(e.getAccountNumber())
-                .accountHolder(e.getAccountHolder()).build();
+                .accountHolder(e.getAccountHolder()).isDefault(e.getIsDefault()).build();
     }
 
     private BankAccount toEntity(BankAccountDTO dto) {

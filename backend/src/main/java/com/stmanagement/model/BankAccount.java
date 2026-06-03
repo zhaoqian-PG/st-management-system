@@ -48,6 +48,9 @@ public class BankAccount {
     @Column(name = "account_holder", length = 100, nullable = false)
     private String accountHolder;
 
+    @Column(name = "is_default", nullable = false)
+    private Boolean isDefault = false;
+
     @Column(name = "create_time", nullable = false, updatable = false)
     private LocalDateTime createTime;
 

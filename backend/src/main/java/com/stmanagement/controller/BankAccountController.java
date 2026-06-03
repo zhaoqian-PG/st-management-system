@@ -114,4 +114,10 @@ public class BankAccountController {
         bankAccountService.unbindFromEmployee(id);
         return ResponseEntity.ok(ApiResponse.success(null, "社員紐付けを解除しました"));
     }
+
+    @PutMapping("/{id}/set-default-employee/{employeeId}")
+    public ResponseEntity<?> setDefaultForEmployee(@PathVariable Long id, @PathVariable Long employeeId) {
+        bankAccountService.setDefaultForEmployee(id, employeeId);
+        return ResponseEntity.ok(ApiResponse.success(null, "既定口座を設定しました"));
+    }
 }

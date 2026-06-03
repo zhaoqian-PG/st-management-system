@@ -52,4 +52,7 @@ export const bankAccountApi = {
   getByEmployeeId(employeeId) {
     return axios.get(`${API_BASE}/employee/${employeeId}`);
   },
+  setDefaultForEmployee(id, employeeId) {
+    return axios.put(`${API_BASE}/${id}/set-default-employee/${employeeId}`);
+  },
 };

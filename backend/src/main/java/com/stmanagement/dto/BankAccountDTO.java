@@ -44,4 +44,5 @@ public class BankAccountDTO {
     @NotBlank(message = "口座名義は必須です")
     @Size(max = 100, message = "口座名義は最大100文字です")
     private String accountHolder;
+    private Boolean isDefault;
 }

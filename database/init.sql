@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS bank_account (
     account_type        VARCHAR(20)     NOT NULL,
     account_number      VARCHAR(50)     NOT NULL,
     account_holder      VARCHAR(100)    NOT NULL,
+    is_default          BOOLEAN         NOT NULL DEFAULT FALSE,
     create_time         TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time         TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
