@@ -17,6 +17,17 @@ import java.util.List;
 @Builder
 public class EmployeeDTO {
 
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class AttachmentInfo {
+        private Long id;
+        private String fileName;
+        private String filePath;
+        private Long fileSize;
+    }
+
     private Long id;
 
     private String employeeCode;
@@ -54,6 +65,7 @@ public class EmployeeDTO {
     private LocalDate joinDate;
     private LocalDate birthDate;
     private String attachmentPath;
+    private List<AttachmentInfo> attachments;
 
     private List<BankAccountDTO> bankAccounts;
 }

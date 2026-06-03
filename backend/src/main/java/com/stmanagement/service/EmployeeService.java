@@ -4,9 +4,13 @@ import com.stmanagement.dto.BankAccountDTO;
 import com.stmanagement.dto.EmployeeDTO;
 import com.stmanagement.model.BankAccount;
 import com.stmanagement.model.Employee;
+import com.stmanagement.model.EmployeeAttachment;
 import com.stmanagement.repository.BankAccountRepository;
+import com.stmanagement.repository.EmployeeAttachmentRepository;
 import com.stmanagement.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -22,8 +26,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,6 +36,7 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final BankAccountRepository bankAccountRepository;
+    private final EmployeeAttachmentRepository attachmentRepository;
     private final EntityManager entityManager;
     private final Path uploadDir = Paths.get("uploads");
 
@@ -57,6 +60,11 @@ public class EmployeeService {
         Employee e = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("社員が見つかりません: " + id));
         EmployeeDTO dto = toDTO(e);
+        dto.setAttachments(attachmentRepository.findByEmployeeId(id).stream()
+                .map(a -> EmployeeDTO.AttachmentInfo.builder()
+                        .id(a.getId()).fileName(a.getFileName())
+                        .filePath(a.getFilePath()).fileSize(a.getFileSize()).build())
+                .collect(Collectors.toList()));
         dto.setBankAccounts(bankAccountRepository
                 .findAll((Specification<BankAccount>) (root, q, cb) -> cb.equal(root.get("employeeId"), id))
                 .stream().map(ba -> BankAccountDTO.builder().id(ba.getId()).torihikiNo(ba.getTorihikiNo())
@@ -93,18 +101,51 @@ public class EmployeeService {
     public void delete(Long id) {
         if (!employeeRepository.existsById(id))
             throw new RuntimeException("社員が見つかりません: " + id);
+        attachmentRepository.deleteByEmployeeId(id);
         employeeRepository.deleteById(id);
     }
 
-    public String uploadFile(Long id, MultipartFile file) throws IOException {
+    @Transactional
+    public List<EmployeeDTO.AttachmentInfo> uploadFiles(Long id, MultipartFile[] files) throws IOException {
         Employee e = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("社員が見つかりません: " + id));
         Files.createDirectories(uploadDir);
-        String name = "emp_" + id + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        Files.copy(file.getInputStream(), uploadDir.resolve(name));
-        e.setAttachmentPath(uploadDir.resolve(name).toString());
-        employeeRepository.save(e);
-        return e.getAttachmentPath();
+        List<EmployeeDTO.AttachmentInfo> results = new ArrayList<>();
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) continue;
+            String name = "emp_" + id + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Path target = uploadDir.resolve(name);
+            Files.copy(file.getInputStream(), target);
+            EmployeeAttachment att = EmployeeAttachment.builder()
+                    .employeeId(id).fileName(file.getOriginalFilename())
+                    .filePath(target.toString()).fileSize(file.getSize()).build();
+            att = attachmentRepository.save(att);
+            results.add(EmployeeDTO.AttachmentInfo.builder()
+                    .id(att.getId()).fileName(att.getFileName())
+                    .filePath(att.getFilePath()).fileSize(att.getFileSize()).build());
+        }
+        return results;
+    }
+
+    public Resource downloadAttachment(Long attachmentId) {
+        EmployeeAttachment att = attachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new RuntimeException("添付ファイルが見つかりません: " + attachmentId));
+        Resource r = new FileSystemResource(Paths.get(att.getFilePath()));
+        if (!r.exists()) throw new RuntimeException("ファイルが存在しません");
+        return r;
+    }
+
+    public String getAttachmentFileName(Long attachmentId) {
+        return attachmentRepository.findById(attachmentId)
+                .map(EmployeeAttachment::getFileName).orElse("download");
+    }
+
+    @Transactional
+    public void deleteAttachment(Long attachmentId) {
+        EmployeeAttachment att = attachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new RuntimeException("添付ファイルが見つかりません"));
+        try { Files.deleteIfExists(Paths.get(att.getFilePath())); } catch (IOException ignored) {}
+        attachmentRepository.delete(att);
     }
 
     @Transactional
@@ -112,21 +153,18 @@ public class EmployeeService {
         String content = new String(file.getBytes(), "UTF-8");
         String[] lines = content.split("\\r?\\n");
         int count = 0;
-        for (int i = 1; i < lines.length; i++) { // skip header
+        for (int i = 1; i < lines.length; i++) {
             String[] cols = lines[i].split(",");
             if (cols.length < 3) continue;
             try {
                 Employee e = new Employee();
-                e.setName(cols[0].trim());
-                e.setEmail(cols[1].trim());
-                e.setDepartment(cols[2].trim());
+                e.setName(cols[0].trim()); e.setEmail(cols[1].trim()); e.setDepartment(cols[2].trim());
                 if (cols.length > 3) e.setPosition(cols[3].trim());
                 if (cols.length > 4) e.setJapanAddress(cols[4].trim());
                 if (cols.length > 5) e.setChinaAddress(cols[5].trim());
                 if (cols.length > 6) e.setPhone(cols[6].trim());
                 e.setEmployeeCode(null);
-                employeeRepository.save(e);
-                count++;
+                employeeRepository.save(e); count++;
             } catch (Exception ignored) {}
         }
         return count;
@@ -139,8 +177,7 @@ public class EmployeeService {
                 .chinaPhone(e.getChinaPhone()).chinaEmergencyContact(e.getChinaEmergencyContact())
                 .torihikiNo(e.getTorihikiNo())
                 .department(e.getDepartment()).position(e.getPosition())
-                .joinDate(e.getJoinDate()).birthDate(e.getBirthDate())
-                .attachmentPath(e.getAttachmentPath()).build();
+                .joinDate(e.getJoinDate()).birthDate(e.getBirthDate()).build();
     }
 
     private Employee toEntity(EmployeeDTO d) {

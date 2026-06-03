@@ -4,18 +4,17 @@ import com.stmanagement.common.ApiResponse;
 import com.stmanagement.dto.EmployeeDTO;
 import com.stmanagement.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/employee")
@@ -57,13 +56,29 @@ public class EmployeeController {
     }
 
     @PostMapping("/{id}/upload")
-    public ResponseEntity<?> upload(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> upload(@PathVariable Long id, @RequestParam("files") MultipartFile[] files) {
         try {
-            String path = employeeService.uploadFile(id, file);
-            return ResponseEntity.ok(ApiResponse.success(path, "ファイルをアップロードしました"));
+            List<EmployeeDTO.AttachmentInfo> result = employeeService.uploadFiles(id, files);
+            return ResponseEntity.ok(ApiResponse.success(result, result.size() + "件のファイルをアップロードしました"));
         } catch (IOException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error("アップロード失敗: " + e.getMessage(), 400));
         }
+    }
+
+    @GetMapping("/attachments/{attachmentId}/download")
+    public ResponseEntity<?> download(@PathVariable Long attachmentId) {
+        Resource resource = employeeService.downloadAttachment(attachmentId);
+        String fileName = employeeService.getAttachmentFileName(attachmentId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .body(resource);
+    }
+
+    @DeleteMapping("/attachments/{attachmentId}")
+    public ResponseEntity<?> deleteAttachment(@PathVariable Long attachmentId) {
+        employeeService.deleteAttachment(attachmentId);
+        return ResponseEntity.ok(ApiResponse.success(null, "ファイルを削除しました"));
     }
 
     @PostMapping("/batch-import")
@@ -74,19 +89,5 @@ public class EmployeeController {
         } catch (IOException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error("インポート失敗: " + e.getMessage(), 400));
         }
-    }
-
-    @GetMapping("/{id}/download")
-    public ResponseEntity<?> download(@PathVariable Long id) {
-        EmployeeDTO dto = employeeService.findById(id);
-        if (dto.getAttachmentPath() == null || dto.getAttachmentPath().isEmpty())
-            return ResponseEntity.notFound().build();
-        Resource resource = new FileSystemResource(Paths.get(dto.getAttachmentPath()));
-        if (!resource.exists()) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
     }
 }
