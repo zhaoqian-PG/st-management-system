@@ -13,7 +13,9 @@ public class DataFixRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        jdbcTemplate.update("UPDATE bank_account SET branch_no = '001' WHERE branch_no IS NULL");
         jdbcTemplate.update("UPDATE bank_account SET category = 'CUSTOMER' WHERE category IS NULL AND customer_id IS NOT NULL");
         jdbcTemplate.update("UPDATE bank_account SET category = 'EMPLOYEE' WHERE category IS NULL AND employee_id IS NOT NULL");
+        jdbcTemplate.update("UPDATE bank_account SET is_default = FALSE WHERE is_default IS NULL");
     }
 }

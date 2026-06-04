@@ -160,6 +160,16 @@ export default function BankAccount() {
               <Option value="EMPLOYEE">👤 社員用</Option>
             </Select>
           </Form.Item>
+          {editingRecord && (
+            <Form.Item label="取引番号">
+              <Input value={`${editingRecord.torihikiNo}-${editingRecord.branchNo}`} disabled />
+            </Form.Item>
+          )}
+          {!editingRecord && (
+            <Form.Item label="枝番">
+              <Input value="自動採番（同一取引番号内で001〜）" disabled style={{ color: 'rgba(0,0,0,0.45)' }} />
+            </Form.Item>
+          )}
           <Form.Item name="bankName" label="銀行名称"
             rules={[{ required: true, message: '銀行名称は必須です' }, { max: 200, message: '200文字以内' }]}>
             <Input placeholder="例: 三菱UFJ銀行" maxLength={200} />

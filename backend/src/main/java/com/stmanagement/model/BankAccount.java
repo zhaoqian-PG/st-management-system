@@ -20,7 +20,7 @@ public class BankAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "torihiki_no", length = 20, nullable = false, insertable = false, updatable = false)
+    @Column(name = "torihiki_no", length = 20, nullable = false, insertable = false)
     private String torihikiNo;
 
     @Column(name = "branch_no", length = 3, nullable = false)

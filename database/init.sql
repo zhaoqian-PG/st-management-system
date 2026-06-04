@@ -155,9 +155,9 @@ COMMENT ON COLUMN bank_account.account_type IS '口座種類：普通/当座';
 COMMENT ON COLUMN bank_account.account_number IS '口座番号';
 COMMENT ON COLUMN bank_account.account_holder IS '口座名義人';
 
-CREATE INDEX idx_ba_customer ON bank_account(customer_id);
-CREATE INDEX idx_ba_employee ON bank_account(employee_id);
-CREATE INDEX idx_ba_torihiki ON bank_account(torihiki_no);
+CREATE INDEX IF NOT EXISTS idx_ba_customer ON bank_account(customer_id);
+CREATE INDEX IF NOT EXISTS idx_ba_employee ON bank_account(employee_id);
+CREATE INDEX IF NOT EXISTS idx_ba_torihiki ON bank_account(torihiki_no);
 
 -- 5. 勤務記録テーブル
 CREATE TABLE IF NOT EXISTS attendance (
@@ -181,9 +181,9 @@ COMMENT ON COLUMN attendance.work_hours IS '勤務時間（h）';
 COMMENT ON COLUMN attendance.overtime_hours IS '残業時間（h）';
 COMMENT ON COLUMN attendance.status IS 'ステータス：出勤 / 欠勤 / 休暇';
 
-CREATE INDEX idx_attendance_employee_id ON attendance(employee_id);
-CREATE INDEX idx_attendance_work_date    ON attendance(work_date);
-CREATE INDEX idx_attendance_emp_date     ON attendance(employee_id, work_date);
+CREATE INDEX IF NOT EXISTS idx_attendance_employee_id ON attendance(employee_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_work_date    ON attendance(work_date);
+CREATE INDEX IF NOT EXISTS idx_attendance_emp_date     ON attendance(employee_id, work_date);
 
 -- 6. 請求書テーブル
 CREATE TABLE IF NOT EXISTS invoice (
@@ -210,8 +210,8 @@ COMMENT ON COLUMN invoice.invoice_number IS '請求書番号';
 COMMENT ON COLUMN invoice.amount IS '金額（円）';
 COMMENT ON COLUMN invoice.status IS 'ステータス：下書き / 送付済 / 入金済';
 
-CREATE INDEX idx_invoice_customer_id ON invoice(customer_id);
-CREATE INDEX idx_invoice_year_month   ON invoice(year, month);
+CREATE INDEX IF NOT EXISTS idx_invoice_customer_id ON invoice(customer_id);
+CREATE INDEX IF NOT EXISTS idx_invoice_year_month   ON invoice(year, month);
 
 -- 7. 社員添付ファイルテーブル
 CREATE TABLE IF NOT EXISTS employee_attachment (
@@ -228,7 +228,7 @@ CREATE TABLE IF NOT EXISTS employee_attachment (
 );
 
 COMMENT ON TABLE employee_attachment IS '社員添付ファイル';
-CREATE INDEX idx_emp_att_employee ON employee_attachment(employee_id);
+CREATE INDEX IF NOT EXISTS idx_emp_att_employee ON employee_attachment(employee_id);
 
 -- 8. 注文書テーブル（添付資料）
 CREATE TABLE IF NOT EXISTS order_documents (
@@ -250,7 +250,7 @@ COMMENT ON COLUMN order_documents.file_name IS 'ファイル名';
 COMMENT ON COLUMN order_documents.file_path IS '保存パス';
 COMMENT ON COLUMN order_documents.file_size IS 'ファイルサイズ（byte）';
 
-CREATE INDEX idx_order_documents_invoice_id ON order_documents(invoice_id);
+CREATE INDEX IF NOT EXISTS idx_order_documents_invoice_id ON order_documents(invoice_id);
 
 -- ============================================================
 -- 初期データ
