@@ -178,7 +178,7 @@ export default function Employee() {
         <Tooltip title="既定口座に設定"><Button type="link" size="small" icon={<StarOutlined />} onClick={() => handleSetDefault(r.id)} /></Tooltip>
       ),
     },
-    { title: '取引番号', dataIndex: 'torihikiNo', width: 100, render: t => <strong>{t}</strong> },
+    { title: '取引番号', key: 'torihiki', width: 120, render: (_, r) => <strong>{r.torihikiNo}-{r.branchNo}</strong> },
     { title: '銀行名称', dataIndex: 'bankName', width: 120 },
     { title: '支店番号', dataIndex: 'branchCode', width: 80 },
     { title: '口座種類', dataIndex: 'accountType', width: 80, render: t => <Tag color={t === '普通' ? 'blue' : 'orange'}>{t}</Tag> },

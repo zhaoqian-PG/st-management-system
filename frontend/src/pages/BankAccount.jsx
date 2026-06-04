@@ -112,7 +112,8 @@ export default function BankAccount() {
   };
 
   const columns = [
-    { title: '取引番号', dataIndex: 'torihikiNo', width: 120, render: (t) => <strong>{t}</strong> },
+    { title: '取引番号', key: 'torihiki', width: 140,
+      render: (_, r) => <strong>{r.torihikiNo}-{r.branchNo}</strong> },
     { title: '支店番号', dataIndex: 'branchCode', width: 90 },
     { title: '銀行名称', dataIndex: 'bankName', width: 150 },
     { title: '口座種類', dataIndex: 'accountType', width: 90, render: (t) => <Tag color={t === '普通' ? 'blue' : 'orange'}>{t}</Tag> },

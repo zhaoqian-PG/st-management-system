@@ -16,8 +16,8 @@ import javax.validation.constraints.Size;
 public class BankAccountDTO {
 
     private Long id;
-
     private String torihikiNo;
+    private String branchNo;
 
     private String category;
     private Long customerId;
@@ -25,7 +25,6 @@ public class BankAccountDTO {
     private String customerName;
     private String employeeName;
 
-    @NotBlank(message = "支店番号は必須です")
     @Size(max = 10, message = "支店番号は最大10文字です")
     private String branchCode;
 
@@ -44,5 +43,6 @@ public class BankAccountDTO {
     @NotBlank(message = "口座名義は必須です")
     @Size(max = 100, message = "口座名義は最大100文字です")
     private String accountHolder;
+
     private Boolean isDefault;
 }

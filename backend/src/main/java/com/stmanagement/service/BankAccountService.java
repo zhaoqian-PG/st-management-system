@@ -39,7 +39,7 @@ public class BankAccountService {
                 predicates.add(cb.equal(root.get("customerId"), customerId));
             return cb.and(predicates.toArray(new Predicate[0]));
         };
-        return bankAccountRepository.findAll(spec, PageRequest.of(page, size, Sort.by("torihikiNo").ascending()))
+        return bankAccountRepository.findAll(spec, PageRequest.of(page, size, Sort.by("torihikiNo", "branchNo").ascending()))
                 .map(this::toDTO);
     }
 
@@ -57,6 +57,13 @@ public class BankAccountService {
                 cb.equal(root.get("employeeId"), eid)).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    private String nextBranchNo(String torihikiNo) {
+        List<BankAccount> existing = bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
+                cb.equal(root.get("torihikiNo"), torihikiNo));
+        int max = existing.stream().mapToInt(a -> Integer.parseInt(a.getBranchNo())).max().orElse(0);
+        return String.format("%03d", max + 1);
+    }
+
     @Transactional
     public BankAccountDTO create(BankAccountDTO dto) {
         BankAccount e = toEntity(dto);
@@ -70,13 +77,9 @@ public class BankAccountService {
     public BankAccountDTO update(Long id, BankAccountDTO dto) {
         BankAccount e = bankAccountRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("銀行口座が見つかりません: " + id));
-        e.setCategory(dto.getCategory());
-        e.setCustomerId(dto.getCustomerId());
-        e.setEmployeeId(dto.getEmployeeId());
-        e.setBranchCode(dto.getBranchCode());
-        e.setBankName(dto.getBankName());
-        e.setAccountType(dto.getAccountType());
-        e.setAccountNumber(dto.getAccountNumber());
+        e.setCategory(dto.getCategory()); e.setCustomerId(dto.getCustomerId()); e.setEmployeeId(dto.getEmployeeId());
+        e.setBranchCode(dto.getBranchCode()); e.setBankName(dto.getBankName());
+        e.setAccountType(dto.getAccountType()); e.setAccountNumber(dto.getAccountNumber());
         e.setAccountHolder(dto.getAccountHolder());
         return toDTO(bankAccountRepository.save(e));
     }
@@ -90,19 +93,26 @@ public class BankAccountService {
 
     @Transactional
     public void bindToCustomer(Long id, Long customerId) {
-        BankAccount e = bankAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
-        e.setCategory("CUSTOMER");
-        e.setCustomerId(customerId);
-        e.setEmployeeId(null);
+        BankAccount e = bankAccountRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("銀行口座が見つかりません: " + id));
+        // Assign same torihiki_no as customer
+        Customer c = customerRepository.findById(customerId).orElse(null);
+        if (c != null) {
+            String torihiki = c.getTorihikiNo();
+            if (torihiki != null && !torihiki.isEmpty()) {
+                e.setTorihikiNo(torihiki);
+                e.setBranchNo(nextBranchNo(torihiki));
+            }
+        }
+        e.setCategory("CUSTOMER"); e.setCustomerId(customerId); e.setEmployeeId(null);
         bankAccountRepository.save(e);
-        syncCustomerTorihikiNo(customerId);
+        if (customerId != null) syncCustomerTorihikiNo(customerId);
     }
 
     @Transactional
     public void unbindFromCustomer(Long id) {
         BankAccount e = bankAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
-        Long cid = e.getCustomerId();
-        e.setCustomerId(null);
+        Long cid = e.getCustomerId(); e.setCustomerId(null);
         bankAccountRepository.save(e);
         if (cid != null) syncCustomerTorihikiNo(cid);
     }
@@ -110,56 +120,55 @@ public class BankAccountService {
     @Transactional
     public void bindToEmployee(Long id, Long employeeId) {
         BankAccount e = bankAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
-        e.setCategory("EMPLOYEE");
-        e.setEmployeeId(employeeId);
-        e.setCustomerId(null);
-        // If first bank for this employee, set as default
+        Employee emp = employeeRepository.findById(employeeId).orElse(null);
+        if (emp != null) {
+            String torihiki = emp.getTorihikiNo();
+            if (torihiki != null && !torihiki.isEmpty()) {
+                e.setTorihikiNo(torihiki);
+                e.setBranchNo(nextBranchNo(torihiki));
+            }
+        }
         long count = bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
                 cb.equal(root.get("employeeId"), employeeId)).stream().count();
+        e.setCategory("EMPLOYEE"); e.setEmployeeId(employeeId); e.setCustomerId(null);
         if (count == 0) e.setIsDefault(true);
         bankAccountRepository.save(e);
         syncEmployeeTorihikiNo(employeeId);
     }
 
     @Transactional
-    public void setDefaultForEmployee(Long id, Long employeeId) {
-        // Unset all others first
-        List<BankAccount> all = bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
-                cb.equal(root.get("employeeId"), employeeId));
-        for (BankAccount a : all) { a.setIsDefault(false); bankAccountRepository.save(a); }
-        // Set this one as default
+    public void unbindFromEmployee(Long id) {
         BankAccount e = bankAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
-        e.setIsDefault(true);
+        Long eid = e.getEmployeeId(); e.setEmployeeId(null);
         bankAccountRepository.save(e);
+        if (eid != null) syncEmployeeTorihikiNo(eid);
     }
 
     @Transactional
-    public void unbindFromEmployee(Long id) {
-        BankAccount e = bankAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
-        Long eid = e.getEmployeeId();
-        e.setEmployeeId(null);
+    public void setDefaultForEmployee(Long id, Long employeeId) {
+        List<BankAccount> all = bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
+                cb.equal(root.get("employeeId"), employeeId));
+        for (BankAccount a : all) { a.setIsDefault(false); bankAccountRepository.save(a); }
+        BankAccount e = bankAccountRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
+        e.setIsDefault(true);
         bankAccountRepository.save(e);
-        if (eid != null) syncEmployeeTorihikiNo(eid);
     }
 
     private void syncCustomerTorihikiNo(Long cid) {
         Customer c = customerRepository.findById(cid).orElse(null);
         if (c == null) return;
-        List<String> labels = bankAccountRepository.findByCustomerId(cid).stream()
-                .map(ba -> ba.getBankName() + "（" + ba.getBranchCode() + "）")
-                .collect(Collectors.toList());
-        c.setTorihikiNo(labels.isEmpty() ? null : String.join("、", labels));
+        List<BankAccount> accounts = bankAccountRepository.findByCustomerId(cid);
+        c.setTorihikiNo(accounts.isEmpty() ? null : accounts.get(0).getTorihikiNo());
         customerRepository.save(c);
     }
 
     private void syncEmployeeTorihikiNo(Long eid) {
         Employee emp = employeeRepository.findById(eid).orElse(null);
         if (emp == null) return;
-        List<String> labels = bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
-                cb.equal(root.get("employeeId"), eid)).stream()
-                .map(ba -> ba.getBankName() + "（" + ba.getBranchCode() + "）")
-                .collect(Collectors.toList());
-        emp.setTorihikiNo(labels.isEmpty() ? null : String.join("、", labels));
+        List<BankAccount> accounts = bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
+                cb.equal(root.get("employeeId"), eid));
+        emp.setTorihikiNo(accounts.isEmpty() ? null : accounts.get(0).getTorihikiNo());
         employeeRepository.save(emp);
     }
 
@@ -167,19 +176,18 @@ public class BankAccountService {
         String cn = null, en = null;
         if (e.getCustomerId() != null) cn = customerRepository.findById(e.getCustomerId()).map(Customer::getCompanyName).orElse(null);
         if (e.getEmployeeId() != null) en = employeeRepository.findById(e.getEmployeeId()).map(Employee::getName).orElse(null);
-        return BankAccountDTO.builder().id(e.getId()).torihikiNo(e.getTorihikiNo())
+        return BankAccountDTO.builder().id(e.getId()).torihikiNo(e.getTorihikiNo()).branchNo(e.getBranchNo())
                 .category(e.getCategory()).customerId(e.getCustomerId()).employeeId(e.getEmployeeId())
-                .customerName(cn).employeeName(en)
-                .branchCode(e.getBranchCode()).bankName(e.getBankName())
+                .customerName(cn).employeeName(en).branchCode(e.getBranchCode()).bankName(e.getBankName())
                 .accountType(e.getAccountType()).accountNumber(e.getAccountNumber())
                 .accountHolder(e.getAccountHolder()).isDefault(e.getIsDefault()).build();
     }
 
     private BankAccount toEntity(BankAccountDTO dto) {
-        return BankAccount.builder().category(dto.getCategory())
-                .customerId(dto.getCustomerId()).employeeId(dto.getEmployeeId())
+        return BankAccount.builder().torihikiNo(dto.getTorihikiNo()).branchNo(dto.getBranchNo() != null ? dto.getBranchNo() : "001")
+                .category(dto.getCategory()).customerId(dto.getCustomerId()).employeeId(dto.getEmployeeId())
                 .branchCode(dto.getBranchCode()).bankName(dto.getBankName())
                 .accountType(dto.getAccountType()).accountNumber(dto.getAccountNumber())
-                .accountHolder(dto.getAccountHolder()).build();
+                .accountHolder(dto.getAccountHolder()).isDefault(dto.getIsDefault() != null ? dto.getIsDefault() : false).build();
     }
 }

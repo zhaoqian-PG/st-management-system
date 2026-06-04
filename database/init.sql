@@ -117,7 +117,8 @@ COMMENT ON COLUMN customer.admin_rep_email IS '事務担当者メールアドレ
 -- ============================================================
 CREATE TABLE IF NOT EXISTS bank_account (
     id                  BIGSERIAL       PRIMARY KEY,
-    torihiki_no         VARCHAR(20)     NOT NULL UNIQUE DEFAULT 'BK' || LPAD(nextval('torihiki_seq')::text, 6, '0'),
+    torihiki_no         VARCHAR(20)     NOT NULL DEFAULT 'BK' || LPAD(nextval('torihiki_seq')::text, 6, '0'),
+    branch_no           VARCHAR(3)      NOT NULL,
     category            VARCHAR(10)     NOT NULL DEFAULT 'CUSTOMER',
     customer_id         BIGINT,
     employee_id         BIGINT,
@@ -136,13 +137,15 @@ CREATE TABLE IF NOT EXISTS bank_account (
     CONSTRAINT fk_ba_employee
         FOREIGN KEY (employee_id) REFERENCES employee(id)
         ON DELETE SET NULL,
+    CONSTRAINT uk_ba_torihiki_branch UNIQUE (torihiki_no, branch_no),
     CONSTRAINT chk_ba_link CHECK ((category = 'CUSTOMER' AND employee_id IS NULL) OR (category = 'EMPLOYEE' AND customer_id IS NULL)),
     CONSTRAINT chk_ba_category CHECK (category IN ('CUSTOMER', 'EMPLOYEE')),
     CONSTRAINT chk_ba_account_type CHECK (account_type IN ('普通', '当座'))
 );
 
 COMMENT ON TABLE bank_account IS '銀行口座（MASTERテーブル・機密情報）';
-COMMENT ON COLUMN bank_account.torihiki_no IS '取引番号（自動採番、一意）';
+COMMENT ON COLUMN bank_account.torihiki_no IS '取引番号（グループキー）';
+COMMENT ON COLUMN bank_account.branch_no IS '枝番（取引番号+枝番で一意）';
 COMMENT ON COLUMN bank_account.category IS '区分: CUSTOMER(顧客用) / EMPLOYEE(社員用)';
 COMMENT ON COLUMN bank_account.customer_id IS 'FK→customer（category=CUSTOMER時）';
 COMMENT ON COLUMN bank_account.employee_id IS 'FK→employee（category=EMPLOYEE時）';
@@ -154,6 +157,7 @@ COMMENT ON COLUMN bank_account.account_holder IS '口座名義人';
 
 CREATE INDEX idx_ba_customer ON bank_account(customer_id);
 CREATE INDEX idx_ba_employee ON bank_account(employee_id);
+CREATE INDEX idx_ba_torihiki ON bank_account(torihiki_no);
 
 -- 5. 勤務記録テーブル
 CREATE TABLE IF NOT EXISTS attendance (
@@ -291,13 +295,13 @@ ON CONFLICT (employee_code) DO NOTHING;
 SELECT setval('employee_code_seq', 5);
 
 -- 社員用銀行口座
-INSERT INTO bank_account (torihiki_no, category, employee_id, branch_code, bank_name, account_type, account_number, account_holder)
+INSERT INTO bank_account (torihiki_no, branch_no, category, employee_id, branch_code, bank_name, account_type, account_number, account_holder, is_default)
 VALUES
-    ('BK000101', 'EMPLOYEE', 1, '038', '三菱UFJ銀行', '普通', '1234567', 'ヤマダ タロウ'),
-    ('BK000102', 'EMPLOYEE', 2, '890', 'みずほ銀行', '普通', '2345678', 'スズキ ハナコ'),
-    ('BK000103', 'EMPLOYEE', 3, '056', '三井住友銀行', '当座', '3456789', 'サトウ ケンイチ'),
-    ('BK000104', 'EMPLOYEE', 4, '001', 'りそな銀行', '普通', '4567890', 'タナカ ミサキ'),
-    ('BK000105', 'EMPLOYEE', 5, '038', '三菱UFJ銀行', '普通', '5678901', 'イトウ ダイスケ');
+    ('BK000101', '001', 'EMPLOYEE', 1, '038', '三菱UFJ銀行', '普通', '1234567', 'ヤマダ タロウ', TRUE),
+    ('BK000102', '001', 'EMPLOYEE', 2, '890', 'みずほ銀行', '普通', '2345678', 'スズキ ハナコ', TRUE),
+    ('BK000103', '001', 'EMPLOYEE', 3, '056', '三井住友銀行', '当座', '3456789', 'サトウ ケンイチ', TRUE),
+    ('BK000104', '001', 'EMPLOYEE', 4, '001', 'りそな銀行', '普通', '4567890', 'タナカ ミサキ', TRUE),
+    ('BK000105', '001', 'EMPLOYEE', 5, '038', '三菱UFJ銀行', '普通', '5678901', 'イトウ ダイスケ', TRUE);
 
 SELECT setval('torihiki_seq', 200);
 
@@ -312,19 +316,19 @@ VALUES
      '中村 博', 'info@techno-tokyo.co.jp', '03-1111-2222',
      '中村 博', '090-1234-5678', 'nakamura@techno-tokyo.co.jp',
      '斉藤 雅子', '03-1111-2223', 'saito@techno-tokyo.co.jp',
-     '三菱UFJ銀行（038）、みずほ銀行（890）'),
+     'BK000001'),
     ('CUS0002', '大阪商事株式会社', '山本 和夫', 'www.osaka-shoji.jp',
      '大阪府大阪市中央区本町1-1-1',
      '加藤 恵', 'info@osaka-shoji.jp', '06-3333-4444',
      '加藤 恵', '090-2345-6789', 'kato@osaka-shoji.jp',
      '井上 隆', '06-3333-4445', 'inoue@osaka-shoji.jp',
-     '三菱UFJ銀行（056）'),
+     'BK000002'),
     ('CUS0003', '名古屋工業有限会社', '伊藤 正和', 'www.nagoya-kogyo.jp',
      '愛知県名古屋市中区栄2-2-2',
      '渡辺 誠', 'info@nagoya-kogyo.jp', '052-5555-6666',
      '渡辺 誠', '090-3456-7890', 'watanabe@nagoya-kogyo.jp',
      '木村 由美', '052-5555-6667', 'kimura@nagoya-kogyo.jp',
-     '三井住友銀行（123）'),
+     'BK000003'),
     ('CUS0004', '福岡システム株式会社', '吉田 和彦', 'www.fukuoka-sys.jp',
      '福岡県福岡市博多区博多駅前3-3-3',
      '松本 直子', 'info@fukuoka-sys.jp', '092-7777-8888',
@@ -339,13 +343,13 @@ SELECT setval('customer_code_seq', 4);
 -- 銀行口座（5件）★MASTERテーブル / 1顧客:多口座
 -- CUS001（テクノ東京）→ 2口座、CUS002（大阪商事）→ 1口座、CUS003（名古屋工業）→ 1口座
 -- CUS004（福岡システム）→ 未紐付（customer_id = NULL）
-INSERT INTO bank_account (torihiki_no, category, customer_id, branch_code, bank_name, account_type, account_number, account_holder)
+INSERT INTO bank_account (torihiki_no, branch_no, category, customer_id, branch_code, bank_name, account_type, account_number, account_holder, is_default)
 VALUES
-    ('BK000001', 'CUSTOMER', 1, '038', '三菱UFJ銀行', '普通', '7654321', 'カ）テクノトウキョウ'),
-    ('BK000002', 'CUSTOMER', 1, '890', 'みずほ銀行', '当座', '1122334', 'カ）テクノトウキョウ'),
-    ('BK000003', 'CUSTOMER', 2, '056', '三菱UFJ銀行', '当座', '8765432', 'カ）オオサカショウジ'),
-    ('BK000004', 'CUSTOMER', 3, '123', '三井住友銀行', '普通', '9876543', 'ユ）ナゴヤコウギョウ'),
-    ('BK000005', 'CUSTOMER', NULL, '456', '福岡銀行', '普通', '0987654', 'カ）フクオカシステム');
+    ('BK000001', '001', 'CUSTOMER', 1, '038', '三菱UFJ銀行', '普通', '7654321', 'カ）テクノトウキョウ', TRUE),
+    ('BK000001', '002', 'CUSTOMER', 1, '890', 'みずほ銀行', '当座', '1122334', 'カ）テクノトウキョウ', FALSE),
+    ('BK000002', '001', 'CUSTOMER', 2, '056', '三菱UFJ銀行', '当座', '8765432', 'カ）オオサカショウジ', TRUE),
+    ('BK000003', '001', 'CUSTOMER', 3, '123', '三井住友銀行', '普通', '9876543', 'ユ）ナゴヤコウギョウ', TRUE),
+    ('BK000004', '001', 'CUSTOMER', NULL, '456', '福岡銀行', '普通', '0987654', 'カ）フクオカシステム', FALSE);
 
 -- 勤務記録（5件）
 INSERT INTO attendance (employee_id, work_date, work_hours, overtime_hours, status, remark)
