@@ -242,15 +242,17 @@ export default function Employee() {
           <Form.Item name="chinaAddress" label="中国住所"><Input maxLength={500} /></Form.Item>
 
           <SectionTitle>● 銀行口座（給与振込用・複数可）</SectionTitle>
-          <Table columns={bankCols} dataSource={linkedBanks} rowKey="id" size="small" pagination={false}
-            locale={{ emptyText: 'なし' }} style={{ marginBottom: 12 }} />
-          <Space>
+          <Space style={{ marginBottom: 12 }}>
             <Select placeholder="＋ 口座を追加" value={selectedBankId} onChange={setSelectedBankId} style={{ minWidth: 280 }} allowClear showSearch
               filterOption={(inp, opt) => opt.children.toLowerCase().includes(inp.toLowerCase())}>
               {availableBanks.map(a => (<Select.Option key={a.id} value={a.id}>{a.torihikiNo} — {a.bankName} ({a.branchCode})</Select.Option>))}
             </Select>
             <Button onClick={handleBindBank} disabled={!selectedBankId}>追加</Button>
           </Space>
+          {linkedBanks.length > 0 && (
+            <Table columns={bankCols} dataSource={linkedBanks} rowKey="id" size="small" pagination={false}
+              style={{ marginBottom: 12 }} />
+          )}
 
           <SectionTitle>● 添付ファイル</SectionTitle>
           {editingRecord ? (

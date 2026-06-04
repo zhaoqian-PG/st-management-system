@@ -319,17 +319,7 @@ export default function Customer() {
           </div>
 
           <SectionTitle>● 銀行口座一覧</SectionTitle>
-          <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 8 }}>
-            {editingRecord ? '銀行口座を追加・解除できます' : '顧客登録後に紐付ける銀行口座を選択してください'}
-          </div>
-          <Table
-            columns={bankColumns}
-            dataSource={linkedAccounts}
-            rowKey="id" size="small" pagination={false}
-            locale={{ emptyText: '紐付く銀行口座はありません' }}
-            style={{ marginBottom: 12 }}
-          />
-          <Space>
+          <Space style={{ marginBottom: 12 }}>
             <Select
               placeholder="＋ 口座を追加（未紐付MASTERから選択）"
               value={selectedBankId}
@@ -346,6 +336,14 @@ export default function Customer() {
             </Select>
             <Button onClick={handleBindBank} disabled={!selectedBankId}>追加</Button>
           </Space>
+          {linkedAccounts.length > 0 && (
+            <Table
+              columns={bankColumns}
+              dataSource={linkedAccounts}
+              rowKey="id" size="small" pagination={false}
+              style={{ marginBottom: 12 }}
+            />
+          )}
         </Form>
       </Modal>
     </div>
