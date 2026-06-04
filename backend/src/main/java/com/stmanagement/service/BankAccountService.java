@@ -73,17 +73,18 @@ public class BankAccountService {
     @Transactional
     public BankAccountDTO create(BankAccountDTO dto) {
         BankAccount e = toEntity(dto);
-        // If torihikiNo is specified (existing group), use it and auto-calc branch_no
         if (dto.getTorihikiNo() != null && !dto.getTorihikiNo().isEmpty()) {
+            // Use existing torihiki_no group, auto-calc next branch_no
             e.setTorihikiNo(dto.getTorihikiNo());
             e.setBranchNo(nextBranchNo(dto.getTorihikiNo()));
+        } else {
+            // New torihiki_no: set null to let DB DEFAULT generate it, branch_no = "001"
+            e.setTorihikiNo(null);
+            e.setBranchNo("001");
         }
-        // Otherwise, DB auto-generates torihiki_no via DEFAULT, branch_no defaults to "001"
         e = bankAccountRepository.save(e);
-        if (dto.getTorihikiNo() != null && !dto.getTorihikiNo().isEmpty()) {
-            entityManager.flush();
-            entityManager.refresh(e);
-        }
+        entityManager.flush();
+        entityManager.refresh(e);
         return toDTO(e);
     }
 

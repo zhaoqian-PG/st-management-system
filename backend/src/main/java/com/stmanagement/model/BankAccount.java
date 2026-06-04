@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.DynamicInsert;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
+@DynamicInsert
 @Table(name = "bank_account")
 public class BankAccount {
 
@@ -20,7 +22,7 @@ public class BankAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "torihiki_no", length = 20, nullable = false, insertable = false)
+    @Column(name = "torihiki_no", length = 20, nullable = false)
     private String torihikiNo;
 
     @Column(name = "branch_no", length = 3, nullable = false)
