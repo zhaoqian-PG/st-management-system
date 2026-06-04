@@ -5,7 +5,7 @@ import {
 } from 'antd';
 import {
   PlusOutlined, EditOutlined, DeleteOutlined,
-  ShopOutlined, MinusCircleOutlined,
+  ShopOutlined, MinusCircleOutlined, StarFilled,
 } from '@ant-design/icons';
 import { customerApi } from '../services/customerApi';
 import { bankAccountApi } from '../services/bankAccountApi';
@@ -209,7 +209,8 @@ export default function Customer() {
   ];
 
   const bankColumns = [
-    { title: '取引番号', dataIndex: 'torihikiNo', width: 110, render: (t) => <strong>{t}</strong> },
+    { title: '主カード', dataIndex: 'isDefault', width: 60,
+      render: (v) => v ? <StarFilled style={{ color: '#faad14' }} /> : null },
     { title: '銀行名称', dataIndex: 'bankName', width: 130 },
     { title: '支店番号', dataIndex: 'branchCode', width: 80 },
     { title: '口座種類', dataIndex: 'accountType', width: 80, render: (t) => <Tag color={t === '普通' ? 'blue' : 'orange'}>{t}</Tag> },
