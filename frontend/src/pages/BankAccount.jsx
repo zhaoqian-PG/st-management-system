@@ -7,6 +7,7 @@ import {
   PlusOutlined, EyeOutlined, EyeInvisibleOutlined,
   EditOutlined, DeleteOutlined, SafetyOutlined,
 } from '@ant-design/icons';
+import axios from 'axios';
 import { bankAccountApi } from '../services/bankAccountApi';
 
 const { Option } = Select;
@@ -23,7 +24,16 @@ export default function BankAccount() {
   const [formLoading, setFormLoading] = useState(false);
   const [revealedAccounts, setRevealedAccounts] = useState({});
   const [revealTimers, setRevealTimers] = useState({});
+  const [torihikiNos, setTorihikiNos] = useState([]);
+  const [nextBranch, setNextBranch] = useState('001');
   const [form] = Form.useForm();
+
+  const fetchTorihikiNos = async (category) => {
+    try {
+      const r = await axios.get(`/api/bank-accounts/torihiki-nos/${category}`);
+      setTorihikiNos(r.data.data || []);
+    } catch { setTorihikiNos([]); }
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -41,8 +51,17 @@ export default function BankAccount() {
   const handleCreate = () => {
     setEditingRecord(null);
     form.resetFields();
-    form.setFieldsValue({ category: activeTab });
+    form.setFieldsValue({ category: activeTab, torihikiNo: '' });
+    setNextBranch('001');
+    fetchTorihikiNos(activeTab);
     setModalVisible(true);
+  };
+
+  const handleTorihikiChange = (value) => {
+    if (!value) { setNextBranch('001'); return; }
+    // Count existing branches for this torihiki_no
+    const count = data.filter(d => d.torihikiNo === value).length;
+    setNextBranch(String(count + 1).padStart(3, '0'));
   };
 
   const handleEdit = (record) => {
@@ -166,9 +185,23 @@ export default function BankAccount() {
             </Form.Item>
           )}
           {!editingRecord && (
-            <Form.Item label="枝番">
-              <Input value="自動採番（同一取引番号内で001〜）" disabled style={{ color: 'rgba(0,0,0,0.45)' }} />
-            </Form.Item>
+            <>
+              <Form.Item name="torihikiNo" label="取引番号">
+                <Select
+                  placeholder="新規取引番号（自動採番）"
+                  onChange={handleTorihikiChange}
+                  allowClear
+                >
+                  <Option value="">新規取引番号（自動採番）</Option>
+                  {torihikiNos.map(t => (
+                    <Option key={t} value={t}>{t}（既存）</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Form.Item label="枝番">
+                <Input value={nextBranch} disabled style={{ color: '#1890ff', fontWeight: 'bold' }} />
+              </Form.Item>
+            </>
           )}
           <Form.Item name="bankName" label="銀行名称"
             rules={[{ required: true, message: '銀行名称は必須です' }, { max: 200, message: '200文字以内' }]}>

@@ -32,6 +32,11 @@ public class BankAccountController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
+    @GetMapping("/torihiki-nos/{category}")
+    public ResponseEntity<?> torihikiNos(@PathVariable String category) {
+        return ResponseEntity.ok(ApiResponse.success(bankAccountService.getExistingTorihikiNos(category)));
+    }
+
     /**
      * GET /api/bank-accounts/{id} — 銀行口座詳細取得
      */

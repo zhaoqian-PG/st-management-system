@@ -64,12 +64,26 @@ public class BankAccountService {
         return String.format("%03d", max + 1);
     }
 
+    public List<String> getExistingTorihikiNos(String category) {
+        return bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
+                cb.equal(root.get("category"), category)).stream()
+                .map(BankAccount::getTorihikiNo).distinct().sorted().collect(Collectors.toList());
+    }
+
     @Transactional
     public BankAccountDTO create(BankAccountDTO dto) {
         BankAccount e = toEntity(dto);
+        // If torihikiNo is specified (existing group), use it and auto-calc branch_no
+        if (dto.getTorihikiNo() != null && !dto.getTorihikiNo().isEmpty()) {
+            e.setTorihikiNo(dto.getTorihikiNo());
+            e.setBranchNo(nextBranchNo(dto.getTorihikiNo()));
+        }
+        // Otherwise, DB auto-generates torihiki_no via DEFAULT, branch_no defaults to "001"
         e = bankAccountRepository.save(e);
-        entityManager.flush();
-        entityManager.refresh(e);
+        if (dto.getTorihikiNo() != null && !dto.getTorihikiNo().isEmpty()) {
+            entityManager.flush();
+            entityManager.refresh(e);
+        }
         return toDTO(e);
     }
 
