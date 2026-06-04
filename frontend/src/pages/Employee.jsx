@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, Upload, Tooltip } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, Upload } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, UploadOutlined, DownloadOutlined, MinusCircleOutlined, StarOutlined, StarFilled } from '@ant-design/icons';
 import { employeeApi } from '../services/employeeApi';
 import { bankAccountApi } from '../services/bankAccountApi';
+import axios from 'axios';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -22,8 +23,8 @@ export default function Employee() {
   const [formLoading, setFormLoading] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [linkedBanks, setLinkedBanks] = useState([]);
-  const [availableBanks, setAvailableBanks] = useState([]);
-  const [selectedBankId, setSelectedBankId] = useState(null);
+  const [availableTorihikiNos, setAvailableTorihikiNos] = useState([]);
+  const [selectedTorihikiNo, setSelectedTorihikiNo] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [pendingFiles, setPendingFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -47,30 +48,26 @@ export default function Employee() {
     catch { setAttachments([]); setLinkedBanks([]); }
   };
 
-  const fetchAvailableBanks = async () => {
-    try {
-      const r = await bankAccountApi.list({ size: 200 });
-      setAvailableBanks((r.data.data.content || []).filter(a => a.category === 'EMPLOYEE' && a.employeeId === null));
-    } catch { setAvailableBanks([]); }
+  const fetchTorihikiNos = async () => {
+    try { const r = await axios.get('/api/bank-accounts/torihiki-nos/EMPLOYEE'); setAvailableTorihikiNos(r.data.data || []); }
+    catch { setAvailableTorihikiNos([]); }
   };
 
   const handleCreate = () => {
-    setEditingRecord(null); setLinkedBanks([]); setAttachments([]); setPendingFiles([]); setSelectedBankId(null);
-    form.resetFields(); setModalVisible(true); fetchAvailableBanks();
+    setEditingRecord(null); setLinkedBanks([]); setAttachments([]); setPendingFiles([]); setSelectedTorihikiNo(null);
+    form.resetFields(); setModalVisible(true); fetchTorihikiNos();
   };
 
   const handleEdit = async (record) => {
-    setEditingRecord(record); setPendingFiles([]); setSelectedBankId(null);
+    setEditingRecord(record); setPendingFiles([]); setSelectedTorihikiNo(null);
     form.setFieldsValue({ ...record, joinDate: record.joinDate ? dayjs(record.joinDate) : null, birthDate: record.birthDate ? dayjs(record.birthDate) : null });
     setModalVisible(true);
-    await refreshDetail(record.id);
-    await fetchAvailableBanks();
+    await refreshDetail(record.id); await fetchTorihikiNos();
   };
 
   const doUpload = async (empId, files) => {
     if (!files || files.length === 0) return;
-    const fd = new FormData();
-    files.forEach(f => fd.append('files', f));
+    const fd = new FormData(); files.forEach(f => fd.append('files', f));
     await employeeApi.upload(empId, fd);
   };
 
@@ -80,7 +77,6 @@ export default function Employee() {
       setFormLoading(true);
       const payload = { ...values, joinDate: values.joinDate ? values.joinDate.format('YYYY-MM-DD') : null, birthDate: values.birthDate ? values.birthDate.format('YYYY-MM-DD') : null };
       let empId = editingRecord?.id;
-
       if (editingRecord) {
         await employeeApi.update(empId, payload);
         if (pendingFiles.length > 0) await doUpload(empId, pendingFiles);
@@ -104,25 +100,33 @@ export default function Employee() {
       onOk: async () => { try { await employeeApi.delete(r.id); fetchData(); } catch {} } });
   };
 
-  const handleBindBank = () => {
-    if (!selectedBankId) return;
-    const acc = availableBanks.find(a => a.id === selectedBankId);
-    if (!acc) return;
-    setLinkedBanks([...linkedBanks, acc]); setAvailableBanks(availableBanks.filter(a => a.id !== selectedBankId)); setSelectedBankId(null);
+  const handleBindBank = async () => {
+    if (!selectedTorihikiNo) return;
+    // Get all EMPLOYEE accounts under this torihiki_no that are unlinked
+    try {
+      const r = await bankAccountApi.list({ category: 'EMPLOYEE', size: 100 });
+      const all = (r.data.data.content || []).filter(a => a.torihikiNo === selectedTorihikiNo && a.employeeId === null);
+      const newBanks = [...linkedBanks, ...all];
+      // Remove duplicates by id
+      const seen = new Set(); const unique = newBanks.filter(b => { const k = b.id; if (seen.has(k)) return false; seen.add(k); return true; });
+      setLinkedBanks(unique);
+      setAvailableTorihikiNos(availableTorihikiNos.filter(t => t !== selectedTorihikiNo));
+      setSelectedTorihikiNo(null);
+    } catch { message.error('追加に失敗しました'); }
   };
 
   const handleUnbindBank = (bank) => {
     if (editingRecord) {
       Modal.confirm({ title: '紐付け解除', content: '解除しますか？', okText: '解除', cancelText: 'キャンセル', centered: true,
-        onOk: async () => { try { await bankAccountApi.unbindFromEmployee(bank.id); await refreshDetail(editingRecord.id); await fetchAvailableBanks(); } catch {} } });
+        onOk: async () => { try { await bankAccountApi.unbindFromEmployee(bank.id); await refreshDetail(editingRecord.id); await fetchTorihikiNos(); } catch {} } });
     } else {
-      setLinkedBanks(linkedBanks.filter(a => a.id !== bank.id)); setAvailableBanks([...availableBanks, bank]);
+      setLinkedBanks(linkedBanks.filter(a => a.id !== bank.id)); setAvailableTorihikiNos([...availableTorihikiNos, bank.torihikiNo]);
     }
   };
 
   const handleSetDefault = async (bankId) => {
     if (!editingRecord) return;
-    try { await bankAccountApi.setDefaultForEmployee(bankId, editingRecord.id); await refreshDetail(editingRecord.id); message.success('既定口座を設定しました'); }
+    try { await bankAccountApi.setDefaultForEmployee(bankId, editingRecord.id); await refreshDetail(editingRecord.id); }
     catch { message.error('失敗'); }
   };
 
@@ -131,56 +135,37 @@ export default function Employee() {
     setUploading(true);
     const files = fileRef.current?.input?.files;
     if (!files || files.length === 0) { setUploading(false); return; }
-    doUpload(editingRecord.id, Array.from(files)).then(() => {
-      return employeeApi.getById(editingRecord.id);
-    }).then(r => {
-      setAttachments(r.data.data.attachments || []); message.success('アップロードしました');
-    }).catch(() => message.error('失敗')).finally(() => setUploading(false));
+    doUpload(editingRecord.id, Array.from(files)).then(() => employeeApi.getById(editingRecord.id))
+      .then(r => { setAttachments(r.data.data.attachments || []); message.success('アップロードしました'); })
+      .catch(() => message.error('失敗')).finally(() => setUploading(false));
   };
 
   const handleDownload = (att) => { window.open(`/api/employee/attachments/${att.id}/download`); };
-
   const handleDeleteAtt = (attId) => {
     Modal.confirm({ title: '削除', content: 'このファイルを削除しますか？', okText: '削除', cancelText: 'キャンセル', centered: true,
       onOk: async () => { try { await employeeApi.deleteAttachment(attId); setAttachments(attachments.filter(a => a.id !== attId)); } catch {} } });
   };
-
   const handleBatchImport = async (file) => {
     setImporting(true);
     try { const fd = new FormData(); fd.append('file', file); const r = await employeeApi.batchImport(fd); message.success(r.data.message); fetchData(); }
-    catch { message.error('失敗'); }
-    finally { setImporting(false); }
+    catch { message.error('失敗'); } finally { setImporting(false); }
   };
-
   const handleExportAll = () => { window.open('/api/employee/export'); };
 
   const columns = [
-    { title: '社員番号', dataIndex: 'employeeCode', width: 110 },
-    { title: '氏名', dataIndex: 'name', width: 110 },
-    { title: '部署', dataIndex: 'department', width: 80 },
-    { title: '役職', dataIndex: 'position', width: 80 },
-    { title: 'メール', dataIndex: 'email', width: 180, ellipsis: true },
-    { title: '日本電話', dataIndex: 'phone', width: 120 },
+    { title: '社員番号', dataIndex: 'employeeCode', width: 110 }, { title: '氏名', dataIndex: 'name', width: 110 },
+    { title: '部署', dataIndex: 'department', width: 80 }, { title: '役職', dataIndex: 'position', width: 80 },
+    { title: 'メール', dataIndex: 'email', width: 180, ellipsis: true }, { title: '日本電話', dataIndex: 'phone', width: 120 },
     { title: '銀行口座', dataIndex: 'torihikiNo', width: 180, ellipsis: true, render: t => t || <span style={{ color: 'rgba(0,0,0,0.25)' }}>未設定</span> },
     { title: '操作', width: 220, fixed: 'right',
-      render: (_, r) => (
-        <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(r)}>編集</Button>
-          <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteConfirm(r)}>削除</Button>
-        </Space>
-      ),
-    },
+      render: (_, r) => (<Space><Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(r)}>編集</Button><Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteConfirm(r)}>削除</Button></Space>) },
   ];
 
   const bankCols = [
     { title: '既定', dataIndex: 'isDefault', width: 50,
-      render: (v, r) => v ? <StarFilled style={{ color: '#faad14' }} /> : (
-        <Tooltip title="既定口座に設定"><Button type="link" size="small" icon={<StarOutlined />} onClick={() => handleSetDefault(r.id)} /></Tooltip>
-      ),
-    },
+      render: (v, r) => v ? <StarFilled style={{ color: '#faad14' }} /> : <Button type="link" size="small" icon={<StarOutlined />} onClick={() => handleSetDefault(r.id)} /> },
     { title: '取引番号', key: 'torihiki', width: 120, render: (_, r) => <strong>{r.torihikiNo}-{r.branchNo}</strong> },
-    { title: '銀行名称', dataIndex: 'bankName', width: 120 },
-    { title: '支店番号', dataIndex: 'branchCode', width: 80 },
+    { title: '銀行名称', dataIndex: 'bankName', width: 120 }, { title: '支店番号', dataIndex: 'branchCode', width: 80 },
     { title: '口座種類', dataIndex: 'accountType', width: 80, render: t => <Tag color={t === '普通' ? 'blue' : 'orange'}>{t}</Tag> },
     { title: '口座番号', dataIndex: 'accountNumber', width: 100, render: t => '****' + (t ? t.slice(-4) : '****') },
     { title: '口座名義', dataIndex: 'accountHolder', width: 130 },
@@ -190,13 +175,7 @@ export default function Employee() {
   const attCols = [
     { title: 'ファイル名', dataIndex: 'fileName', ellipsis: true },
     { title: 'サイズ', dataIndex: 'fileSize', width: 100, render: s => s ? (s / 1024).toFixed(1) + ' KB' : '-' },
-    { title: '操作', width: 120, render: (_, a) => (
-        <Space>
-          <Button type="link" icon={<DownloadOutlined />} onClick={() => handleDownload(a)}>DL</Button>
-          <Button type="link" danger onClick={() => handleDeleteAtt(a.id)}>削除</Button>
-        </Space>
-      ),
-    },
+    { title: '操作', width: 120, render: (_, a) => (<Space><Button type="link" icon={<DownloadOutlined />} onClick={() => handleDownload(a)}>DL</Button><Button type="link" danger onClick={() => handleDeleteAtt(a.id)}>削除</Button></Space>) },
   ];
 
   return (
@@ -205,11 +184,8 @@ export default function Employee() {
       <Card>
         <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
           <Input placeholder="社員番号・氏名で検索" value={keyword} onChange={e => { setKeyword(e.target.value); setPage(1); }} style={{ width: 240 }} allowClear />
-          <span style={{ flex: 1 }} />
-          <Button icon={<DownloadOutlined />} onClick={handleExportAll}>一括DL</Button>
-          <Upload accept=".csv" showUploadList={false} beforeUpload={f => { handleBatchImport(f); return false; }}>
-            <Button icon={<UploadOutlined />} loading={importing}>一括登録</Button>
-          </Upload>
+          <span style={{ flex: 1 }} /><Button icon={<DownloadOutlined />} onClick={handleExportAll}>一括DL</Button>
+          <Upload accept=".csv" showUploadList={false} beforeUpload={f => { handleBatchImport(f); return false; }}><Button icon={<UploadOutlined />} loading={importing}>一括登録</Button></Upload>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>新規登録</Button>
         </div>
         <Table columns={columns} dataSource={data} rowKey="id" loading={loading}
@@ -243,24 +219,23 @@ export default function Employee() {
 
           <SectionTitle>● 銀行口座（給与振込用・複数可）</SectionTitle>
           <Space style={{ marginBottom: 12 }}>
-            <Select placeholder="＋ 口座を追加" value={selectedBankId} onChange={setSelectedBankId} style={{ minWidth: 280 }} allowClear showSearch
+            <Select placeholder="＋ 取引番号を選択して追加" value={selectedTorihikiNo} onChange={setSelectedTorihikiNo}
+              style={{ minWidth: 220 }} allowClear showSearch
               filterOption={(inp, opt) => opt.children.toLowerCase().includes(inp.toLowerCase())}>
-              {availableBanks.map(a => (<Select.Option key={a.id} value={a.id}>{a.torihikiNo} — {a.bankName} ({a.branchCode})</Select.Option>))}
+              {availableTorihikiNos.map(t => (<Select.Option key={t} value={t}>{t}</Select.Option>))}
             </Select>
-            <Button onClick={handleBindBank} disabled={!selectedBankId}>追加</Button>
+            <Button onClick={handleBindBank} disabled={!selectedTorihikiNo}>追加</Button>
           </Space>
           {linkedBanks.length > 0 && (
-            <Table columns={bankCols} dataSource={linkedBanks} rowKey="id" size="small" pagination={false}
-              style={{ marginBottom: 12 }} />
+            <Table columns={bankCols} dataSource={linkedBanks} rowKey="id" size="small" pagination={false} style={{ marginBottom: 12 }} />
           )}
 
           <SectionTitle>● 添付ファイル</SectionTitle>
           {editingRecord ? (
             <>
-              <Table columns={attCols} dataSource={attachments} rowKey="id" size="small" pagination={false}
-                locale={{ emptyText: 'なし' }} style={{ marginBottom: 8 }} />
+              <Table columns={attCols} dataSource={attachments} rowKey="id" size="small" pagination={false} locale={{ emptyText: 'なし' }} style={{ marginBottom: 8 }} />
               <Space>
-                <input type="file" multiple ref={fileRef} style={{ display: 'none' }} id="empFileInput" onChange={(e) => { if (e.target.files.length > 0) message.info(e.target.files.length + '件選択中'); }} />
+                <input type="file" multiple ref={fileRef} style={{ display: 'none' }} id="empFileInput" onChange={e => { if (e.target.files.length > 0) message.info(e.target.files.length + '件選択中'); }} />
                 <Button onClick={() => document.getElementById('empFileInput').click()}>ファイル選択（複数可）</Button>
                 <Button type="primary" icon={<UploadOutlined />} onClick={handleUploadClick} loading={uploading}>アップロード</Button>
               </Space>
@@ -269,9 +244,7 @@ export default function Employee() {
             <>
               {pendingFiles.length > 0 && (
                 <Table dataSource={pendingFiles.map((f, i) => ({ key: i, name: f.name, size: f.size }))} rowKey="key" size="small" pagination={false}
-                  columns={[
-                    { title: 'ファイル名', dataIndex: 'name' },
-                    { title: 'サイズ', dataIndex: 'size', width: 100, render: s => (s / 1024).toFixed(1) + ' KB' },
+                  columns={[{ title: 'ファイル名', dataIndex: 'name' }, { title: 'サイズ', dataIndex: 'size', width: 100, render: s => (s / 1024).toFixed(1) + ' KB' },
                     { title: '操作', width: 60, render: (_, __, i) => <Button type="link" danger onClick={() => setPendingFiles(pendingFiles.filter((_, j) => j !== i))}>削除</Button> },
                   ]} style={{ marginBottom: 8 }} />
               )}
