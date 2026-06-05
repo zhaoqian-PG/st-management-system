@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, Upload } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, UploadOutlined, DownloadOutlined, MinusCircleOutlined, StarOutlined, StarFilled } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, Upload, Radio } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, UploadOutlined, DownloadOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { employeeApi } from '../services/employeeApi';
 import { bankAccountApi } from '../services/bankAccountApi';
 import axios from 'axios';
@@ -25,6 +25,7 @@ export default function Employee() {
   const [linkedBanks, setLinkedBanks] = useState([]);
   const [availableTorihikiNos, setAvailableTorihikiNos] = useState([]);
   const [selectedTorihikiNo, setSelectedTorihikiNo] = useState(null);
+  const [primaryBankId, setPrimaryBankId] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [pendingFiles, setPendingFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -44,8 +45,12 @@ export default function Employee() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const refreshDetail = async (empId) => {
-    try { const r = await employeeApi.getById(empId); setAttachments(r.data.data.attachments || []); setLinkedBanks(r.data.data.bankAccounts || []); }
-    catch { setAttachments([]); setLinkedBanks([]); }
+    try { const r = await employeeApi.getById(empId);
+      setAttachments(r.data.data.attachments || []);
+      const banks = r.data.data.bankAccounts || [];
+      setLinkedBanks(banks);
+      setPrimaryBankId(banks.find(b => b.isDefault)?.id || null);
+    } catch { setAttachments([]); setLinkedBanks([]); }
   };
 
   const fetchTorihikiNos = async () => {
@@ -54,7 +59,8 @@ export default function Employee() {
   };
 
   const handleCreate = () => {
-    setEditingRecord(null); setLinkedBanks([]); setAttachments([]); setPendingFiles([]); setSelectedTorihikiNo(null);
+    setEditingRecord(null); setLinkedBanks([]); setAttachments([]); setPendingFiles([]);
+    setSelectedTorihikiNo(null); setPrimaryBankId(null);
     form.resetFields(); setModalVisible(true); fetchTorihikiNos();
   };
 
@@ -80,17 +86,28 @@ export default function Employee() {
       if (editingRecord) {
         await employeeApi.update(empId, payload);
         if (pendingFiles.length > 0) await doUpload(empId, pendingFiles);
+        // Bind/unbind bank accounts
+        const currentIds = linkedBanks.map(b => b.id);
+        const originalIds = (editingRecord.bankAccounts || []).map(b => b.id);
+        // Bind new ones
+        for (const acc of linkedBanks) {
+          if (!originalIds.includes(acc.id)) { try { await bankAccountApi.bindToEmployee(acc.id, empId); } catch (e) {} }
+        }
+        // Set primary
+        if (primaryBankId) { try { await bankAccountApi.setDefaultForEmployee(primaryBankId, empId); } catch (e) {} }
         message.success('更新しました');
       } else {
         const r = await employeeApi.create(payload);
         empId = r.data.data.id;
         if (pendingFiles.length > 0) await doUpload(empId, pendingFiles);
-        if (linkedBanks.length > 0) {
-          for (const acc of linkedBanks) { try { await bankAccountApi.bindToEmployee(acc.id, empId); } catch (e) {} }
-        }
+        // Bind bank accounts
+        for (const acc of linkedBanks) { try { await bankAccountApi.bindToEmployee(acc.id, empId); } catch (e) {} }
+        // Set primary
+        if (primaryBankId) { try { await bankAccountApi.setDefaultForEmployee(primaryBankId, empId); } catch (e) {} }
         message.success('登録しました');
       }
-      setModalVisible(false); fetchData();
+      setModalVisible(false);
+      fetchData(); // Refresh list to show updated torihiki_no
     } catch (err) { if (err.response?.data?.error) message.error(err.response.data.error); }
     finally { setFormLoading(false); }
   };
@@ -102,14 +119,13 @@ export default function Employee() {
 
   const handleBindBank = async () => {
     if (!selectedTorihikiNo) return;
-    // Get all EMPLOYEE accounts under this torihiki_no that are unlinked
     try {
       const r = await bankAccountApi.list({ category: 'EMPLOYEE', size: 100 });
       const all = (r.data.data.content || []).filter(a => a.torihikiNo === selectedTorihikiNo && a.employeeId === null);
-      const newBanks = [...linkedBanks, ...all];
-      // Remove duplicates by id
-      const seen = new Set(); const unique = newBanks.filter(b => { const k = b.id; if (seen.has(k)) return false; seen.add(k); return true; });
-      setLinkedBanks(unique);
+      const seen = new Set(linkedBanks.map(b => b.id));
+      const newBanks = [...linkedBanks, ...all.filter(b => !seen.has(b.id))];
+      setLinkedBanks(newBanks);
+      if (!primaryBankId && newBanks.length > 0) setPrimaryBankId(newBanks[0].id);
       setAvailableTorihikiNos(availableTorihikiNos.filter(t => t !== selectedTorihikiNo));
       setSelectedTorihikiNo(null);
     } catch { message.error('追加に失敗しました'); }
@@ -120,19 +136,14 @@ export default function Employee() {
       Modal.confirm({ title: '紐付け解除', content: '解除しますか？', okText: '解除', cancelText: 'キャンセル', centered: true,
         onOk: async () => { try { await bankAccountApi.unbindFromEmployee(bank.id); await refreshDetail(editingRecord.id); await fetchTorihikiNos(); } catch {} } });
     } else {
-      setLinkedBanks(linkedBanks.filter(a => a.id !== bank.id)); setAvailableTorihikiNos([...availableTorihikiNos, bank.torihikiNo]);
+      setLinkedBanks(linkedBanks.filter(a => a.id !== bank.id));
+      if (primaryBankId === bank.id) setPrimaryBankId(null);
+      setAvailableTorihikiNos([...availableTorihikiNos, bank.torihikiNo]);
     }
   };
 
-  const handleSetDefault = async (bankId) => {
-    if (!editingRecord) return;
-    try { await bankAccountApi.setDefaultForEmployee(bankId, editingRecord.id); await refreshDetail(editingRecord.id); }
-    catch { message.error('失敗'); }
-  };
-
   const handleUploadClick = () => {
-    if (!editingRecord?.id) return;
-    setUploading(true);
+    if (!editingRecord?.id) return; setUploading(true);
     const files = fileRef.current?.input?.files;
     if (!files || files.length === 0) { setUploading(false); return; }
     doUpload(editingRecord.id, Array.from(files)).then(() => employeeApi.getById(editingRecord.id))
@@ -156,14 +167,24 @@ export default function Employee() {
     { title: '社員番号', dataIndex: 'employeeCode', width: 110 }, { title: '氏名', dataIndex: 'name', width: 110 },
     { title: '部署', dataIndex: 'department', width: 80 }, { title: '役職', dataIndex: 'position', width: 80 },
     { title: 'メール', dataIndex: 'email', width: 180, ellipsis: true }, { title: '日本電話', dataIndex: 'phone', width: 120 },
-    { title: '銀行口座', dataIndex: 'torihikiNo', width: 180, ellipsis: true, render: t => t || <span style={{ color: 'rgba(0,0,0,0.25)' }}>未設定</span> },
+    { title: '銀行口座', dataIndex: 'torihikiNo', width: 250, ellipsis: true,
+      render: (t, r) => {
+        if (!t) return <span style={{ color: 'rgba(0,0,0,0.25)' }}>未設定</span>;
+        // Show torihikiNo as bank names from linked accounts
+        if (r.bankAccounts && r.bankAccounts.length > 0) {
+          return r.bankAccounts.map(b => `${b.bankName}（${b.branchCode}）`).join('、');
+        }
+        return t;
+      } },
     { title: '操作', width: 220, fixed: 'right',
       render: (_, r) => (<Space><Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(r)}>編集</Button><Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteConfirm(r)}>削除</Button></Space>) },
   ];
 
   const bankCols = [
-    { title: '既定', dataIndex: 'isDefault', width: 50,
-      render: (v, r) => v ? <StarFilled style={{ color: '#faad14' }} /> : <Button type="link" size="small" icon={<StarOutlined />} onClick={() => handleSetDefault(r.id)} /> },
+    { title: '主カード', width: 70,
+      render: (_, r) => (
+        <Radio checked={primaryBankId === r.id} onChange={() => setPrimaryBankId(r.id)} />
+      ) },
     { title: '取引番号', key: 'torihiki', width: 120, render: (_, r) => <strong>{r.torihikiNo}-{r.branchNo}</strong> },
     { title: '銀行名称', dataIndex: 'bankName', width: 120 }, { title: '支店番号', dataIndex: 'branchCode', width: 80 },
     { title: '口座種類', dataIndex: 'accountType', width: 80, render: t => <Tag color={t === '普通' ? 'blue' : 'orange'}>{t}</Tag> },

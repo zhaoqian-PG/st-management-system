@@ -53,7 +53,19 @@ public class EmployeeService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
         return employeeRepository.findAll(spec, PageRequest.of(page, size, Sort.by("employeeCode").ascending()))
-                .map(this::toDTO);
+                .map(e -> {
+                    EmployeeDTO dto = toDTO(e);
+                    // Populate bank info for display
+                    List<com.stmanagement.model.BankAccount> banks = bankAccountRepository
+                            .findAll((Specification<com.stmanagement.model.BankAccount>) (root, q, cb) ->
+                                    cb.equal(root.get("employeeId"), e.getId()));
+                    if (!banks.isEmpty()) {
+                        dto.setTorihikiNo(banks.stream()
+                                .map(b -> b.getBankName() + "（" + b.getBranchCode() + "）")
+                                .collect(Collectors.joining("、")));
+                    }
+                    return dto;
+                });
     }
 
     public EmployeeDTO findById(Long id) {
