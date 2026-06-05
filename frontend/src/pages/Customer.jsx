@@ -103,8 +103,8 @@ export default function Customer() {
   const handleBindBank = async () => {
     if (!selectedTorihikiNo) return;
     try {
-      const r = await bankAccountApi.list({ category: 'CUSTOMER', size: 100 });
-      const all = (r.data.data.content || []).filter(a => a.torihikiNo === selectedTorihikiNo && a.customerId === null);
+      const r = await axios.get(`/api/bank-accounts/unlinked/CUSTOMER/${selectedTorihikiNo}`);
+      const all = r.data.data || [];
       const seen = new Set(linkedAccounts.map(a => a.id));
       const newBanks = [...linkedAccounts, ...all.filter(b => !seen.has(b.id))];
       setLinkedAccounts(newBanks);

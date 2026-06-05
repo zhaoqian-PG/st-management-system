@@ -37,6 +37,12 @@ public class BankAccountController {
         return ResponseEntity.ok(ApiResponse.success(bankAccountService.getExistingTorihikiNos(category)));
     }
 
+    @GetMapping("/unlinked/{category}/{torihikiNo}")
+    public ResponseEntity<?> unlinkedByTorihiki(@PathVariable String category, @PathVariable String torihikiNo) {
+        return ResponseEntity.ok(ApiResponse.success(
+                bankAccountService.findUnlinkedByTorihikiNo(category, torihikiNo)));
+    }
+
     @GetMapping("/next-branch/{torihikiNo}")
     public ResponseEntity<?> nextBranch(@PathVariable String torihikiNo) {
         return ResponseEntity.ok(ApiResponse.success(bankAccountService.nextBranchNo(torihikiNo)));

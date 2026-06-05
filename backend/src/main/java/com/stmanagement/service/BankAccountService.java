@@ -67,6 +67,12 @@ public class BankAccountService {
         return String.format("%03d", max + 1);
     }
 
+    public List<BankAccountDTO> findUnlinkedByTorihikiNo(String category, String torihikiNo) {
+        return bankAccountRepository.findByTorihikiNo(torihikiNo).stream()
+                .filter(a -> category.equals(a.getCategory()) && a.getCustomerId() == null && a.getEmployeeId() == null)
+                .map(this::toDTO).collect(Collectors.toList());
+    }
+
     public List<String> getExistingTorihikiNos(String category) {
         return bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
                 cb.equal(root.get("category"), category)).stream()

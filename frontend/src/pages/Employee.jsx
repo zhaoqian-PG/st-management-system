@@ -120,8 +120,8 @@ export default function Employee() {
   const handleBindBank = async () => {
     if (!selectedTorihikiNo) return;
     try {
-      const r = await bankAccountApi.list({ category: 'EMPLOYEE', size: 100 });
-      const all = (r.data.data.content || []).filter(a => a.torihikiNo === selectedTorihikiNo && a.employeeId === null);
+      const r = await axios.get(`/api/bank-accounts/unlinked/EMPLOYEE/${selectedTorihikiNo}`);
+      const all = r.data.data || [];
       const seen = new Set(linkedBanks.map(b => b.id));
       const newBanks = [...linkedBanks, ...all.filter(b => !seen.has(b.id))];
       setLinkedBanks(newBanks);
