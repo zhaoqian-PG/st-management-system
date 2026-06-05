@@ -64,8 +64,8 @@ public class Employee {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
-    @Column(name = "attachment_path", length = 500)
-    private String attachmentPath;
+    @Column(name = "leave_date")
+    private LocalDate leaveDate;
 
     @Column(name = "create_time", nullable = false, updatable = false)
     private LocalDateTime createTime;

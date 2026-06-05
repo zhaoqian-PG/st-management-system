@@ -27,10 +27,11 @@ public class EmployeeController {
     public ResponseEntity<?> list(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String department,
+            @RequestParam(defaultValue = "false") boolean includeResigned,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         size = Math.min(size, 10);
-        Page<EmployeeDTO> r = employeeService.findAll(keyword, department, page, size);
+        Page<EmployeeDTO> r = employeeService.findAll(keyword, department, includeResigned, page, size);
         return ResponseEntity.ok(ApiResponse.success(r));
     }
 

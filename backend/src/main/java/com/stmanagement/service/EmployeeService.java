@@ -40,7 +40,7 @@ public class EmployeeService {
     private final EntityManager entityManager;
     private final Path uploadDir = Paths.get("uploads");
 
-    public Page<EmployeeDTO> findAll(String keyword, String department, int page, int size) {
+    public Page<EmployeeDTO> findAll(String keyword, String department, boolean includeResigned, int page, int size) {
         Specification<Employee> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (StringUtils.hasText(keyword)) {
@@ -50,20 +50,19 @@ public class EmployeeService {
             }
             if (StringUtils.hasText(department))
                 predicates.add(cb.equal(root.get("department"), department));
+            if (!includeResigned)
+                predicates.add(cb.isNull(root.get("leaveDate")));
             return cb.and(predicates.toArray(new Predicate[0]));
         };
         return employeeRepository.findAll(spec, PageRequest.of(page, size, Sort.by("employeeCode").ascending()))
                 .map(e -> {
                     EmployeeDTO dto = toDTO(e);
-                    // Populate bank info for display
                     List<com.stmanagement.model.BankAccount> banks = bankAccountRepository
                             .findAll((Specification<com.stmanagement.model.BankAccount>) (root, q, cb) ->
                                     cb.equal(root.get("employeeId"), e.getId()));
-                    if (!banks.isEmpty()) {
-                        dto.setTorihikiNo(banks.stream()
-                                .map(b -> b.getBankName() + "（" + b.getBranchCode() + "）")
+                    if (!banks.isEmpty())
+                        dto.setTorihikiNo(banks.stream().map(b -> b.getBankName() + "（" + b.getBranchCode() + "）")
                                 .collect(Collectors.joining("、")));
-                    }
                     return dto;
                 });
     }
@@ -74,8 +73,7 @@ public class EmployeeService {
         EmployeeDTO dto = toDTO(e);
         dto.setAttachments(attachmentRepository.findByEmployeeId(id).stream()
                 .map(a -> EmployeeDTO.AttachmentInfo.builder()
-                        .id(a.getId()).fileName(a.getFileName())
-                        .filePath(a.getFilePath()).fileSize(a.getFileSize()).build())
+                        .id(a.getId()).fileName(a.getFileName()).filePath(a.getFilePath()).fileSize(a.getFileSize()).build())
                 .collect(Collectors.toList()));
         dto.setBankAccounts(bankAccountRepository
                 .findAll((Specification<BankAccount>) (root, q, cb) -> cb.equal(root.get("employeeId"), id))
@@ -92,6 +90,7 @@ public class EmployeeService {
     public EmployeeDTO create(EmployeeDTO dto) {
         Employee e = toEntity(dto);
         e.setEmployeeCode(null);
+        e.setStatus(dto.getLeaveDate() != null ? "離職" : "在職");
         e = employeeRepository.save(e);
         entityManager.flush();
         entityManager.refresh(e);
@@ -107,6 +106,8 @@ public class EmployeeService {
         e.setChinaPhone(dto.getChinaPhone()); e.setChinaEmergencyContact(dto.getChinaEmergencyContact());
         e.setDepartment(dto.getDepartment()); e.setPosition(dto.getPosition());
         e.setJoinDate(dto.getJoinDate()); e.setBirthDate(dto.getBirthDate());
+        e.setLeaveDate(dto.getLeaveDate());
+        e.setStatus(dto.getLeaveDate() != null ? "離職" : "在職");
         return toDTO(employeeRepository.save(e));
     }
 
@@ -134,8 +135,7 @@ public class EmployeeService {
                     .filePath(target.toString()).fileSize(file.getSize()).build();
             att = attachmentRepository.save(att);
             results.add(EmployeeDTO.AttachmentInfo.builder()
-                    .id(att.getId()).fileName(att.getFileName())
-                    .filePath(att.getFilePath()).fileSize(att.getFileSize()).build());
+                    .id(att.getId()).fileName(att.getFileName()).filePath(att.getFilePath()).fileSize(att.getFileSize()).build());
         }
         return results;
     }
@@ -176,11 +176,33 @@ public class EmployeeService {
                 if (cols.length > 4) e.setJapanAddress(cols[4].trim());
                 if (cols.length > 5) e.setChinaAddress(cols[5].trim());
                 if (cols.length > 6) e.setPhone(cols[6].trim());
-                e.setEmployeeCode(null);
+                e.setEmployeeCode(null); e.setStatus("在職");
                 employeeRepository.save(e); count++;
             } catch (Exception ignored) {}
         }
         return count;
+    }
+
+    public String exportCsv() {
+        List<Employee> all = employeeRepository.findAll(Sort.by("employeeCode"));
+        StringBuilder sb = new StringBuilder();
+        sb.append("社員番号,氏名,メール,日本電話,部署,役職,入社日,生年月日,離職日,状態,日本住所,中国住所,中国電話,緊急連絡先\n");
+        for (Employee e : all) {
+            sb.append(e.getEmployeeCode()).append(",").append(e.getName()).append(",");
+            sb.append(e.getEmail() != null ? e.getEmail() : "").append(",");
+            sb.append(e.getPhone() != null ? e.getPhone() : "").append(",");
+            sb.append(e.getDepartment() != null ? e.getDepartment() : "").append(",");
+            sb.append(e.getPosition() != null ? e.getPosition() : "").append(",");
+            sb.append(e.getJoinDate() != null ? e.getJoinDate() : "").append(",");
+            sb.append(e.getBirthDate() != null ? e.getBirthDate() : "").append(",");
+            sb.append(e.getLeaveDate() != null ? e.getLeaveDate() : "").append(",");
+            sb.append(e.getStatus()).append(",");
+            sb.append(e.getJapanAddress() != null ? e.getJapanAddress() : "").append(",");
+            sb.append(e.getChinaAddress() != null ? e.getChinaAddress() : "").append(",");
+            sb.append(e.getChinaPhone() != null ? e.getChinaPhone() : "").append(",");
+            sb.append(e.getChinaEmergencyContact() != null ? e.getChinaEmergencyContact() : "").append("\n");
+        }
+        return sb.toString();
     }
 
     private EmployeeDTO toDTO(Employee e) {
@@ -190,28 +212,7 @@ public class EmployeeService {
                 .chinaPhone(e.getChinaPhone()).chinaEmergencyContact(e.getChinaEmergencyContact())
                 .torihikiNo(e.getTorihikiNo()).status(e.getStatus())
                 .department(e.getDepartment()).position(e.getPosition())
-                .joinDate(e.getJoinDate()).birthDate(e.getBirthDate()).build();
-    }
-
-    public String exportCsv() {
-        List<Employee> all = employeeRepository.findAll(Sort.by("employeeCode"));
-        StringBuilder sb = new StringBuilder();
-        sb.append("社員番号,氏名,メール,日本電話,部署,役職,入社日,生年月日,日本住所,中国住所,中国電話,緊急連絡先\n");
-        for (Employee e : all) {
-            sb.append(e.getEmployeeCode()).append(",");
-            sb.append(e.getName()).append(",");
-            sb.append(e.getEmail() != null ? e.getEmail() : "").append(",");
-            sb.append(e.getPhone() != null ? e.getPhone() : "").append(",");
-            sb.append(e.getDepartment() != null ? e.getDepartment() : "").append(",");
-            sb.append(e.getPosition() != null ? e.getPosition() : "").append(",");
-            sb.append(e.getJoinDate() != null ? e.getJoinDate() : "").append(",");
-            sb.append(e.getBirthDate() != null ? e.getBirthDate() : "").append(",");
-            sb.append(e.getJapanAddress() != null ? e.getJapanAddress() : "").append(",");
-            sb.append(e.getChinaAddress() != null ? e.getChinaAddress() : "").append(",");
-            sb.append(e.getChinaPhone() != null ? e.getChinaPhone() : "").append(",");
-            sb.append(e.getChinaEmergencyContact() != null ? e.getChinaEmergencyContact() : "").append("\n");
-        }
-        return sb.toString();
+                .joinDate(e.getJoinDate()).birthDate(e.getBirthDate()).leaveDate(e.getLeaveDate()).build();
     }
 
     private Employee toEntity(EmployeeDTO d) {
@@ -219,6 +220,6 @@ public class EmployeeService {
                 .japanAddress(d.getJapanAddress()).chinaAddress(d.getChinaAddress())
                 .chinaPhone(d.getChinaPhone()).chinaEmergencyContact(d.getChinaEmergencyContact())
                 .department(d.getDepartment()).position(d.getPosition())
-                .joinDate(d.getJoinDate()).birthDate(d.getBirthDate()).build();
+                .joinDate(d.getJoinDate()).birthDate(d.getBirthDate()).leaveDate(d.getLeaveDate()).build();
     }
 }

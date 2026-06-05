@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, Upload, Radio } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, Upload, Radio, Checkbox } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, UploadOutlined, DownloadOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { employeeApi } from '../services/employeeApi';
 import { bankAccountApi } from '../services/bankAccountApi';
@@ -29,6 +29,7 @@ export default function Employee() {
   const [attachments, setAttachments] = useState([]);
   const [pendingFiles, setPendingFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [includeResigned, setIncludeResigned] = useState(false);
   const [importing, setImporting] = useState(false);
   const [form] = Form.useForm();
   const fileRef = useRef(null);
@@ -36,11 +37,11 @@ export default function Employee() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await employeeApi.list({ page: page - 1, size: PAGE_SIZE, keyword: keyword || undefined });
+      const res = await employeeApi.list({ page: page - 1, size: PAGE_SIZE, keyword: keyword || undefined, includeResigned });
       setData(res.data.data.content || []); setTotal(res.data.data.totalElements || 0);
     } catch { message.error('データの取得に失敗しました'); }
     finally { setLoading(false); }
-  }, [page, keyword]);
+  }, [page, keyword, includeResigned]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -66,7 +67,7 @@ export default function Employee() {
 
   const handleEdit = async (record) => {
     setEditingRecord(record); setPendingFiles([]); setSelectedTorihikiNo(null);
-    form.setFieldsValue({ ...record, joinDate: record.joinDate ? dayjs(record.joinDate) : null, birthDate: record.birthDate ? dayjs(record.birthDate) : null });
+    form.setFieldsValue({ ...record, joinDate: record.joinDate ? dayjs(record.joinDate) : null, birthDate: record.birthDate ? dayjs(record.birthDate) : null, leaveDate: record.leaveDate ? dayjs(record.leaveDate) : null });
     setModalVisible(true);
     await refreshDetail(record.id); await fetchTorihikiNos();
   };
@@ -81,7 +82,7 @@ export default function Employee() {
     try {
       const values = await form.validateFields();
       setFormLoading(true);
-      const payload = { ...values, joinDate: values.joinDate ? values.joinDate.format('YYYY-MM-DD') : null, birthDate: values.birthDate ? values.birthDate.format('YYYY-MM-DD') : null };
+      const payload = { ...values, joinDate: values.joinDate ? values.joinDate.format('YYYY-MM-DD') : null, birthDate: values.birthDate ? values.birthDate.format('YYYY-MM-DD') : null, leaveDate: values.leaveDate ? values.leaveDate.format('YYYY-MM-DD') : null };
       let empId = editingRecord?.id;
       if (editingRecord) {
         await employeeApi.update(empId, payload);
@@ -199,7 +200,8 @@ export default function Employee() {
       <h2 style={{ marginBottom: 20 }}><UserOutlined /> 社員管理</h2>
       <Card>
         <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-          <Input placeholder="社員番号・氏名で検索" value={keyword} onChange={e => { setKeyword(e.target.value); setPage(1); }} style={{ width: 240 }} allowClear />
+          <Input placeholder="社員番号・氏名で検索" value={keyword} onChange={e => { setKeyword(e.target.value); setPage(1); }} style={{ width: 220 }} allowClear />
+          <Checkbox checked={includeResigned} onChange={e => { setIncludeResigned(e.target.checked); setPage(1); }}>離職者含む</Checkbox>
           <span style={{ flex: 1 }} /><Button icon={<DownloadOutlined />} onClick={handleExportAll}>一括DL</Button>
           <Upload accept=".csv" showUploadList={false} beforeUpload={f => { handleBatchImport(f); return false; }}><Button icon={<UploadOutlined />} loading={importing}>一括登録</Button></Upload>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>新規登録</Button>
@@ -219,6 +221,7 @@ export default function Employee() {
             <Form.Item name="phone" label="電話番号（日本）" rules={[{ max: 20 }]}><Input maxLength={20} /></Form.Item>
             <Form.Item name="joinDate" label="入社日"><DatePicker style={{ width: '100%' }} /></Form.Item>
             <Form.Item name="birthDate" label="生年月日"><DatePicker style={{ width: '100%' }} /></Form.Item>
+            <Form.Item name="leaveDate" label="離職日"><DatePicker style={{ width: '100%' }} /></Form.Item>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
             <Form.Item name="department" label="部署"><Select allowClear><Option value="営業部">営業部</Option><Option value="技術部">技術部</Option><Option value="経理部">経理部</Option><Option value="人事部">人事部</Option></Select></Form.Item>

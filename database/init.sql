@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS employee (
     position                VARCHAR(100),
     join_date               DATE,
     birth_date              DATE,
-    attachment_path         VARCHAR(500),
+    leave_date              DATE,
     create_time             TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time             TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -71,7 +71,7 @@ COMMENT ON COLUMN employee.china_phone IS '中国電話番号';
 COMMENT ON COLUMN employee.china_emergency_contact IS '中国緊急連絡先';
 COMMENT ON COLUMN employee.join_date IS '入社日';
 COMMENT ON COLUMN employee.birth_date IS '生年月日';
-COMMENT ON COLUMN employee.attachment_path IS '添付ファイルパス';
+COMMENT ON COLUMN employee.leave_date IS '離職日';
 
 -- ============================================================
 -- 3. customer（顧客）★業務テーブル（先に作成：bank_accountがFK参照するため）

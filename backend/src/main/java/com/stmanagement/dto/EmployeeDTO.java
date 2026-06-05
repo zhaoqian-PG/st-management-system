@@ -65,7 +65,7 @@ public class EmployeeDTO {
     private String status;
     private LocalDate joinDate;
     private LocalDate birthDate;
-    private String attachmentPath;
+    private LocalDate leaveDate;
     private List<AttachmentInfo> attachments;
 
     private List<BankAccountDTO> bankAccounts;
