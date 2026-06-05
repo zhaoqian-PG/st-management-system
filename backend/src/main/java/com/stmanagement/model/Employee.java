@@ -49,7 +49,7 @@ public class Employee {
     @Column(name = "torihiki_no", length = 500)
     private String torihikiNo;
 
-    @Column(length = 10, nullable = false)
+    @Column(length = 10, columnDefinition = "VARCHAR(10) DEFAULT '在職'")
     private String status;
 
     @Column(length = 100)
