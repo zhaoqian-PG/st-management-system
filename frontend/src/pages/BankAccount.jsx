@@ -57,11 +57,15 @@ export default function BankAccount() {
     setModalVisible(true);
   };
 
-  const handleTorihikiChange = (value) => {
+  const handleTorihikiChange = async (value) => {
     if (!value) { setNextBranch('001'); return; }
-    // Count existing branches for this torihiki_no
-    const count = data.filter(d => d.torihikiNo === value).length;
-    setNextBranch(String(count + 1).padStart(3, '0'));
+    // Fetch all accounts under this torihiki_no to get accurate branch count
+    try {
+      const r = await bankAccountApi.list({ category: activeTab, size: 1000 });
+      const all = (r.data.data.content || []).filter(d => d.torihikiNo === value);
+      const maxBranch = Math.max(0, ...all.map(a => parseInt(a.branchNo) || 0));
+      setNextBranch(String(maxBranch + 1).padStart(3, '0'));
+    } catch { setNextBranch('???'); }
   };
 
   const handleEdit = (record) => {

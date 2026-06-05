@@ -58,9 +58,12 @@ public class BankAccountService {
     }
 
     private String nextBranchNo(String torihikiNo) {
-        List<BankAccount> existing = bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
-                cb.equal(root.get("torihikiNo"), torihikiNo));
-        int max = existing.stream().mapToInt(a -> Integer.parseInt(a.getBranchNo())).max().orElse(0);
+        List<BankAccount> existing = bankAccountRepository.findByTorihikiNo(torihikiNo);
+        int max = existing.stream()
+                .map(BankAccount::getBranchNo)
+                .filter(bn -> bn != null && !bn.isEmpty())
+                .mapToInt(Integer::parseInt)
+                .max().orElse(0);
         return String.format("%03d", max + 1);
     }
 

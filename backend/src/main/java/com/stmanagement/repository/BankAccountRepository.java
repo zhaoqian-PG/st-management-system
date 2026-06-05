@@ -19,4 +19,6 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long>,
     List<BankAccount> findByCustomerIdIsNull();
 
     boolean existsByTorihikiNo(String torihikiNo);
+
+    List<BankAccount> findByTorihikiNo(String torihikiNo);
 }
