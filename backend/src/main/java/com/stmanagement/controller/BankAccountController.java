@@ -125,4 +125,10 @@ public class BankAccountController {
         bankAccountService.setDefaultForEmployee(id, employeeId);
         return ResponseEntity.ok(ApiResponse.success(null, "既定口座を設定しました"));
     }
+
+    @PutMapping("/{id}/set-default-customer/{customerId}")
+    public ResponseEntity<?> setDefaultForCustomer(@PathVariable Long id, @PathVariable Long customerId) {
+        bankAccountService.setDefaultForCustomer(id, customerId);
+        return ResponseEntity.ok(ApiResponse.success(null, "既定口座を設定しました"));
+    }
 }

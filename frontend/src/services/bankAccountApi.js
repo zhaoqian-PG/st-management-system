@@ -55,4 +55,7 @@ export const bankAccountApi = {
   setDefaultForEmployee(id, employeeId) {
     return axios.put(`${API_BASE}/${id}/set-default-employee/${employeeId}`);
   },
+  setDefaultForCustomer(id, customerId) {
+    return axios.put(`${API_BASE}/${id}/set-default-customer/${customerId}`);
+  },
 };

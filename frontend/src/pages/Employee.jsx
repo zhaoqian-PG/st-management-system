@@ -168,14 +168,7 @@ export default function Employee() {
     { title: '部署', dataIndex: 'department', width: 80 }, { title: '役職', dataIndex: 'position', width: 80 },
     { title: 'メール', dataIndex: 'email', width: 180, ellipsis: true }, { title: '日本電話', dataIndex: 'phone', width: 120 },
     { title: '銀行口座', dataIndex: 'torihikiNo', width: 250, ellipsis: true,
-      render: (t, r) => {
-        if (!t) return <span style={{ color: 'rgba(0,0,0,0.25)' }}>未設定</span>;
-        // Show torihikiNo as bank names from linked accounts
-        if (r.bankAccounts && r.bankAccounts.length > 0) {
-          return r.bankAccounts.map(b => `${b.bankName}（${b.branchCode}）`).join('、');
-        }
-        return t;
-      } },
+      render: (t) => t ? <span>{t}</span> : <span style={{ color: 'rgba(0,0,0,0.25)' }}>未設定</span> },
     { title: '操作', width: 220, fixed: 'right',
       render: (_, r) => (<Space><Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(r)}>編集</Button><Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteConfirm(r)}>削除</Button></Space>) },
   ];

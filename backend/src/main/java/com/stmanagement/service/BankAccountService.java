@@ -160,6 +160,14 @@ public class BankAccountService {
     }
 
     @Transactional
+    public void setDefaultForCustomer(Long id, Long customerId) {
+        List<BankAccount> all = bankAccountRepository.findByCustomerId(customerId);
+        for (BankAccount a : all) { a.setIsDefault(false); bankAccountRepository.save(a); }
+        BankAccount e = bankAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("銀行口座が見つかりません"));
+        e.setIsDefault(true); bankAccountRepository.save(e);
+    }
+
+    @Transactional
     public void setDefaultForEmployee(Long id, Long employeeId) {
         List<BankAccount> all = bankAccountRepository.findAll((Specification<BankAccount>) (root, q, cb) ->
                 cb.equal(root.get("employeeId"), employeeId));

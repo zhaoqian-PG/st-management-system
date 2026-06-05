@@ -43,7 +43,6 @@ public class CustomerService {
         PageRequest pageable = PageRequest.of(page, size, Sort.by("customerCode").ascending());
         return customerRepository.findAll(spec, pageable).map(entity -> {
             CustomerDTO dto = toDTO(entity);
-            // Always sync torihikiNo from linked bank_account records
             List<String> labels = bankAccountRepository.findByCustomerId(entity.getId())
                     .stream().map(ba -> ba.getBankName() + "（" + ba.getBranchCode() + "）")
                     .collect(Collectors.toList());
