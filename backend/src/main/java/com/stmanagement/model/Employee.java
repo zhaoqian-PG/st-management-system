@@ -49,6 +49,9 @@ public class Employee {
     @Column(name = "torihiki_no", length = 500)
     private String torihikiNo;
 
+    @Column(length = 10, nullable = false)
+    private String status;
+
     @Column(length = 100)
     private String department;
 

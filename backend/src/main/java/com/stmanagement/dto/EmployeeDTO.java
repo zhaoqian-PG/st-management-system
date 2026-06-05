@@ -62,6 +62,7 @@ public class EmployeeDTO {
     private String position;
 
     private String torihikiNo;
+    private String status;
     private LocalDate joinDate;
     private LocalDate birthDate;
     private String attachmentPath;

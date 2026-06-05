@@ -79,10 +79,11 @@ public class EmployeeService {
                 .collect(Collectors.toList()));
         dto.setBankAccounts(bankAccountRepository
                 .findAll((Specification<BankAccount>) (root, q, cb) -> cb.equal(root.get("employeeId"), id))
-                .stream().map(ba -> BankAccountDTO.builder().id(ba.getId()).torihikiNo(ba.getTorihikiNo())
+                .stream().map(ba -> BankAccountDTO.builder().id(ba.getId())
+                        .torihikiNo(ba.getTorihikiNo()).branchNo(ba.getBranchNo())
                         .bankName(ba.getBankName()).branchCode(ba.getBranchCode())
                         .accountType(ba.getAccountType()).accountNumber(ba.getAccountNumber())
-                        .accountHolder(ba.getAccountHolder()).build())
+                        .accountHolder(ba.getAccountHolder()).isDefault(ba.getIsDefault()).build())
                 .collect(Collectors.toList()));
         return dto;
     }
@@ -187,7 +188,7 @@ public class EmployeeService {
                 .name(e.getName()).email(e.getEmail()).phone(e.getPhone())
                 .japanAddress(e.getJapanAddress()).chinaAddress(e.getChinaAddress())
                 .chinaPhone(e.getChinaPhone()).chinaEmergencyContact(e.getChinaEmergencyContact())
-                .torihikiNo(e.getTorihikiNo())
+                .torihikiNo(e.getTorihikiNo()).status(e.getStatus())
                 .department(e.getDepartment()).position(e.getPosition())
                 .joinDate(e.getJoinDate()).birthDate(e.getBirthDate()).build();
     }

@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS employee (
     china_phone             VARCHAR(20),
     china_emergency_contact VARCHAR(100),
     torihiki_no             VARCHAR(500),
+    status                  VARCHAR(10)     NOT NULL DEFAULT '在職',
     department              VARCHAR(100),
     position                VARCHAR(100),
     join_date               DATE,

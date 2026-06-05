@@ -167,7 +167,9 @@ export default function Employee() {
     { title: '社員番号', dataIndex: 'employeeCode', width: 110 }, { title: '氏名', dataIndex: 'name', width: 110 },
     { title: '部署', dataIndex: 'department', width: 80 }, { title: '役職', dataIndex: 'position', width: 80 },
     { title: 'メール', dataIndex: 'email', width: 180, ellipsis: true }, { title: '日本電話', dataIndex: 'phone', width: 120 },
-    { title: '銀行口座', dataIndex: 'torihikiNo', width: 250, ellipsis: true,
+    { title: '状態', dataIndex: 'status', width: 70,
+      render: (t) => <Tag color={t === '在職' ? 'green' : 'red'}>{t || '在職'}</Tag> },
+    { title: '銀行口座', dataIndex: 'torihikiNo', width: 220, ellipsis: true,
       render: (t) => t ? <span>{t}</span> : <span style={{ color: 'rgba(0,0,0,0.25)' }}>未設定</span> },
     { title: '操作', width: 220, fixed: 'right',
       render: (_, r) => (<Space><Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(r)}>編集</Button><Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteConfirm(r)}>削除</Button></Space>) },
@@ -223,6 +225,7 @@ export default function Employee() {
             <Form.Item name="position" label="役職"><Select allowClear><Option value="部長">部長</Option><Option value="課長">課長</Option><Option value="係長">係長</Option><Option value="一般社員">一般社員</Option></Select></Form.Item>
           </div>
           <Form.Item name="japanAddress" label="日本住所"><Input maxLength={500} /></Form.Item>
+          <Form.Item name="status" label="状態"><Select><Option value="在職">在職</Option><Option value="離職">離職</Option></Select></Form.Item>
 
           <SectionTitle>● 中国連絡情報</SectionTitle>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
