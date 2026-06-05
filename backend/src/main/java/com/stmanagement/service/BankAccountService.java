@@ -57,7 +57,7 @@ public class BankAccountService {
                 cb.equal(root.get("employeeId"), eid)).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    private String nextBranchNo(String torihikiNo) {
+    public String nextBranchNo(String torihikiNo) {
         List<BankAccount> existing = bankAccountRepository.findByTorihikiNo(torihikiNo);
         int max = existing.stream()
                 .map(BankAccount::getBranchNo)
