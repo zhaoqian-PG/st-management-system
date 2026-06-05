@@ -27,10 +27,10 @@ public class Attendance {
     @Column(name = "work_date", nullable = false)
     private LocalDate workDate;
 
-    @Column(name = "work_hours", nullable = false)
+    @Column(name = "work_hours", columnDefinition = "DECIMAL(4,1) DEFAULT 0", nullable = false)
     private Double workHours;
 
-    @Column(name = "overtime_hours", nullable = false)
+    @Column(name = "overtime_hours", columnDefinition = "DECIMAL(4,1) DEFAULT 0", nullable = false)
     private Double overtimeHours;
 
     @Column(length = 20, nullable = false)
