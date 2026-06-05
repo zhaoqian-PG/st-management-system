@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.DynamicInsert;
-
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
@@ -14,7 +12,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@DynamicInsert
 @Table(name = "bank_account")
 public class BankAccount {
 

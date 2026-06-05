@@ -81,13 +81,13 @@ public class BankAccountService {
             e.setTorihikiNo(dto.getTorihikiNo());
             e.setBranchNo(nextBranchNo(dto.getTorihikiNo()));
         } else {
-            // New torihiki_no: set null to let DB DEFAULT generate it, branch_no = "001"
-            e.setTorihikiNo(null);
+            // New torihiki_no: generate in Java from sequence
+            java.math.BigInteger nextVal = (java.math.BigInteger) entityManager
+                    .createNativeQuery("SELECT nextval('torihiki_seq')").getSingleResult();
+            e.setTorihikiNo("BK" + String.format("%06d", nextVal));
             e.setBranchNo("001");
         }
-        e = bankAccountRepository.save(e);
-        entityManager.flush();
-        entityManager.refresh(e);
+        e = bankAccountRepository.save(entityManager.merge(e));
         return toDTO(e);
     }
 

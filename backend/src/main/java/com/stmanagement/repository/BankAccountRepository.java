@@ -12,8 +12,6 @@ import java.util.Optional;
 public interface BankAccountRepository extends JpaRepository<BankAccount, Long>,
         JpaSpecificationExecutor<BankAccount> {
 
-    Optional<BankAccount> findByTorihikiNo(String torihikiNo);
-
     List<BankAccount> findByCustomerId(Long customerId);
 
     List<BankAccount> findByCustomerIdIsNull();
