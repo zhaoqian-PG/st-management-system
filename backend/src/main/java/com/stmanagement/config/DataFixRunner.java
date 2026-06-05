@@ -18,6 +18,8 @@ public class DataFixRunner implements CommandLineRunner {
         jdbcTemplate.update("UPDATE bank_account SET category = 'EMPLOYEE' WHERE category IS NULL AND employee_id IS NOT NULL");
         jdbcTemplate.update("UPDATE bank_account SET is_default = FALSE WHERE is_default IS NULL");
         jdbcTemplate.update("UPDATE employee SET status = '在職' WHERE status IS NULL");
+        jdbcTemplate.update("UPDATE employee SET status = '離職' WHERE leave_date IS NOT NULL AND status = '在職'");
+        jdbcTemplate.update("UPDATE employee SET status = '在職' WHERE leave_date IS NULL AND status = '離職'");
         // Sync employee.torihiki_no = bank_account.torihiki_no (group key)
         jdbcTemplate.update("UPDATE employee e SET torihiki_no = (" +
             "SELECT ba.torihiki_no FROM bank_account ba WHERE ba.employee_id = e.id AND ba.category = 'EMPLOYEE' FETCH FIRST 1 ROW ONLY" +

@@ -206,11 +206,13 @@ public class EmployeeService {
     }
 
     private EmployeeDTO toDTO(Employee e) {
+        // Status derived from leave_date for consistency
+        String status = e.getLeaveDate() != null ? "離職" : "在職";
         return EmployeeDTO.builder().id(e.getId()).employeeCode(e.getEmployeeCode())
                 .name(e.getName()).email(e.getEmail()).phone(e.getPhone())
                 .japanAddress(e.getJapanAddress()).chinaAddress(e.getChinaAddress())
                 .chinaPhone(e.getChinaPhone()).chinaEmergencyContact(e.getChinaEmergencyContact())
-                .torihikiNo(e.getTorihikiNo()).status(e.getStatus())
+                .torihikiNo(e.getTorihikiNo()).status(status)
                 .department(e.getDepartment()).position(e.getPosition())
                 .joinDate(e.getJoinDate()).birthDate(e.getBirthDate()).leaveDate(e.getLeaveDate()).build();
     }
