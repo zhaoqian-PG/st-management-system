@@ -32,14 +32,21 @@ CREATE TABLE IF NOT EXISTS "user" (
     username    VARCHAR(50)     NOT NULL UNIQUE,
     password    VARCHAR(255)    NOT NULL,
     role        VARCHAR(20)     NOT NULL DEFAULT 'USER',
+    employee_id BIGINT,
     create_time TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
+    update_time TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_user_employee
+        FOREIGN KEY (employee_id) REFERENCES employee(id)
+        ON DELETE SET NULL,
+    CONSTRAINT chk_user_role CHECK (role IN ('ADMIN', 'USER'))
 );
 
-COMMENT ON TABLE "user" IS 'ログインユーザー';
+COMMENT ON TABLE "user" IS 'ログインユーザー（権限管理）';
 COMMENT ON COLUMN "user".username IS 'ログイン名';
 COMMENT ON COLUMN "user".password IS 'パスワード（BCrypt暗号化）';
-COMMENT ON COLUMN "user".role IS 'ロール：ADMIN / USER';
+COMMENT ON COLUMN "user".role IS 'ロール：ADMIN（管理者）/ USER（一般）';
+COMMENT ON COLUMN "user".employee_id IS 'FK→employee(id) 1:1社員紐付け';
 
 -- 2. 社員情報テーブル
 CREATE TABLE IF NOT EXISTS employee (
