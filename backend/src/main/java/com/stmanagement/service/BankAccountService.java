@@ -210,10 +210,18 @@ public class BankAccountService {
     }
 
     private BankAccount toEntity(BankAccountDTO dto) {
-        return BankAccount.builder().torihikiNo(dto.getTorihikiNo()).branchNo(dto.getBranchNo() != null ? dto.getBranchNo() : "001")
-                .category(dto.getCategory()).customerId(dto.getCustomerId()).employeeId(dto.getEmployeeId())
-                .branchCode(dto.getBranchCode()).bankName(dto.getBankName())
-                .accountType(dto.getAccountType()).accountNumber(dto.getAccountNumber())
-                .accountHolder(dto.getAccountHolder()).isDefault(dto.getIsDefault() != null ? dto.getIsDefault() : false).build();
+        BankAccount e = new BankAccount();
+        e.setTorihikiNo(dto.getTorihikiNo());
+        e.setBranchNo(dto.getBranchNo() != null ? dto.getBranchNo() : "001");
+        e.setCategory(dto.getCategory());
+        e.setCustomerId(dto.getCustomerId());
+        e.setEmployeeId(dto.getEmployeeId());
+        e.setBranchCode(dto.getBranchCode());
+        e.setBankName(dto.getBankName());
+        e.setAccountType(dto.getAccountType());
+        e.setAccountNumber(dto.getAccountNumber());
+        e.setAccountHolder(dto.getAccountHolder());
+        e.setIsDefault(dto.getIsDefault() != null ? dto.getIsDefault() : false);
+        return e;
     }
 }
