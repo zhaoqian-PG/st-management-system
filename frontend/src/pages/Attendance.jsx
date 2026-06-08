@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, TimePicker, Statistic, Row, Col } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, TimePicker } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CalendarOutlined, DownloadOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { attendanceApi } from '../services/attendanceApi';
 import axios from 'axios';
@@ -20,16 +20,10 @@ export default function Attendance() {
   const [month, setMonth] = useState(dayjs().month() + 1);
   const [employeeId, setEmployeeId] = useState(null);
   const [employees, setEmployees] = useState([]);
-  const [summary, setSummary] = useState({ workHours: 0, overtimeHours: 0, totalHours: 0, workDays: 0, totalRecords: 0 });
   const [monthlySummary, setMonthlySummary] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [form] = Form.useForm();
   const role = localStorage.getItem('userRole') || 'USER';
-
-  const fetchSummary = async () => {
-    if (!employeeId) return;
-    try { const r = await axios.get('/api/attendance/summary', { params: { year, month, employeeId } }); setSummary(r.data.data); } catch {}
-  };
 
   const fetchMonthlySummary = async () => {
     try { const r = await axios.get('/api/attendance/monthly-summary', { params: { year, month } }); setMonthlySummary(r.data.data || []); } catch {}
@@ -44,7 +38,7 @@ export default function Attendance() {
     finally { setLoading(false); }
   }, [page, year, month, employeeId]);
 
-  useEffect(() => { fetchData(); fetchSummary(); fetchMonthlySummary(); }, [fetchData]);
+  useEffect(() => { fetchData(); fetchMonthlySummary(); }, [fetchData]);
   useEffect(() => {
     axios.get('/api/employee?size=200').then(r => {
       const empList = r.data.data.content || [];
@@ -64,7 +58,7 @@ export default function Attendance() {
       if (employeeId) params.employeeId = employeeId;
       const res = await axios.post('/api/attendance/generate', null, { params });
       message.success(res.data.message);
-      fetchData(); fetchSummary(); fetchMonthlySummary();
+      fetchData(); fetchMonthlySummary();
     } catch { message.error('生成に失敗しました'); }
     finally { setGenerating(false); }
   };
@@ -96,7 +90,7 @@ export default function Attendance() {
       };
       if (editingRecord) { await attendanceApi.update(editingRecord.id, payload); message.success('更新しました'); }
       else { await attendanceApi.create(payload); message.success('登録しました'); }
-      setModalVisible(false); fetchData(); fetchSummary(); fetchMonthlySummary();
+      setModalVisible(false); fetchData(); fetchMonthlySummary();
     } catch (e) {
       if (e.response?.data?.error) message.error(e.response.data.error);
       else if (e.response?.data?.details) message.error(e.response.data.details.join(', '));
@@ -105,7 +99,7 @@ export default function Attendance() {
   };
 
   const handleDelete = (r) => Modal.confirm({ title: '削除', content: '削除しますか？', okText: '削除', cancelText: 'キャンセル', okType: 'danger', centered: true,
-    onOk: async () => { try { await attendanceApi.delete(r.id); fetchData(); fetchSummary(); fetchMonthlySummary(); } catch {} } });
+    onOk: async () => { try { await attendanceApi.delete(r.id); fetchData(); fetchMonthlySummary(); } catch {} } });
 
   const columns = [
     { title: '日付', dataIndex: 'workDate', width: 120 }, { title: '社員名', dataIndex: 'employeeName', width: 120 },
@@ -130,12 +124,6 @@ export default function Attendance() {
         <Button icon={<DownloadOutlined />} onClick={() => window.open(employeeId ? `/api/attendance/export?year=${year}&month=${month}&employeeId=${employeeId}` : `/api/attendance/export-all?year=${year}&month=${month}`)}>CSV出力</Button>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>新規登録</Button>
       </div>
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={6}><Card size="small"><Statistic title="総勤務時間(h)" value={summary.workHours} suffix="h" /></Card></Col>
-        <Col span={6}><Card size="small"><Statistic title="総残業時間(h)" value={summary.overtimeHours} suffix="h" /></Card></Col>
-        <Col span={6}><Card size="small"><Statistic title="勤務日数" value={summary.workDays} suffix="日" /></Card></Col>
-        <Col span={6}><Card size="small"><Statistic title="総件数" value={total} suffix="件" /></Card></Col>
-      </Row>
       {role === 'ADMIN' && (
         <Card title="📊 社員別月次集計" size="small" style={{ marginBottom: 16 }}>
           <Table columns={[
