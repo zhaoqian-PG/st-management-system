@@ -176,17 +176,18 @@ public class AttendanceService {
         for (Employee emp : employees) {
             if (emp.getLeaveDate() != null) continue;
             Map<String, Object> row = getMonthlySummary(year, month, emp.getId());
-            if ((long) row.get("totalRecords") == 0) continue;
+            long records = ((Number) row.get("totalRecords")).longValue();
+            if (records == 0) continue;
+            double wh = ((Number) row.get("workHours")).doubleValue();
+            double oh = ((Number) row.get("overtimeHours")).doubleValue();
+            double th = ((Number) row.get("totalHours")).doubleValue();
+            long wd = ((Number) row.get("workDays")).longValue();
             sb.append(emp.getEmployeeCode()).append(",").append(emp.getName()).append(",");
             sb.append(emp.getDepartment() != null ? emp.getDepartment() : "").append(",");
-            sb.append(row.get("workHours")).append(",").append(row.get("overtimeHours")).append(",");
-            sb.append(row.get("totalHours")).append(",").append(row.get("workDays")).append(",");
-            sb.append(row.get("totalRecords")).append("\n");
-            grandWork += (double) row.get("workHours");
-            grandOvertime += (double) row.get("overtimeHours");
-            grandTotal += (double) row.get("totalHours");
-            grandDays += (long) row.get("workDays");
-            grandRecords += (long) row.get("totalRecords");
+            sb.append(wh).append(",").append(oh).append(",").append(th).append(",").append(wd).append(",");
+            sb.append(records).append("\n");
+            grandWork += wh; grandOvertime += oh; grandTotal += th;
+            grandDays += wd; grandRecords += records;
         }
         sb.append("\n合計,,,").append(Math.round(grandWork * 10.0) / 10.0).append(",");
         sb.append(Math.round(grandOvertime * 10.0) / 10.0).append(",");
