@@ -80,25 +80,33 @@ public class AttendanceController {
         return ResponseEntity.ok(ApiResponse.success(count, count + "件の勤務記録を生成しました"));
     }
 
-    @GetMapping("/export-all")
-    public ResponseEntity<?> exportCsvAll(
+    @GetMapping(value = "/export-all", produces = "text/csv; charset=UTF-8")
+    public ResponseEntity<byte[]> exportCsvAll(
             @RequestParam Integer year, @RequestParam Integer month) {
         String csv = attendanceService.exportCsvAll(year, month);
+        byte[] bom = new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
+        byte[] csvBytes = csv.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] result = new byte[bom.length + csvBytes.length];
+        System.arraycopy(bom, 0, result, 0, bom.length);
+        System.arraycopy(csvBytes, 0, result, bom.length, csvBytes.length);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=monthly_summary_" + year + "_" + month + ".csv")
-                .body(csv);
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"monthly_summary_" + year + "_" + month + ".csv\"")
+                .body(result);
     }
 
-    @GetMapping("/export")
-    public ResponseEntity<?> exportCsv(
+    @GetMapping(value = "/export", produces = "text/csv; charset=UTF-8")
+    public ResponseEntity<byte[]> exportCsv(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Long employeeId) {
         String csv = attendanceService.exportCsv(year, month, employeeId);
+        byte[] bom = new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
+        byte[] csvBytes = csv.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] result = new byte[bom.length + csvBytes.length];
+        System.arraycopy(bom, 0, result, 0, bom.length);
+        System.arraycopy(csvBytes, 0, result, bom.length, csvBytes.length);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=attendance.csv")
-                .body(csv);
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attendance.csv\"")
+                .body(result);
     }
 }

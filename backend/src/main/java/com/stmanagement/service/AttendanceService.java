@@ -67,10 +67,10 @@ public class AttendanceService {
         if (dto.getClockOut() != null && !dto.getClockOut().isEmpty())
             a.setClockOut(java.time.LocalTime.parse(dto.getClockOut()));
         else a.setClockOut(null);
-        // Auto-calc total hours from clock times
+        // Auto-calc total hours from clock times (subtract 1h lunch)
         if (a.getClockIn() != null && a.getClockOut() != null) {
-            long mins = java.time.Duration.between(a.getClockIn(), a.getClockOut()).toMinutes();
-            a.setTotalHours(Math.round(mins / 6.0) / 10.0);
+            long mins = java.time.Duration.between(a.getClockIn(), a.getClockOut()).toMinutes() - 60;
+            a.setTotalHours(Math.round(Math.max(0, mins) / 6.0) / 10.0);
         } else {
             a.setTotalHours(dto.getTotalHours());
         }
