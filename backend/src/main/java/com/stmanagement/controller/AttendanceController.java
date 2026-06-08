@@ -53,6 +53,14 @@ public class AttendanceController {
         return ResponseEntity.ok(ApiResponse.success(null, "勤務記録を削除しました"));
     }
 
+    @PostMapping("/generate")
+    public ResponseEntity<?> generate(
+            @RequestParam Integer year, @RequestParam Integer month,
+            @RequestParam Long employeeId) {
+        int count = attendanceService.generateMonth(year, month, employeeId);
+        return ResponseEntity.ok(ApiResponse.success(count, count + "件の勤務記録を生成しました"));
+    }
+
     @GetMapping("/export")
     public ResponseEntity<?> exportCsv(
             @RequestParam(required = false) Integer year,

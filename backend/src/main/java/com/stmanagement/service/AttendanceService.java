@@ -17,7 +17,6 @@ import javax.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -60,12 +59,48 @@ public class AttendanceService {
                 .orElseThrow(() -> new RuntimeException("勤務記録が見つかりません: " + id));
         a.setWorkDate(dto.getWorkDate()); a.setWorkHours(dto.getWorkHours());
         a.setOvertimeHours(dto.getOvertimeHours() != null ? dto.getOvertimeHours() : 0.0);
-        a.setClockIn(dto.getClockIn() != null && !dto.getClockIn().isEmpty() ? java.time.LocalTime.parse(dto.getClockIn()) : null);
-        a.setClockOut(dto.getClockOut() != null && !dto.getClockOut().isEmpty() ? java.time.LocalTime.parse(dto.getClockOut()) : null);
-        a.setTotalHours(dto.getTotalHours());
+        if (dto.getClockIn() != null && !dto.getClockIn().isEmpty())
+            a.setClockIn(java.time.LocalTime.parse(dto.getClockIn()));
+        else a.setClockIn(null);
+        if (dto.getClockOut() != null && !dto.getClockOut().isEmpty())
+            a.setClockOut(java.time.LocalTime.parse(dto.getClockOut()));
+        else a.setClockOut(null);
+        // Auto-calc total hours from clock times
+        if (a.getClockIn() != null && a.getClockOut() != null) {
+            long mins = java.time.Duration.between(a.getClockIn(), a.getClockOut()).toMinutes();
+            a.setTotalHours(Math.round(mins / 6.0) / 10.0);
+        } else {
+            a.setTotalHours(dto.getTotalHours());
+        }
         a.setWorkType(dto.getWorkType());
         a.setStatus(dto.getStatus()); a.setRemark(dto.getRemark());
         return toDTO(attendanceRepository.save(a));
+    }
+
+    @Transactional
+    public int generateMonth(Integer year, Integer month, Long employeeId) {
+        if (year == null || month == null) return 0;
+        int count = 0;
+        LocalDate start = LocalDate.of(year, month, 1);
+        LocalDate end = start.plusMonths(1).minusDays(1);
+        for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
+            // Skip weekends
+            if (d.getDayOfWeek().getValue() >= 6) continue;
+            // Check if record already exists
+            boolean exists = attendanceRepository
+                    .findAll((Specification<Attendance>) (root, q, cb) -> cb.and(
+                            cb.equal(root.get("employeeId"), employeeId),
+                            cb.equal(root.get("workDate"), d)))
+                    .size() > 0;
+            if (!exists) {
+                Attendance a = new Attendance();
+                a.setEmployeeId(employeeId); a.setWorkDate(d);
+                a.setWorkHours(8.0); a.setOvertimeHours(0.0);
+                a.setWorkType("NORMAL"); a.setStatus("出勤");
+                attendanceRepository.save(a); count++;
+            }
+        }
+        return count;
     }
 
     @Transactional
