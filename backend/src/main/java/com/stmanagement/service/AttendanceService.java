@@ -60,6 +60,9 @@ public class AttendanceService {
                 .orElseThrow(() -> new RuntimeException("勤務記録が見つかりません: " + id));
         a.setWorkDate(dto.getWorkDate()); a.setWorkHours(dto.getWorkHours());
         a.setOvertimeHours(dto.getOvertimeHours() != null ? dto.getOvertimeHours() : 0.0);
+        a.setClockIn(dto.getClockIn() != null && !dto.getClockIn().isEmpty() ? java.time.LocalTime.parse(dto.getClockIn()) : null);
+        a.setClockOut(dto.getClockOut() != null && !dto.getClockOut().isEmpty() ? java.time.LocalTime.parse(dto.getClockOut()) : null);
+        a.setTotalHours(dto.getTotalHours());
         a.setStatus(dto.getStatus()); a.setRemark(dto.getRemark());
         return toDTO(attendanceRepository.save(a));
     }
@@ -94,6 +97,9 @@ public class AttendanceService {
         String name = employeeRepository.findById(a.getEmployeeId()).map(Employee::getName).orElse("");
         return AttendanceDTO.builder().id(a.getId()).employeeId(a.getEmployeeId()).employeeName(name)
                 .workDate(a.getWorkDate()).workHours(a.getWorkHours()).overtimeHours(a.getOvertimeHours())
+                .clockIn(a.getClockIn() != null ? a.getClockIn().toString() : null)
+                .clockOut(a.getClockOut() != null ? a.getClockOut().toString() : null)
+                .totalHours(a.getTotalHours())
                 .status(a.getStatus()).remark(a.getRemark()).build();
     }
 

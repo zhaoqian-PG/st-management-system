@@ -171,6 +171,9 @@ CREATE TABLE IF NOT EXISTS attendance (
     work_date       DATE            NOT NULL,
     work_hours      DECIMAL(4,1)    NOT NULL DEFAULT 0,
     overtime_hours  DECIMAL(4,1)    NOT NULL DEFAULT 0,
+    clock_in        TIME,
+    clock_out       TIME,
+    total_hours     DECIMAL(4,1),
     status          VARCHAR(20)     NOT NULL DEFAULT '出勤',
     remark          VARCHAR(500),
     create_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -184,6 +187,9 @@ CREATE TABLE IF NOT EXISTS attendance (
 COMMENT ON TABLE attendance IS '勤務記録';
 COMMENT ON COLUMN attendance.work_hours IS '勤務時間（h）';
 COMMENT ON COLUMN attendance.overtime_hours IS '残業時間（h）';
+COMMENT ON COLUMN attendance.clock_in IS '出勤打刻時刻';
+COMMENT ON COLUMN attendance.clock_out IS '退勤打刻時刻';
+COMMENT ON COLUMN attendance.total_hours IS '総労働時間（h）';
 COMMENT ON COLUMN attendance.status IS 'ステータス：出勤 / 欠勤 / 休暇';
 
 CREATE INDEX IF NOT EXISTS idx_attendance_employee_id ON attendance(employee_id);

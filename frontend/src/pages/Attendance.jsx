@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, TimePicker } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CalendarOutlined, DownloadOutlined } from '@ant-design/icons';
 import { attendanceApi } from '../services/attendanceApi';
 import axios from 'axios';
@@ -35,11 +35,13 @@ export default function Attendance() {
   useEffect(() => { axios.get('/api/employee?size=100').then(r => setEmployees(r.data.data.content || [])).catch(() => {}); }, []);
 
   const handleCreate = () => { setEditingRecord(null); form.resetFields(); form.setFieldsValue({ workDate: dayjs(), workHours: 8.0, overtimeHours: 0.0, status: '出勤' }); setModalVisible(true); };
-  const handleEdit = (r) => { setEditingRecord(r); form.setFieldsValue({ ...r, workDate: dayjs(r.workDate) }); setModalVisible(true); };
+  const handleEdit = (r) => { setEditingRecord(r); form.setFieldsValue({ ...r, workDate: dayjs(r.workDate), clockIn: r.clockIn ? dayjs(r.clockIn, 'HH:mm') : null, clockOut: r.clockOut ? dayjs(r.clockOut, 'HH:mm') : null }); setModalVisible(true); };
 
   const handleSubmit = async () => {
     try { const v = await form.validateFields(); setFormLoading(true);
-      const payload = { ...v, workDate: v.workDate.format('YYYY-MM-DD') };
+      const payload = { ...v, workDate: v.workDate.format('YYYY-MM-DD'),
+        clockIn: v.clockIn ? v.clockIn.format('HH:mm') : null,
+        clockOut: v.clockOut ? v.clockOut.format('HH:mm') : null };
       if (editingRecord) { await attendanceApi.update(editingRecord.id, payload); message.success('更新しました'); }
       else { await attendanceApi.create(payload); message.success('登録しました'); }
       setModalVisible(false); fetchData();
@@ -52,7 +54,9 @@ export default function Attendance() {
 
   const columns = [
     { title: '日付', dataIndex: 'workDate', width: 120 }, { title: '社員名', dataIndex: 'employeeName', width: 120 },
-    { title: '勤務時間(h)', dataIndex: 'workHours', width: 110 }, { title: '残業時間(h)', dataIndex: 'overtimeHours', width: 110 },
+    { title: '勤務時間(h)', dataIndex: 'workHours', width: 90 }, { title: '残業時間(h)', dataIndex: 'overtimeHours', width: 90 },
+    { title: '出勤打刻', dataIndex: 'clockIn', width: 80 }, { title: '退勤打刻', dataIndex: 'clockOut', width: 80 },
+    { title: '総労働(h)', dataIndex: 'totalHours', width: 80 },
     { title: '状態', dataIndex: 'status', width: 80, render: t => {
       const m = { '出勤': ['green', '出勤'], '欠勤': ['red', '欠勤'], '休暇': ['blue', '休暇'] };
       return <Tag color={m[t]?.[0]}>{m[t]?.[1] || t}</Tag>;
@@ -87,7 +91,10 @@ export default function Attendance() {
         <Form.Item name="workDate" label="日付" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
           <Form.Item name="workHours" label="勤務時間(h)" rules={[{ required: true }]}><Input type="number" step={0.5} min={0} max={24} /></Form.Item>
-          <Form.Item name="overtimeHours" label="残業時間(h)"><Input type="number" step={0.5} min={0} max={12} /></Form.Item></div>
+          <Form.Item name="overtimeHours" label="残業時間(h)"><Input type="number" step={0.5} min={0} max={12} /></Form.Item>
+          <Form.Item name="clockIn" label="出勤打刻"><TimePicker format="HH:mm" style={{ width: '100%' }} /></Form.Item>
+          <Form.Item name="clockOut" label="退勤打刻"><TimePicker format="HH:mm" style={{ width: '100%' }} /></Form.Item></div>
+        <Form.Item name="totalHours" label="総労働時間(h)"><Input type="number" step={0.5} min={0} max={24} /></Form.Item>
         <Form.Item name="status" label="状態" rules={[{ required: true }]}>
           <Select><Option value="出勤">出勤</Option><Option value="欠勤">欠勤</Option><Option value="休暇">休暇</Option></Select></Form.Item>
         <Form.Item name="remark" label="備考"><Input.TextArea rows={2} maxLength={500} /></Form.Item>

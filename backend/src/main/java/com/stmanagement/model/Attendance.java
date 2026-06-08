@@ -33,6 +33,15 @@ public class Attendance {
     @Column(name = "overtime_hours", columnDefinition = "DECIMAL(4,1) DEFAULT 0", nullable = false)
     private Double overtimeHours;
 
+    @Column(name = "clock_in")
+    private java.time.LocalTime clockIn;
+
+    @Column(name = "clock_out")
+    private java.time.LocalTime clockOut;
+
+    @Column(name = "total_hours", columnDefinition = "DECIMAL(4,1)")
+    private Double totalHours;
+
     @Column(length = 20, nullable = false)
     private String status;
 

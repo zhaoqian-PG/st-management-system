@@ -19,6 +19,9 @@ public class AttendanceDTO {
     @NotNull private LocalDate workDate;
     @NotNull private Double workHours;
     private Double overtimeHours;
+    private String clockIn;
+    private String clockOut;
+    private Double totalHours;
     private String status;
     private String remark;
 }
