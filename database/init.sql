@@ -36,9 +36,6 @@ CREATE TABLE IF NOT EXISTS "user" (
     create_time TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_user_employee
-        FOREIGN KEY (employee_id) REFERENCES employee(id)
-        ON DELETE SET NULL,
     CONSTRAINT chk_user_role CHECK (role IN ('ADMIN', 'USER'))
 );
 
@@ -259,6 +256,10 @@ COMMENT ON COLUMN order_documents.file_path IS '保存パス';
 COMMENT ON COLUMN order_documents.file_size IS 'ファイルサイズ（byte）';
 
 CREATE INDEX IF NOT EXISTS idx_order_documents_invoice_id ON order_documents(invoice_id);
+
+-- user.employee_id 外部キー（employeeテーブル作成後に追加）
+ALTER TABLE "user" ADD CONSTRAINT fk_user_employee
+    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE SET NULL;
 
 -- ============================================================
 -- 初期データ
