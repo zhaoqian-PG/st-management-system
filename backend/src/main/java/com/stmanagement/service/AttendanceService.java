@@ -63,6 +63,7 @@ public class AttendanceService {
         a.setClockIn(dto.getClockIn() != null && !dto.getClockIn().isEmpty() ? java.time.LocalTime.parse(dto.getClockIn()) : null);
         a.setClockOut(dto.getClockOut() != null && !dto.getClockOut().isEmpty() ? java.time.LocalTime.parse(dto.getClockOut()) : null);
         a.setTotalHours(dto.getTotalHours());
+        a.setWorkType(dto.getWorkType());
         a.setStatus(dto.getStatus()); a.setRemark(dto.getRemark());
         return toDTO(attendanceRepository.save(a));
     }
@@ -100,12 +101,14 @@ public class AttendanceService {
                 .clockIn(a.getClockIn() != null ? a.getClockIn().toString() : null)
                 .clockOut(a.getClockOut() != null ? a.getClockOut().toString() : null)
                 .totalHours(a.getTotalHours())
+                .workType(a.getWorkType())
                 .status(a.getStatus()).remark(a.getRemark()).build();
     }
 
     private Attendance toEntity(AttendanceDTO dto) {
         return Attendance.builder().employeeId(dto.getEmployeeId()).workDate(dto.getWorkDate())
                 .workHours(dto.getWorkHours()).overtimeHours(dto.getOvertimeHours() != null ? dto.getOvertimeHours() : 0.0)
+                .workType(dto.getWorkType())
                 .status(dto.getStatus()).remark(dto.getRemark()).build();
     }
 }

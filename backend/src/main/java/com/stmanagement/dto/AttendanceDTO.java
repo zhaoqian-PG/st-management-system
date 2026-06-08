@@ -22,6 +22,7 @@ public class AttendanceDTO {
     private String clockIn;
     private String clockOut;
     private Double totalHours;
+    private String workType;
     private String status;
     private String remark;
 }

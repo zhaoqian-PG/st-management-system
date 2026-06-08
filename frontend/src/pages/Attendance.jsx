@@ -57,6 +57,10 @@ export default function Attendance() {
     { title: '勤務時間(h)', dataIndex: 'workHours', width: 90 }, { title: '残業時間(h)', dataIndex: 'overtimeHours', width: 90 },
     { title: '出勤打刻', dataIndex: 'clockIn', width: 80 }, { title: '退勤打刻', dataIndex: 'clockOut', width: 80 },
     { title: '総労働(h)', dataIndex: 'totalHours', width: 80 },
+    { title: '勤務区分', dataIndex: 'workType', width: 100, render: t => {
+      const m = { NORMAL: ['blue', '通常'], REMOTE: ['green', '在宅'], HOLIDAY_WORK: ['orange', '休日出勤'], LEAVE: ['default', '休暇'] };
+      return <Tag color={m[t]?.[0]}>{m[t]?.[1] || t}</Tag>;
+    }},
     { title: '状態', dataIndex: 'status', width: 80, render: t => {
       const m = { '出勤': ['green', '出勤'], '欠勤': ['red', '欠勤'], '休暇': ['blue', '休暇'] };
       return <Tag color={m[t]?.[0]}>{m[t]?.[1] || t}</Tag>;
@@ -95,6 +99,8 @@ export default function Attendance() {
           <Form.Item name="clockIn" label="出勤打刻"><TimePicker format="HH:mm" style={{ width: '100%' }} /></Form.Item>
           <Form.Item name="clockOut" label="退勤打刻"><TimePicker format="HH:mm" style={{ width: '100%' }} /></Form.Item></div>
         <Form.Item name="totalHours" label="総労働時間(h)"><Input type="number" step={0.5} min={0} max={24} /></Form.Item>
+        <Form.Item name="workType" label="勤務区分" rules={[{ required: true }]}>
+          <Select><Option value="NORMAL">通常</Option><Option value="REMOTE">在宅</Option><Option value="HOLIDAY_WORK">休日出勤</Option><Option value="LEAVE">休暇</Option></Select></Form.Item>
         <Form.Item name="status" label="状態" rules={[{ required: true }]}>
           <Select><Option value="出勤">出勤</Option><Option value="欠勤">欠勤</Option><Option value="休暇">休暇</Option></Select></Form.Item>
         <Form.Item name="remark" label="備考"><Input.TextArea rows={2} maxLength={500} /></Form.Item>

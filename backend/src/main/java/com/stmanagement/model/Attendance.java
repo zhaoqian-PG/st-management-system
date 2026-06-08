@@ -42,6 +42,9 @@ public class Attendance {
     @Column(name = "total_hours", columnDefinition = "DECIMAL(4,1)")
     private Double totalHours;
 
+    @Column(name = "work_type", length = 20, nullable = false)
+    private String workType;
+
     @Column(length = 20, nullable = false)
     private String status;
 

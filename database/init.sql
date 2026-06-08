@@ -174,6 +174,7 @@ CREATE TABLE IF NOT EXISTS attendance (
     clock_in        TIME,
     clock_out       TIME,
     total_hours     DECIMAL(4,1),
+    work_type       VARCHAR(20)     NOT NULL DEFAULT 'NORMAL',
     status          VARCHAR(20)     NOT NULL DEFAULT '出勤',
     remark          VARCHAR(500),
     create_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -181,7 +182,8 @@ CREATE TABLE IF NOT EXISTS attendance (
 
     CONSTRAINT fk_attendance_employee
         FOREIGN KEY (employee_id) REFERENCES employee(id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT chk_attendance_work_type CHECK (work_type IN ('NORMAL', 'REMOTE', 'HOLIDAY_WORK', 'LEAVE'))
 );
 
 COMMENT ON TABLE attendance IS '勤務記録';
@@ -190,7 +192,9 @@ COMMENT ON COLUMN attendance.overtime_hours IS '残業時間（h）';
 COMMENT ON COLUMN attendance.clock_in IS '出勤打刻時刻';
 COMMENT ON COLUMN attendance.clock_out IS '退勤打刻時刻';
 COMMENT ON COLUMN attendance.total_hours IS '総労働時間（h）';
+COMMENT ON COLUMN attendance.work_type IS '勤務区分: NORMAL(通常)/REMOTE(在宅)/HOLIDAY_WORK(休日出勤)/LEAVE(休暇)';
 COMMENT ON COLUMN attendance.status IS 'ステータス：出勤 / 欠勤 / 休暇';
+COMMENT ON COLUMN attendance.total_hours IS '総労働時間（h）';
 
 CREATE INDEX IF NOT EXISTS idx_attendance_employee_id ON attendance(employee_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_work_date    ON attendance(work_date);
