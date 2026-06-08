@@ -20,6 +20,8 @@ public class DataFixRunner implements CommandLineRunner {
         jdbcTemplate.update("UPDATE employee SET status = '在職' WHERE status IS NULL");
         jdbcTemplate.update("UPDATE employee SET status = '離職' WHERE leave_date IS NOT NULL AND status = '在職'");
         jdbcTemplate.update("UPDATE employee SET status = '在職' WHERE leave_date IS NULL AND status = '離職'");
+        // Reset admin password to plain text for dev login
+        jdbcTemplate.update("UPDATE \"user\" SET password = 'admin123' WHERE username = 'admin' AND length(password) > 20");
         // Sync employee.torihiki_no = bank_account.torihiki_no (group key)
         jdbcTemplate.update("UPDATE employee e SET torihiki_no = (" +
             "SELECT ba.torihiki_no FROM bank_account ba WHERE ba.employee_id = e.id AND ba.category = 'EMPLOYEE' FETCH FIRST 1 ROW ONLY" +
