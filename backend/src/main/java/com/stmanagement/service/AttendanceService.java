@@ -78,6 +78,36 @@ public class AttendanceService {
         return toDTO(attendanceRepository.save(a));
     }
 
+    public List<Map<String, Object>> getAllEmployeeMonthlySummary(Integer year, Integer month) {
+        LocalDate start = LocalDate.of(year, month, 1);
+        LocalDate end = start.plusMonths(1).minusDays(1);
+        List<Employee> allEmployees = employeeRepository.findAll();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Employee emp : allEmployees) {
+            // Skip resigned employees
+            if (emp.getLeaveDate() != null && !emp.getLeaveDate().isAfter(end)) continue;
+            List<Attendance> list = attendanceRepository
+                    .findByEmployeeIdAndWorkDateBetween(emp.getId(), start, end);
+            if (list.isEmpty()) continue;
+            double workTotal = list.stream().mapToDouble(a -> a.getWorkHours() != null ? a.getWorkHours() : 0).sum();
+            double overtimeTotal = list.stream().mapToDouble(a -> a.getOvertimeHours() != null ? a.getOvertimeHours() : 0).sum();
+            double totalH = list.stream().mapToDouble(a -> a.getTotalHours() != null ? a.getTotalHours() : 0).sum();
+            long workDays = list.stream().filter(a -> "出勤".equals(a.getStatus())).count();
+            Map<String, Object> row = new HashMap<>();
+            row.put("employeeId", emp.getId());
+            row.put("employeeCode", emp.getEmployeeCode());
+            row.put("employeeName", emp.getName());
+            row.put("department", emp.getDepartment());
+            row.put("workHours", Math.round(workTotal * 10.0) / 10.0);
+            row.put("overtimeHours", Math.round(overtimeTotal * 10.0) / 10.0);
+            row.put("totalHours", Math.round(totalH * 10.0) / 10.0);
+            row.put("workDays", workDays);
+            row.put("totalRecords", list.size());
+            result.add(row);
+        }
+        return result;
+    }
+
     public Map<String, Object> getMonthlySummary(Integer year, Integer month, Long employeeId) {
         LocalDate start = LocalDate.of(year, month, 1);
         LocalDate end = start.plusMonths(1).minusDays(1);

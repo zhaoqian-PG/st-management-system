@@ -52,6 +52,13 @@ public class AttendanceController {
         return ResponseEntity.ok(ApiResponse.success(null, "勤務記録を削除しました"));
     }
 
+    @GetMapping("/monthly-summary")
+    public ResponseEntity<?> monthlySummary(
+            @RequestParam Integer year, @RequestParam Integer month) {
+        return ResponseEntity.ok(ApiResponse.success(
+                attendanceService.getAllEmployeeMonthlySummary(year, month)));
+    }
+
     @GetMapping("/summary")
     public ResponseEntity<?> summary(
             @RequestParam Integer year, @RequestParam Integer month,

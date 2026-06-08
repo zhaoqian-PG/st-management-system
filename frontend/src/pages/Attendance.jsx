@@ -21,16 +21,18 @@ export default function Attendance() {
   const [employeeId, setEmployeeId] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [summary, setSummary] = useState({ workHours: 0, overtimeHours: 0, totalHours: 0, workDays: 0, totalRecords: 0 });
+  const [monthlySummary, setMonthlySummary] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [form] = Form.useForm();
   const role = localStorage.getItem('userRole') || 'USER';
 
   const fetchSummary = async () => {
     if (!employeeId) return;
-    try {
-      const r = await axios.get('/api/attendance/summary', { params: { year, month, employeeId } });
-      setSummary(r.data.data);
-    } catch {}
+    try { const r = await axios.get('/api/attendance/summary', { params: { year, month, employeeId } }); setSummary(r.data.data); } catch {}
+  };
+
+  const fetchMonthlySummary = async () => {
+    try { const r = await axios.get('/api/attendance/monthly-summary', { params: { year, month } }); setMonthlySummary(r.data.data || []); } catch {}
   };
 
   const fetchData = useCallback(async () => {
@@ -42,7 +44,7 @@ export default function Attendance() {
     finally { setLoading(false); }
   }, [page, year, month, employeeId]);
 
-  useEffect(() => { fetchData(); fetchSummary(); }, [fetchData]);
+  useEffect(() => { fetchData(); fetchSummary(); fetchMonthlySummary(); }, [fetchData]);
   useEffect(() => {
     axios.get('/api/employee?size=200').then(r => {
       const empList = r.data.data.content || [];
@@ -120,6 +122,20 @@ export default function Attendance() {
         <Col span={6}><Card size="small"><Statistic title="勤務日数" value={summary.workDays} suffix="日" /></Card></Col>
         <Col span={6}><Card size="small"><Statistic title="総件数" value={total} suffix="件" /></Card></Col>
       </Row>
+      {role === 'ADMIN' && (
+        <Card title="📊 社員別月次集計" size="small" style={{ marginBottom: 16 }}>
+          <Table columns={[
+            { title: '社員番号', dataIndex: 'employeeCode', width: 100 },
+            { title: '氏名', dataIndex: 'employeeName', width: 110 },
+            { title: '部署', dataIndex: 'department', width: 80 },
+            { title: '勤務時間(h)', dataIndex: 'workHours', width: 110 },
+            { title: '残業時間(h)', dataIndex: 'overtimeHours', width: 110 },
+            { title: '総労働(h)', dataIndex: 'totalHours', width: 100 },
+            { title: '勤務日数', dataIndex: 'workDays', width: 80 },
+            { title: '件数', dataIndex: 'totalRecords', width: 60 },
+          ]} dataSource={monthlySummary} rowKey="employeeId" size="small" pagination={false} />
+        </Card>
+      )}
       <Table columns={columns} dataSource={data} rowKey="id" loading={loading}
         pagination={{ current: page, pageSize: PAGE_SIZE, total, showSizeChanger: false, showTotal: t => `全 ${t} 件`, onChange: p => setPage(p) }} />
     </Card>
