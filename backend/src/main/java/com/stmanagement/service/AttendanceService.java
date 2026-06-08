@@ -257,7 +257,6 @@ public class AttendanceService {
             default: return type;
         }
     }
-    }
 
     private AttendanceDTO toDTO(Attendance a) {
         String name = employeeRepository.findById(a.getEmployeeId()).map(Employee::getName).orElse("");
