@@ -50,6 +50,12 @@ public class AttendanceService {
 
     @Transactional
     public AttendanceDTO create(AttendanceDTO dto) {
+        // Check duplicate: same employee + same date
+        List<Attendance> existing = attendanceRepository
+                .findByEmployeeIdAndWorkDateBetween(dto.getEmployeeId(), dto.getWorkDate(), dto.getWorkDate());
+        if (!existing.isEmpty()) {
+            throw new RuntimeException(dto.getWorkDate() + " の勤務記録は既に存在します");
+        }
         Attendance a = toEntity(dto);
         a = attendanceRepository.save(a);
         return toDTO(a);

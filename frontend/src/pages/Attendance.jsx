@@ -64,7 +64,7 @@ export default function Attendance() {
       if (employeeId) params.employeeId = employeeId;
       const res = await axios.post('/api/attendance/generate', null, { params });
       message.success(res.data.message);
-      fetchData(); fetchMonthlySummary();
+      fetchData(); fetchSummary(); fetchMonthlySummary();
     } catch { message.error('生成に失敗しました'); }
     finally { setGenerating(false); }
   };
@@ -96,7 +96,7 @@ export default function Attendance() {
       };
       if (editingRecord) { await attendanceApi.update(editingRecord.id, payload); message.success('更新しました'); }
       else { await attendanceApi.create(payload); message.success('登録しました'); }
-      setModalVisible(false); fetchData();
+      setModalVisible(false); fetchData(); fetchSummary(); fetchMonthlySummary();
     } catch (e) {
       if (e.response?.data?.error) message.error(e.response.data.error);
       else if (e.response?.data?.details) message.error(e.response.data.details.join(', '));
@@ -105,7 +105,7 @@ export default function Attendance() {
   };
 
   const handleDelete = (r) => Modal.confirm({ title: '削除', content: '削除しますか？', okText: '削除', cancelText: 'キャンセル', okType: 'danger', centered: true,
-    onOk: async () => { try { await attendanceApi.delete(r.id); fetchData(); } catch {} } });
+    onOk: async () => { try { await attendanceApi.delete(r.id); fetchData(); fetchSummary(); fetchMonthlySummary(); } catch {} } });
 
   const columns = [
     { title: '日付', dataIndex: 'workDate', width: 120 }, { title: '社員名', dataIndex: 'employeeName', width: 120 },
