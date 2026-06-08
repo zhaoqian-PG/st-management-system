@@ -16,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -75,6 +77,24 @@ public class AttendanceService {
         a.setWorkType(dto.getWorkType());
         a.setStatus(dto.getStatus()); a.setRemark(dto.getRemark());
         return toDTO(attendanceRepository.save(a));
+    }
+
+    public Map<String, Object> getMonthlySummary(Integer year, Integer month, Long employeeId) {
+        LocalDate start = LocalDate.of(year, month, 1);
+        LocalDate end = start.plusMonths(1).minusDays(1);
+        List<Attendance> list = attendanceRepository
+                .findByEmployeeIdAndWorkDateBetween(employeeId, start, end);
+        double workTotal = list.stream().mapToDouble(a -> a.getWorkHours() != null ? a.getWorkHours() : 0).sum();
+        double overtimeTotal = list.stream().mapToDouble(a -> a.getOvertimeHours() != null ? a.getOvertimeHours() : 0).sum();
+        double totalH = list.stream().mapToDouble(a -> a.getTotalHours() != null ? a.getTotalHours() : 0).sum();
+        long workDays = list.stream().filter(a -> "出勤".equals(a.getStatus())).count();
+        Map<String, Object> summary = new java.util.HashMap<>();
+        summary.put("workHours", Math.round(workTotal * 10.0) / 10.0);
+        summary.put("overtimeHours", Math.round(overtimeTotal * 10.0) / 10.0);
+        summary.put("totalHours", Math.round(totalH * 10.0) / 10.0);
+        summary.put("workDays", workDays);
+        summary.put("totalRecords", list.size());
+        return summary;
     }
 
     @Transactional

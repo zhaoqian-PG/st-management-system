@@ -25,8 +25,7 @@ public class AttendanceController {
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Long employeeId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        size = Math.min(size, 10);
+            @RequestParam(defaultValue = "31") int size) {
         Page<AttendanceDTO> r = attendanceService.findAll(year, month, employeeId, page, size);
         return ResponseEntity.ok(ApiResponse.success(r));
     }
@@ -51,6 +50,14 @@ public class AttendanceController {
     public ResponseEntity<?> delete(@PathVariable Long id) {
         attendanceService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(null, "勤務記録を削除しました"));
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<?> summary(
+            @RequestParam Integer year, @RequestParam Integer month,
+            @RequestParam Long employeeId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                attendanceService.getMonthlySummary(year, month, employeeId)));
     }
 
     @PostMapping("/generate")
