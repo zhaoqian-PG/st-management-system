@@ -32,7 +32,7 @@ export default function Attendance() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await attendanceApi.list({ page: page - 1, size: PAGE_SIZE, year, month, employeeId: employeeId || undefined });
+      const res = await attendanceApi.list({ page: page - 1, size: PAGE_SIZE, year, month, employeeId: employeeId != null ? employeeId : undefined });
       setData(res.data.data.content || []); setTotal(res.data.data.totalElements || 0);
     } catch { message.error('データの取得に失敗しました'); }
     finally { setLoading(false); }
@@ -46,7 +46,7 @@ export default function Attendance() {
       if (role === 'USER') {
         const empId = parseInt(localStorage.getItem('employeeId') || '0');
         if (empId) { setEmployeeId(empId); setEmployees(empList.filter(e => e.id === empId)); }
-        else setEmployees(empList);
+        else { setEmployeeId(-1); setEmployees([]); } // No linked employee → show empty
       } else setEmployees(empList);
     }).catch(() => {});
   }, [role]);
