@@ -151,8 +151,48 @@ public class AttendanceService {
     }
 
     @Transactional
+    public int generateMonthForAll(Integer year, Integer month) {
+        List<Employee> employees = employeeRepository.findAll();
+        int total = 0;
+        for (Employee emp : employees) {
+            if (emp.getLeaveDate() != null) continue; // Skip resigned
+            total += generateMonth(year, month, emp.getId());
+        }
+        return total;
+    }
+
+    @Transactional
     public void delete(Long id) {
         attendanceRepository.deleteById(id);
+    }
+
+    public String exportCsvAll(Integer year, Integer month) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("社員別月次勤務集計 ").append(year).append("年").append(month).append("月\n\n");
+        sb.append("社員番号,氏名,部署,勤務時間(h),残業時間(h),総労働(h),勤務日数,件数\n");
+        List<Employee> employees = employeeRepository.findAll();
+        double grandWork = 0, grandOvertime = 0, grandTotal = 0;
+        int grandDays = 0, grandRecords = 0;
+        for (Employee emp : employees) {
+            if (emp.getLeaveDate() != null) continue;
+            Map<String, Object> row = getMonthlySummary(year, month, emp.getId());
+            if ((long) row.get("totalRecords") == 0) continue;
+            sb.append(emp.getEmployeeCode()).append(",").append(emp.getName()).append(",");
+            sb.append(emp.getDepartment() != null ? emp.getDepartment() : "").append(",");
+            sb.append(row.get("workHours")).append(",").append(row.get("overtimeHours")).append(",");
+            sb.append(row.get("totalHours")).append(",").append(row.get("workDays")).append(",");
+            sb.append(row.get("totalRecords")).append("\n");
+            grandWork += (double) row.get("workHours");
+            grandOvertime += (double) row.get("overtimeHours");
+            grandTotal += (double) row.get("totalHours");
+            grandDays += (long) row.get("workDays");
+            grandRecords += (long) row.get("totalRecords");
+        }
+        sb.append("\n合計,,,").append(Math.round(grandWork * 10.0) / 10.0).append(",");
+        sb.append(Math.round(grandOvertime * 10.0) / 10.0).append(",");
+        sb.append(Math.round(grandTotal * 10.0) / 10.0).append(",");
+        sb.append(grandDays).append(",").append(grandRecords).append("\n");
+        return sb.toString();
     }
 
     public String exportCsv(Integer year, Integer month, Long employeeId) {

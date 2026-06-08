@@ -58,11 +58,13 @@ export default function Attendance() {
   }, [role]);
 
   const handleGenerate = async () => {
-    if (!employeeId) { message.warning('社員を選択してください'); return; }
     setGenerating(true);
     try {
-      const res = await axios.post(`/api/attendance/generate?year=${year}&month=${month}&employeeId=${employeeId}`);
-      message.success(res.data.message); fetchData();
+      const params = { year, month };
+      if (employeeId) params.employeeId = employeeId;
+      const res = await axios.post('/api/attendance/generate', null, { params });
+      message.success(res.data.message);
+      fetchData(); fetchMonthlySummary();
     } catch { message.error('生成に失敗しました'); }
     finally { setGenerating(false); }
   };
@@ -82,11 +84,23 @@ export default function Attendance() {
   const handleSubmit = async () => {
     try {
       const v = await form.validateFields(); setFormLoading(true);
-      const payload = { ...v, workDate: v.workDate.format('YYYY-MM-DD'), clockIn: v.clockIn ? v.clockIn.format('HH:mm') : null, clockOut: v.clockOut ? v.clockOut.format('HH:mm') : null };
+      const payload = {
+        ...v,
+        workDate: v.workDate.format('YYYY-MM-DD'),
+        clockIn: v.clockIn ? v.clockIn.format('HH:mm') : null,
+        clockOut: v.clockOut ? v.clockOut.format('HH:mm') : null,
+        employeeId: v.employeeId != null ? Number(v.employeeId) : null,
+        workHours: Number(v.workHours),
+        overtimeHours: v.overtimeHours != null ? Number(v.overtimeHours) : 0.0,
+        totalHours: v.totalHours != null ? Number(v.totalHours) : null,
+      };
       if (editingRecord) { await attendanceApi.update(editingRecord.id, payload); message.success('更新しました'); }
       else { await attendanceApi.create(payload); message.success('登録しました'); }
       setModalVisible(false); fetchData();
-    } catch (e) { if (e.response?.data?.error) message.error(e.response.data.error); }
+    } catch (e) {
+      if (e.response?.data?.error) message.error(e.response.data.error);
+      else if (e.response?.data?.details) message.error(e.response.data.details.join(', '));
+    }
     finally { setFormLoading(false); }
   };
 
@@ -113,7 +127,7 @@ export default function Attendance() {
         {role === 'ADMIN' && <Select placeholder="全社員" allowClear value={employeeId} onChange={setEmployeeId} style={{ width: 180 }} showSearch filterOption={(i,o)=>o.children.toLowerCase().includes(i.toLowerCase())}>{employees.map(e => <Option key={e.id} value={e.id}>{e.name} ({e.employeeCode})</Option>)}</Select>}
         <Button icon={<ThunderboltOutlined />} onClick={handleGenerate} loading={generating} disabled={!employeeId}>勤務自動生成</Button>
         <span style={{ flex: 1 }} />
-        <Button icon={<DownloadOutlined />} onClick={() => window.open(`/api/attendance/export?year=${year}&month=${month}${employeeId ? '&employeeId='+employeeId : ''}`)}>CSV出力</Button>
+        <Button icon={<DownloadOutlined />} onClick={() => window.open(employeeId ? `/api/attendance/export?year=${year}&month=${month}&employeeId=${employeeId}` : `/api/attendance/export-all?year=${year}&month=${month}`)}>CSV出力</Button>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>新規登録</Button>
       </div>
       <Row gutter={16} style={{ marginBottom: 16 }}>

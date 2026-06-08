@@ -70,9 +70,24 @@ public class AttendanceController {
     @PostMapping("/generate")
     public ResponseEntity<?> generate(
             @RequestParam Integer year, @RequestParam Integer month,
-            @RequestParam Long employeeId) {
-        int count = attendanceService.generateMonth(year, month, employeeId);
+            @RequestParam(required = false) Long employeeId) {
+        int count;
+        if (employeeId != null) {
+            count = attendanceService.generateMonth(year, month, employeeId);
+        } else {
+            count = attendanceService.generateMonthForAll(year, month);
+        }
         return ResponseEntity.ok(ApiResponse.success(count, count + "件の勤務記録を生成しました"));
+    }
+
+    @GetMapping("/export-all")
+    public ResponseEntity<?> exportCsvAll(
+            @RequestParam Integer year, @RequestParam Integer month) {
+        String csv = attendanceService.exportCsvAll(year, month);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=monthly_summary_" + year + "_" + month + ".csv")
+                .body(csv);
     }
 
     @GetMapping("/export")
