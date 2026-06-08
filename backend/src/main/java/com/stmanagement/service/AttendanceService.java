@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -136,13 +135,24 @@ public class AttendanceService {
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         });
-        StringBuilder sb = new StringBuilder("日付,社員名,勤務時間(h),残業時間(h),ステータス,備考\n");
+        double totalWork = 0, totalOvertime = 0, totalHours = 0;
+        StringBuilder sb = new StringBuilder("日付,社員名,勤務時間(h),残業時間(h),出勤打刻,退勤打刻,総労働(h),勤務区分,ステータス,備考\n");
         for (Attendance a : list) {
             String name = employeeRepository.findById(a.getEmployeeId()).map(Employee::getName).orElse("");
             sb.append(a.getWorkDate()).append(",").append(name).append(",");
             sb.append(a.getWorkHours()).append(",").append(a.getOvertimeHours()).append(",");
+            sb.append(a.getClockIn() != null ? a.getClockIn() : "").append(",");
+            sb.append(a.getClockOut() != null ? a.getClockOut() : "").append(",");
+            sb.append(a.getTotalHours() != null ? a.getTotalHours() : "").append(",");
+            sb.append(a.getWorkType()).append(",");
             sb.append(a.getStatus()).append(",\"").append(a.getRemark() != null ? a.getRemark() : "").append("\"\n");
+            totalWork += a.getWorkHours() != null ? a.getWorkHours() : 0;
+            totalOvertime += a.getOvertimeHours() != null ? a.getOvertimeHours() : 0;
+            totalHours += a.getTotalHours() != null ? a.getTotalHours() : 0;
         }
+        // Add summary row
+        sb.append("\n月度合計,,,,");
+        sb.append(String.format("%.1f,%.1f,,%.1f,,,\n", totalWork, totalOvertime, totalHours));
         return sb.toString();
     }
 
@@ -160,6 +170,9 @@ public class AttendanceService {
     private Attendance toEntity(AttendanceDTO dto) {
         return Attendance.builder().employeeId(dto.getEmployeeId()).workDate(dto.getWorkDate())
                 .workHours(dto.getWorkHours()).overtimeHours(dto.getOvertimeHours() != null ? dto.getOvertimeHours() : 0.0)
+                .clockIn(dto.getClockIn() != null && !dto.getClockIn().isEmpty() ? java.time.LocalTime.parse(dto.getClockIn()) : null)
+                .clockOut(dto.getClockOut() != null && !dto.getClockOut().isEmpty() ? java.time.LocalTime.parse(dto.getClockOut()) : null)
+                .totalHours(dto.getTotalHours())
                 .workType(dto.getWorkType())
                 .status(dto.getStatus()).remark(dto.getRemark()).build();
     }
