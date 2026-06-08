@@ -18,7 +18,7 @@ export default function Login({ onLogin }) {
       message.success('ログインしました');
       onLogin(role);
     } catch (err) {
-      setError(err.response?.data?.error || 'ログインに失敗しました');
+      setError(err.response?.data?.error || 'サーバーに接続できません');
     } finally { setLoading(false); }
   };
 
