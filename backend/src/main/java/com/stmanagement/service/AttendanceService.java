@@ -213,25 +213,50 @@ public class AttendanceService {
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         });
-        double totalWork = 0, totalOvertime = 0, totalHours = 0;
-        StringBuilder sb = new StringBuilder("日付,社員名,勤務時間(h),残業時間(h),出勤打刻,退勤打刻,総労働(h),勤務区分,ステータス,備考\n");
+        String name = !list.isEmpty() ? employeeRepository.findById(list.get(0).getEmployeeId()).map(Employee::getName).orElse("") : "";
+        String dept = !list.isEmpty() ? employeeRepository.findById(list.get(0).getEmployeeId()).map(e -> e.getDepartment() != null ? e.getDepartment() : "").orElse("") : "";
+        String code = !list.isEmpty() ? employeeRepository.findById(list.get(0).getEmployeeId()).map(Employee::getEmployeeCode).orElse("") : "";
+        String[] weekdays = {"日", "月", "火", "水", "木", "金", "土"};
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("勤務帳票\n");
+        sb.append(year).append("年").append(month).append("月\n");
+        sb.append("社員番号,").append(code).append(",氏名,").append(name).append(",部署,").append(dept).append("\n\n");
+        sb.append("日付,曜日,出勤打刻,退勤打刻,休憩(h),所定勤務(h),残業(h),深夜(h),実働(h),勤務区分,状態,備考\n");
+
+        double totalWork = 0, totalOvertime = 0, totalActual = 0;
         for (Attendance a : list) {
-            String name = employeeRepository.findById(a.getEmployeeId()).map(Employee::getName).orElse("");
-            sb.append(a.getWorkDate()).append(",").append(name).append(",");
-            sb.append(a.getWorkHours()).append(",").append(a.getOvertimeHours()).append(",");
+            String wd = weekdays[a.getWorkDate().getDayOfWeek().getValue() % 7];
+            double workH = a.getWorkHours() != null ? a.getWorkHours() : 0;
+            double overtimeH = a.getOvertimeHours() != null ? a.getOvertimeHours() : 0;
+            double actualH = a.getTotalHours() != null ? a.getTotalHours() : workH;
+            double breakH = (a.getClockIn() != null && a.getClockOut() != null) ? 1.0 : 0.0;
+
+            sb.append(a.getWorkDate()).append(",").append(wd).append(",");
             sb.append(a.getClockIn() != null ? a.getClockIn() : "").append(",");
             sb.append(a.getClockOut() != null ? a.getClockOut() : "").append(",");
-            sb.append(a.getTotalHours() != null ? a.getTotalHours() : "").append(",");
-            sb.append(a.getWorkType()).append(",");
+            sb.append(breakH).append(",").append(workH).append(",").append(overtimeH).append(",");
+            sb.append("0,").append(actualH).append(",");
+            sb.append(getWorkTypeLabel(a.getWorkType())).append(",");
             sb.append(a.getStatus()).append(",\"").append(a.getRemark() != null ? a.getRemark() : "").append("\"\n");
-            totalWork += a.getWorkHours() != null ? a.getWorkHours() : 0;
-            totalOvertime += a.getOvertimeHours() != null ? a.getOvertimeHours() : 0;
-            totalHours += a.getTotalHours() != null ? a.getTotalHours() : 0;
+            totalWork += workH; totalOvertime += overtimeH; totalActual += actualH;
         }
-        // Add summary row
-        sb.append("\n月度合計,,,,");
-        sb.append(String.format("%.1f,%.1f,,%.1f,,,\n", totalWork, totalOvertime, totalHours));
+        sb.append("\n月度合計,,,,,").append(Math.round(totalWork * 10.0) / 10.0).append(",");
+        sb.append(Math.round(totalOvertime * 10.0) / 10.0).append(",,");
+        sb.append(Math.round(totalActual * 10.0) / 10.0).append(",,,\n");
         return sb.toString();
+    }
+
+    private String getWorkTypeLabel(String type) {
+        if (type == null) return "";
+        switch (type) {
+            case "NORMAL": return "通常";
+            case "REMOTE": return "在宅";
+            case "HOLIDAY_WORK": return "休日出勤";
+            case "LEAVE": return "休暇";
+            default: return type;
+        }
+    }
     }
 
     private AttendanceDTO toDTO(Attendance a) {
