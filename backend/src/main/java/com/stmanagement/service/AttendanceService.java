@@ -79,22 +79,19 @@ public class AttendanceService {
 
     @Transactional
     public int generateMonth(Integer year, Integer month, Long employeeId) {
-        if (year == null || month == null) return 0;
-        int count = 0;
+        if (year == null || month == null || employeeId == null) return 0;
         LocalDate start = LocalDate.of(year, month, 1);
         LocalDate end = start.plusMonths(1).minusDays(1);
+        // Get existing records for this employee in this month
+        List<Attendance> existing = attendanceRepository
+                .findByEmployeeIdAndWorkDateBetween(employeeId, start, end);
+        int count = 0;
         for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
-            // Skip weekends
-            if (d.getDayOfWeek().getValue() >= 6) continue;
-            // Check if record already exists
-            boolean exists = attendanceRepository
-                    .findAll((Specification<Attendance>) (root, q, cb) -> cb.and(
-                            cb.equal(root.get("employeeId"), employeeId),
-                            cb.equal(root.get("workDate"), d)))
-                    .size() > 0;
-            if (!exists) {
+            if (d.getDayOfWeek().getValue() >= 6) continue; // Skip weekends
+            final LocalDate date = d;
+            if (existing.stream().noneMatch(a -> a.getWorkDate().equals(date))) {
                 Attendance a = new Attendance();
-                a.setEmployeeId(employeeId); a.setWorkDate(d);
+                a.setEmployeeId(employeeId); a.setWorkDate(date);
                 a.setWorkHours(8.0); a.setOvertimeHours(0.0);
                 a.setWorkType("NORMAL"); a.setStatus("出勤");
                 attendanceRepository.save(a); count++;
