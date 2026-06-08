@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Spin } from 'antd';
 import axios from 'axios';
 import Layout from './components/Layout';
@@ -8,6 +8,7 @@ import Employee from './pages/Employee';
 import Customer from './pages/Customer';
 import BankAccount from './pages/BankAccount';
 import Attendance from './pages/Attendance';
+import Login from './pages/Login';
 import './App.css';
 
 const API_BASE = '/api';
@@ -15,18 +16,22 @@ const API_BASE = '/api';
 function App() {
   const [health, setHealth] = useState(null);
   const [error, setError] = useState(null);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     axios.get(`${API_BASE}/health`).then(res => setHealth(res.data)).catch(err => setError(err.message));
-    // Set default role if not logged in
-    if (!localStorage.getItem('userRole')) {
-      localStorage.setItem('userRole', 'ADMIN');
-      localStorage.setItem('username', 'admin');
-    }
+    if (localStorage.getItem('userRole')) setLoggedIn(true);
   }, []);
+
+  const handleLogin = () => {
+    setLoggedIn(true);
+    navigate('/');
+  };
 
   if (!health && !error) return <div className="app-loading"><Spin size="large" tip="システム起動中..." /></div>;
   if (error) return <div className="app-error"><h1>バックエンド接続エラー</h1><p>{error}</p></div>;
+  if (!loggedIn) return <Login onLogin={handleLogin} />;
 
   return (
     <Routes>
