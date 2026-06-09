@@ -8,6 +8,7 @@ import Employee from './pages/Employee';
 import Customer from './pages/Customer';
 import BankAccount from './pages/BankAccount';
 import Attendance from './pages/Attendance';
+import Invoice from './pages/Invoice';
 import Login from './pages/Login';
 import './App.css';
 
@@ -40,7 +41,7 @@ function App() {
         <Route path="/employee" element={<Employee />} />
         <Route path="/customer" element={<Customer />} />
         <Route path="/attendance" element={<Attendance />} />
-        <Route path="/invoice" element={<PlaceholderPage name="請求書・注文書管理" />} />
+        <Route path="/invoice" element={<Invoice />} />
         <Route path="/bank-accounts" element={<BankAccount />} />
       </Route>
     </Routes>

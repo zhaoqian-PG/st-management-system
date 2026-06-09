@@ -1,0 +1,134 @@
+package com.stmanagement.service;
+
+import com.stmanagement.dto.InvoiceDTO;
+import com.stmanagement.dto.OrderDocumentDTO;
+import com.stmanagement.model.Customer;
+import com.stmanagement.model.Invoice;
+import com.stmanagement.model.OrderDocument;
+import com.stmanagement.repository.CustomerRepository;
+import com.stmanagement.repository.InvoiceRepository;
+import com.stmanagement.repository.OrderDocumentRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.persistence.criteria.Predicate;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class InvoiceService {
+
+    private final InvoiceRepository invoiceRepository;
+    private final OrderDocumentRepository orderDocumentRepository;
+    private final CustomerRepository customerRepository;
+    private final Path uploadDir = Paths.get("uploads");
+
+    public Page<InvoiceDTO> findAll(Integer year, Integer month, Long customerId, int page, int size) {
+        Specification<Invoice> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (year != null) predicates.add(cb.equal(root.get("year"), year));
+            if (month != null) predicates.add(cb.equal(root.get("month"), month));
+            if (customerId != null) predicates.add(cb.equal(root.get("customerId"), customerId));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        return invoiceRepository.findAll(spec, PageRequest.of(page, size, Sort.by("invoiceNumber").descending()))
+                .map(this::toDTO);
+    }
+
+    public InvoiceDTO findById(Long id) {
+        Invoice inv = invoiceRepository.findById(id).orElseThrow(() -> new RuntimeException("請求書が見つかりません: " + id));
+        InvoiceDTO dto = toDTO(inv);
+        dto.setDocuments(orderDocumentRepository.findByInvoiceId(id).stream().map(this::toDocDTO).collect(Collectors.toList()));
+        return dto;
+    }
+
+    @Transactional
+    public InvoiceDTO create(InvoiceDTO dto) {
+        if (invoiceRepository.existsByInvoiceNumber(dto.getInvoiceNumber()))
+            throw new RuntimeException("請求書番号 " + dto.getInvoiceNumber() + " は既に存在します");
+        Invoice inv = toEntity(dto);
+        inv.setStatus("下書き");
+        return toDTO(invoiceRepository.save(inv));
+    }
+
+    @Transactional
+    public InvoiceDTO update(Long id, InvoiceDTO dto) {
+        Invoice inv = invoiceRepository.findById(id).orElseThrow(() -> new RuntimeException("請求書が見つかりません: " + id));
+        if (!inv.getInvoiceNumber().equals(dto.getInvoiceNumber()) && invoiceRepository.existsByInvoiceNumber(dto.getInvoiceNumber()))
+            throw new RuntimeException("請求書番号 " + dto.getInvoiceNumber() + " は既に存在します");
+        inv.setInvoiceNumber(dto.getInvoiceNumber()); inv.setCustomerId(dto.getCustomerId());
+        inv.setYear(dto.getYear()); inv.setMonth(dto.getMonth());
+        inv.setAmount(dto.getAmount()); inv.setStatus(dto.getStatus()); inv.setRemark(dto.getRemark());
+        return toDTO(invoiceRepository.save(inv));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        if (!invoiceRepository.existsById(id)) throw new RuntimeException("請求書が見つかりません: " + id);
+        orderDocumentRepository.deleteByInvoiceId(id);
+        invoiceRepository.deleteById(id);
+    }
+
+    @Transactional
+    public OrderDocumentDTO uploadDocument(Long invoiceId, MultipartFile file) throws IOException {
+        if (!invoiceRepository.existsById(invoiceId)) throw new RuntimeException("請求書が見つかりません: " + invoiceId);
+        Files.createDirectories(uploadDir);
+        String name = "inv_" + invoiceId + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        Path target = uploadDir.resolve(name);
+        Files.copy(file.getInputStream(), target);
+        OrderDocument doc = OrderDocument.builder().invoiceId(invoiceId).fileName(file.getOriginalFilename())
+                .filePath(target.toString()).fileSize(file.getSize()).build();
+        return toDocDTO(orderDocumentRepository.save(doc));
+    }
+
+    @Transactional
+    public void deleteDocument(Long docId) {
+        OrderDocument doc = orderDocumentRepository.findById(docId).orElseThrow(() -> new RuntimeException("ファイルが見つかりません"));
+        try { Files.deleteIfExists(Paths.get(doc.getFilePath())); } catch (IOException ignored) {}
+        orderDocumentRepository.delete(doc);
+    }
+
+    private InvoiceDTO toDTO(Invoice inv) {
+        String name = customerRepository.findById(inv.getCustomerId()).map(Customer::getCompanyName).orElse("");
+        return InvoiceDTO.builder().id(inv.getId()).invoiceNumber(inv.getInvoiceNumber())
+                .customerId(inv.getCustomerId()).customerName(name)
+                .year(inv.getYear()).month(inv.getMonth()).amount(inv.getAmount())
+                .status(inv.getStatus()).remark(inv.getRemark()).build();
+    }
+
+    private Invoice toEntity(InvoiceDTO dto) {
+        return Invoice.builder().invoiceNumber(dto.getInvoiceNumber()).customerId(dto.getCustomerId())
+                .year(dto.getYear()).month(dto.getMonth()).amount(dto.getAmount())
+                .remark(dto.getRemark()).build();
+    }
+
+    public Resource getDocumentFile(Long docId) {
+        OrderDocument doc = orderDocumentRepository.findById(docId).orElseThrow(() -> new RuntimeException("ファイルが見つかりません"));
+        Resource r = new FileSystemResource(Paths.get(doc.getFilePath()));
+        if (!r.exists()) throw new RuntimeException("ファイルが存在しません");
+        return r;
+    }
+
+    public String getDocumentFileName(Long docId) {
+        return orderDocumentRepository.findById(docId).map(OrderDocument::getFileName).orElse("download");
+    }
+
+    private OrderDocumentDTO toDocDTO(OrderDocument doc) {
+        return OrderDocumentDTO.builder().id(doc.getId()).invoiceId(doc.getInvoiceId())
+                .fileName(doc.getFileName()).filePath(doc.getFilePath()).fileSize(doc.getFileSize()).build();
+    }
+}
