@@ -44,21 +44,25 @@ export default function Invoice() {
 
   const handleSelect = async (record) => {
     setSelectedInvoice(record);
-    try { const r = await invoiceApi.getById(record.id); setDocuments(r.data.data.documents || []); setInvoiceDetails(r.data.data.details || []); } catch { setDocuments([]); setInvoiceDetails([]); }
-    // Fetch related attendance summary for this customer/month
     try {
-      const details = r.data.data.details || [];
-      const detailNames = details.filter(d => d.employeeName).map(d => d.employeeName);
+      const res = await invoiceApi.getById(record.id);
+      const docs = res.data.data.documents || [];
+      const dtls = res.data.data.details || [];
+      setDocuments(docs);
+      setInvoiceDetails(dtls);
+
+      // Fetch attendance for employees in invoice details
+      const detailNames = dtls.filter(d => d.employeeName).map(d => d.employeeName);
       if (detailNames.length > 0) {
-        // Fetch all monthly summaries, then filter by detail employee names
         const mr = await axios.get('/api/attendance/monthly-summary', { params: { year: record.year, month: record.month } });
         const allSummaries = mr.data.data || [];
         const filtered = allSummaries.filter(s => detailNames.includes(s.employeeName));
         setAttendanceSummary(filtered.length > 0 ? filtered : null);
       } else setAttendanceSummary(null);
-    } catch { setAttendanceSummary(null); }
-    // Fetch customer bank accounts
-    try { const r = await axios.get(`/api/bank-accounts/customer/${record.customerId}`); setCustomerBanks(r.data.data || []); } catch { setCustomerBanks([]); }
+
+      // Fetch customer bank accounts
+      try { const br = await axios.get(`/api/bank-accounts/customer/${record.customerId}`); setCustomerBanks(br.data.data || []); } catch { setCustomerBanks([]); }
+    } catch { setDocuments([]); setInvoiceDetails([]); setAttendanceSummary(null); setCustomerBanks([]); }
   };
 
   const handleCreate = () => { setEditingRecord(null); setDetails([]); setCustomerBanks([]); form.resetFields(); form.setFieldsValue({ year, month, taxRate: 10 }); setModalVisible(true); };
