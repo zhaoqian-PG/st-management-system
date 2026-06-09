@@ -48,14 +48,13 @@ export default function Invoice() {
     // Fetch related attendance summary for this customer/month
     try {
       const details = r.data.data.details || [];
-      const detailEmps = details.filter(d => d.employeeId).map(d => ({ id: d.employeeId, name: d.employeeName }));
-      if (detailEmps.length > 0) {
-        const seen = new Set(); const summaries = [];
-        for (const emp of detailEmps) {
-          if (seen.has(emp.id)) continue; seen.add(emp.id);
-          try { const sr = await axios.get('/api/attendance/summary', { params: { year: record.year, month: record.month, employeeId: emp.id } }); if (sr.data.data) summaries.push({ ...sr.data.data, employeeName: emp.name, employeeId: emp.id }); } catch {}
-        }
-        setAttendanceSummary(summaries);
+      const detailNames = details.filter(d => d.employeeName).map(d => d.employeeName);
+      if (detailNames.length > 0) {
+        // Fetch all monthly summaries, then filter by detail employee names
+        const mr = await axios.get('/api/attendance/monthly-summary', { params: { year: record.year, month: record.month } });
+        const allSummaries = mr.data.data || [];
+        const filtered = allSummaries.filter(s => detailNames.includes(s.employeeName));
+        setAttendanceSummary(filtered.length > 0 ? filtered : null);
       } else setAttendanceSummary(null);
     } catch { setAttendanceSummary(null); }
     // Fetch customer bank accounts
