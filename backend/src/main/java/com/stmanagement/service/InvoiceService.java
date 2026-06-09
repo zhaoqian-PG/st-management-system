@@ -8,6 +8,7 @@ import com.stmanagement.model.Employee;
 import com.stmanagement.model.Invoice;
 import com.stmanagement.model.InvoiceDetail;
 import com.stmanagement.model.OrderDocument;
+import com.stmanagement.repository.BankAccountRepository;
 import com.stmanagement.repository.CustomerRepository;
 import com.stmanagement.repository.EmployeeRepository;
 import com.stmanagement.repository.InvoiceDetailRepository;
@@ -42,6 +43,7 @@ public class InvoiceService {
     private final OrderDocumentRepository orderDocumentRepository;
     private final CustomerRepository customerRepository;
     private final EmployeeRepository employeeRepository;
+    private final BankAccountRepository bankAccountRepository;
     private final Path uploadDir = Paths.get("uploads");
 
     public Page<InvoiceDTO> findAll(Integer year, Integer month, Long customerId, int page, int size) {
@@ -151,30 +153,65 @@ public class InvoiceService {
 
     public String exportInvoiceCsv(Long invoiceId) {
         Invoice inv = invoiceRepository.findById(invoiceId).orElseThrow(() -> new RuntimeException("請求書が見つかりません"));
-        String customerName = customerRepository.findById(inv.getCustomerId()).map(Customer::getCompanyName).orElse("");
+        Customer cust = customerRepository.findById(inv.getCustomerId()).orElse(null);
+        String customerName = cust != null ? cust.getCompanyName() : "";
+        String customerAddr = cust != null && cust.getAddress() != null ? cust.getAddress() : "";
+        String customerTel = cust != null && cust.getPhone() != null ? cust.getPhone() : "";
+        String contactName = cust != null && cust.getContactName() != null ? cust.getContactName() : "";
+
+        // Get primary bank account for this customer
+        String bankInfo = "";
+        List<com.stmanagement.model.BankAccount> bankAccounts = bankAccountRepository.findByCustomerId(inv.getCustomerId());
+        var defaultBank = bankAccounts.stream().filter(b -> b.getIsDefault() != null && b.getIsDefault()).findFirst()
+                .orElse(bankAccounts.isEmpty() ? null : bankAccounts.get(0));
+        if (defaultBank != null) {
+            bankInfo = defaultBank.getBankName() + " " + defaultBank.getBranchCode() + "支店 "
+                    + defaultBank.getAccountType() + " " + defaultBank.getAccountNumber() + " "
+                    + defaultBank.getAccountHolder();
+        }
+
         List<InvoiceDetail> details = detailRepository.findByInvoiceId(invoiceId);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("請求書\n");
-        sb.append("請求書番号,").append(inv.getInvoiceNumber()).append("\n");
-        sb.append("請求先,").append(customerName).append("\n");
-        sb.append("件名,").append(inv.getSubject() != null ? inv.getSubject() : "").append("\n");
-        sb.append("請求日,").append(inv.getInvoiceDate() != null ? inv.getInvoiceDate() : "").append("\n");
-        sb.append("支払期限,").append(inv.getDueDate() != null ? inv.getDueDate() : "").append("\n");
-        sb.append("請求年月,").append(inv.getYear()).append("年").append(inv.getMonth()).append("月\n\n");
+        sb.append("　　　　　　　請　求　書\n\n");
+        sb.append(inv.getYear()).append("年").append(inv.getMonth()).append("月").append("分\n\n");
+        if (inv.getInvoiceDate() != null) sb.append("請求日: ").append(inv.getInvoiceDate()).append("\n");
+        if (inv.getDueDate() != null) sb.append("支払期限: ").append(inv.getDueDate()).append("\n\n");
 
-        sb.append("担当者,項目,数量,単価,金額,残業\n");
+        sb.append("【請求先】\n");
+        sb.append(customerName).append("\n");
+        if (!customerAddr.isEmpty()) sb.append(customerAddr).append("\n");
+        if (!contactName.isEmpty()) sb.append("担当: ").append(contactName).append("\n");
+        if (!customerTel.isEmpty()) sb.append("TEL: ").append(customerTel).append("\n\n");
+
+        sb.append("請求書番号: ").append(inv.getInvoiceNumber()).append("\n");
+        if (inv.getSubject() != null && !inv.getSubject().isEmpty())
+            sb.append("件名: ").append(inv.getSubject()).append("\n\n");
+
+        sb.append("【明細】\n");
+        sb.append("担当者,項目,数量,単価,金額,備考\n");
         double sub = 0;
         for (InvoiceDetail d : details) {
             String name = d.getEmployeeName() != null ? d.getEmployeeName() : "";
             sb.append(name).append(",").append(d.getDescription() != null ? d.getDescription() : "").append(",");
             sb.append(d.getQuantity()).append(",").append(d.getUnitPrice()).append(",");
-            sb.append(d.getAmount()).append(",").append(d.getIsOvertime() ? "○" : "").append("\n");
+            sb.append(d.getAmount()).append(",").append(d.getIsOvertime() ? "残業" : "").append("\n");
             sub += d.getAmount() != null ? d.getAmount() : 0;
         }
-        sb.append("\n小計,,").append(sub).append("\n");
-        sb.append("消費税(").append(inv.getTaxRate() != null ? inv.getTaxRate() : 10).append("%),,").append(inv.getTaxAmount() != null ? inv.getTaxAmount() : 0).append("\n");
-        sb.append("税込合計,,").append(inv.getTotalWithTax() != null ? inv.getTotalWithTax() : 0).append("\n");
+
+        sb.append("\n小計,,").append(String.format("%.0f", sub)).append("\n");
+        double rate = inv.getTaxRate() != null ? inv.getTaxRate() : 10;
+        double tax = inv.getTaxAmount() != null ? inv.getTaxAmount() : Math.round(sub * rate) / 100.0;
+        double total = inv.getTotalWithTax() != null ? inv.getTotalWithTax() : sub + tax;
+        sb.append("消費税(").append(String.format("%.0f", rate)).append("%),,").append(String.format("%.0f", tax)).append("\n");
+        sb.append("税込合計,,").append(String.format("%.0f", total)).append("\n\n");
+
+        if (!bankInfo.isEmpty()) {
+            sb.append("【振込先口座】\n");
+            sb.append(bankInfo).append("\n");
+        }
+
+        sb.append("\n備考: ").append(inv.getRemark() != null ? inv.getRemark() : "");
         return sb.toString();
     }
 
