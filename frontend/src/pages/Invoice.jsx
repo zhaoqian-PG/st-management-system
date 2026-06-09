@@ -160,9 +160,9 @@ export default function Invoice() {
             <p style={{ fontSize: 16 }}>税込合計: <strong style={{ color: '#cf1322' }}>¥{selectedInvoice.totalWithTax?.toLocaleString()}</strong></p>
           </Card>
         </div>
-        {customerBanks.length > 0 && (
+        {customerBanks.filter(b => b.isDefault).length > 0 && (
           <Card size="small" title="🏦 振込先口座（データベース参照）" style={{ marginBottom: 12 }}>
-            {customerBanks.map((b, i) => (
+            {customerBanks.filter(b => b.isDefault).map((b, i) => (
               <p key={b.id} style={{ marginBottom: 4 }}>
                 {i + 1}. <strong>{b.bankName}</strong> {b.branchCode}支店
                 　{b.accountType} {b.accountNumber}　{b.accountHolder}
@@ -171,7 +171,7 @@ export default function Invoice() {
             ))}
           </Card>
         )}
-        {customerBanks.length === 0 && selectedInvoice.customerId && <p style={{ color: 'rgba(0,0,0,0.25)', marginBottom: 12 }}>🏦 振込先口座情報は登録されていません</p>}
+        {customerBanks.filter(b => b.isDefault).length === 0 && selectedInvoice.customerId && <p style={{ color: 'rgba(0,0,0,0.25)', marginBottom: 12 }}>🏦 振込先口座情報は登録されていません</p>}
         <Upload showUploadList={false} beforeUpload={(f) => { handleUpload(f, selectedInvoice.id); return false; }}>
           <Button icon={<UploadOutlined />} style={{ marginBottom: 12 }}>＋ 注文書アップロード</Button>
         </Upload>
@@ -223,9 +223,9 @@ export default function Invoice() {
         </div>
         {editingRecord && <Form.Item name="status" label="状態"><Select><Option value="下書き">下書き</Option><Option value="送付済">送付済</Option><Option value="入金済">入金済</Option></Select></Form.Item>}
         <div style={{ borderTop: '2px solid #f0f0f0', paddingTop: 8, marginTop: 8 }}>
-          {customerBanks.length > 0 ? (
+          {customerBanks.filter(b => b.isDefault).length > 0 ? (
             <Card size="small" title="🏦 振込先口座（参照のみ）" style={{ marginBottom: 8 }}>
-              {customerBanks.map((b, i) => (
+              {customerBanks.filter(b => b.isDefault).map((b, i) => (
                 <p key={b.id} style={{ marginBottom: 2, fontSize: 12 }}>
                   {i + 1}. <strong>{b.bankName}</strong> {b.branchCode}支店　{b.accountType} {b.accountNumber}　{b.accountHolder}
                   {b.isDefault && <Tag color="gold" style={{ marginLeft: 4 }}>主</Tag>}
