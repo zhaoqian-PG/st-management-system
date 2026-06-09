@@ -50,7 +50,7 @@ export default function Invoice() {
     try { const r = await axios.get(`/api/bank-accounts/customer/${record.customerId}`); setCustomerBanks(r.data.data || []); } catch { setCustomerBanks([]); }
   };
 
-  const handleCreate = () => { setEditingRecord(null); setDetails([]); form.resetFields(); form.setFieldsValue({ year, month, taxRate: 10 }); setModalVisible(true); };
+  const handleCreate = () => { setEditingRecord(null); setDetails([]); setCustomerBanks([]); form.resetFields(); form.setFieldsValue({ year, month, taxRate: 10 }); setModalVisible(true); };
   const handleEdit = async (r) => { setEditingRecord(r); form.setFieldsValue({ ...r, invoiceDate: r.invoiceDate ? dayjs(r.invoiceDate) : null, dueDate: r.dueDate ? dayjs(r.dueDate) : null }); try { const res = await invoiceApi.getById(r.id); setDetails(res.data.data.details || []); } catch { setDetails([]); } setModalVisible(true); };
 
   const handleSubmit = async () => {
@@ -187,7 +187,8 @@ export default function Invoice() {
         <Form.Item name="subject" label="件名">
           <Input placeholder="例: システム開発費用" maxLength={500} /></Form.Item>
         <Form.Item name="customerId" label="請求先" rules={[{ required: true }]}>
-          <Select placeholder="選択" showSearch filterOption={(i,o)=>o.children.toLowerCase().includes(i.toLowerCase())}>
+          <Select placeholder="選択" showSearch filterOption={(i,o)=>o.children.toLowerCase().includes(i.toLowerCase())}
+            onChange={async (val) => { try { const r = await axios.get(`/api/bank-accounts/customer/${val}`); setCustomerBanks(r.data.data || []); } catch { setCustomerBanks([]); } }}>
             {customers.map(c => <Option key={c.id} value={c.id}>{c.companyName} ({c.customerCode})</Option>)}</Select></Form.Item>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
           <Form.Item name="year" label="年度" rules={[{ required: true }]}>
@@ -221,6 +222,17 @@ export default function Invoice() {
           <div style={{ textAlign: 'right', marginBottom: 8 }}>小計: <strong>{details.reduce((s,d) => s + (d.amount||0), 0).toLocaleString()}</strong> 円</div>
         </div>
         {editingRecord && <Form.Item name="status" label="状態"><Select><Option value="下書き">下書き</Option><Option value="送付済">送付済</Option><Option value="入金済">入金済</Option></Select></Form.Item>}
+        <div style={{ borderTop: '2px solid #f0f0f0', paddingTop: 8, marginTop: 8 }}>
+          {customerBanks.length > 0 ? (
+            <Card size="small" title="🏦 振込先口座（参照のみ）" style={{ marginBottom: 8 }}>
+              {customerBanks.map((b, i) => (
+                <p key={b.id} style={{ marginBottom: 2, fontSize: 12 }}>
+                  {i + 1}. <strong>{b.bankName}</strong> {b.branchCode}支店　{b.accountType} {b.accountNumber}　{b.accountHolder}
+                  {b.isDefault && <Tag color="gold" style={{ marginLeft: 4 }}>主</Tag>}
+                </p>))}
+            </Card>
+          ) : <p style={{ fontSize: 12, color: 'rgba(0,0,0,0.25)', marginBottom: 8 }}>🏦 振込先口座情報は登録されていません（顧客選択後に表示）</p>}
+        </div>
         <Form.Item name="remark" label="備考"><Input.TextArea rows={2} /></Form.Item>
       </Form>
     </Modal>
