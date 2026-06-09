@@ -29,5 +29,6 @@ public class InvoiceDTO {
     private String subject;
     private String status;
     private String remark;
+    private List<InvoiceDetailDTO> details;
     private List<OrderDocumentDTO> documents;
 }

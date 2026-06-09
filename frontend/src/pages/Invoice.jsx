@@ -20,9 +20,11 @@ export default function Invoice() {
   const [month, setMonth] = useState(null);
   const [customerId, setCustomerId] = useState(null);
   const [customers, setCustomers] = useState([]);
+  const [details, setDetails] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [attendanceSummary, setAttendanceSummary] = useState(null);
+  const [employees, setEmployees] = useState([]);
   const [form] = Form.useForm();
 
   const fetchData = useCallback(async () => {
@@ -36,6 +38,7 @@ export default function Invoice() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { axios.get('/api/customer?size=200').then(r => setCustomers(r.data.data.content || [])).catch(() => {}); }, []);
+  useEffect(() => { axios.get('/api/employee?size=200').then(r => setEmployees(r.data.data.content || [])).catch(() => {}); }, []);
 
   const handleSelect = async (record) => {
     setSelectedInvoice(record);
@@ -44,12 +47,17 @@ export default function Invoice() {
     try { const r = await axios.get('/api/attendance/summary', { params: { year: record.year, month: record.month, employeeId: record.customerId } }); setAttendanceSummary(r.data.data); } catch { setAttendanceSummary(null); }
   };
 
-  const handleCreate = () => { setEditingRecord(null); form.resetFields(); form.setFieldsValue({ year, month }); setModalVisible(true); };
-  const handleEdit = (r) => { setEditingRecord(r); form.setFieldsValue({ ...r, invoiceDate: r.invoiceDate ? dayjs(r.invoiceDate) : null, dueDate: r.dueDate ? dayjs(r.dueDate) : null }); setModalVisible(true); };
+  const handleCreate = () => { setEditingRecord(null); setDetails([]); form.resetFields(); form.setFieldsValue({ year, month, taxRate: 10 }); setModalVisible(true); };
+  const handleEdit = async (r) => { setEditingRecord(r); form.setFieldsValue({ ...r, invoiceDate: r.invoiceDate ? dayjs(r.invoiceDate) : null, dueDate: r.dueDate ? dayjs(r.dueDate) : null }); try { const res = await invoiceApi.getById(r.id); setDetails(res.data.data.details || []); } catch { setDetails([]); } setModalVisible(true); };
 
   const handleSubmit = async () => {
     try { const v = await form.validateFields(); setFormLoading(true);
-      const payload = { ...v, invoiceDate: v.invoiceDate ? v.invoiceDate.format('YYYY-MM-DD') : null, dueDate: v.dueDate ? v.dueDate.format('YYYY-MM-DD') : null };
+      const payload = { ...v, invoiceDate: v.invoiceDate ? v.invoiceDate.format('YYYY-MM-DD') : null, dueDate: v.dueDate ? v.dueDate.format('YYYY-MM-DD') : null, details };
+      // Auto-calc amount from details
+      const sub = details.reduce((s, d) => s + (d.quantity||0)*(d.unitPrice||0), 0);
+      payload.amount = sub;
+      const rate = v.taxRate != null ? Number(v.taxRate) : 10;
+      payload.taxRate = rate; payload.taxAmount = Math.round(sub * rate) / 100; payload.totalWithTax = sub + Math.round(sub * rate) / 100;
       if (editingRecord) { await invoiceApi.update(editingRecord.id, payload); message.success('更新しました'); }
       else { await invoiceApi.create(payload); message.success('登録しました'); }
       setModalVisible(false); fetchData();
@@ -66,6 +74,10 @@ export default function Invoice() {
     catch { message.error('失敗'); }
     return false;
   };
+
+  const addDetail = () => setDetails([...details, { description: '', quantity: 1, unitPrice: 0, amount: 0, isOvertime: false }]);
+  const updateDetail = (i, field, value) => { const d = [...details]; d[i][field] = value; if (field === 'quantity' || field === 'unitPrice') d[i].amount = (d[i].quantity||0)*(d[i].unitPrice||0); setDetails(d); };
+  const removeDetail = (i) => setDetails(details.filter((_, j) => j !== i));
 
   const handleDeleteDoc = (docId) => Modal.confirm({ title: '削除', content: 'このファイルを削除しますか？', okText: '削除', cancelText: 'キャンセル', centered: true,
     onOk: async () => { try { await invoiceApi.deleteDocument(docId); setDocuments(documents.filter(d => d.id !== docId)); } catch {} } });
@@ -143,6 +155,21 @@ export default function Invoice() {
             <Input type="number" min={0} /></Form.Item>
           <Form.Item name="taxRate" label="消費税率(%)"><Input type="number" min={0} max={100} placeholder="10" /></Form.Item>
           <Form.Item label="税込合計"><Input value={(() => { const a = Number(form.getFieldValue('amount')) || 0; const r = Number(form.getFieldValue('taxRate')) || 10; const t = Math.round(a * r) / 100; return (a + t).toLocaleString(); })()} disabled /></Form.Item></div>
+        <div style={{ borderTop: '2px solid #1890ff', paddingTop: 12, marginTop: 8 }}>
+          <h4 style={{ color: '#1890ff', marginBottom: 8 }}>● 請求明細</h4>
+          <Button type="dashed" onClick={addDetail} style={{ marginBottom: 8 }}>＋ 明細行追加</Button>
+          {details.length > 0 && <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 8 }}><thead><tr style={{ background: '#fafafa' }}>
+            <th style={{ padding: 4 }}>社員</th><th style={{ padding: 4 }}>項目</th><th style={{ padding: 4, width: 60 }}>数量</th><th style={{ padding: 4, width: 90 }}>単価</th><th style={{ padding: 4, width: 40 }}>残業</th><th style={{ padding: 4, width: 90 }}>金額</th><th style={{ padding: 4, width: 50 }}></th></tr></thead><tbody>
+            {details.map((d, i) => <tr key={i}>
+              <td style={{ padding: 2 }}><Select value={d.employeeId} onChange={v => updateDetail(i, 'employeeId', v)} style={{ width: '100%' }} size="small" placeholder="-" allowClear>{employees.map(e => <Option key={e.id} value={e.id}>{e.name}</Option>)}</Select></td>
+              <td style={{ padding: 2 }}><Input value={d.description} onChange={e => updateDetail(i, 'description', e.target.value)} size="small" placeholder="例: 基本設計" /></td>
+              <td style={{ padding: 2 }}><Input value={d.quantity} onChange={e => updateDetail(i, 'quantity', Number(e.target.value))} size="small" type="number" /></td>
+              <td style={{ padding: 2 }}><Input value={d.unitPrice} onChange={e => updateDetail(i, 'unitPrice', Number(e.target.value))} size="small" type="number" placeholder="時給" /></td>
+              <td style={{ padding: 2, textAlign: 'center' }}><input type="checkbox" checked={d.isOvertime} onChange={e => updateDetail(i, 'isOvertime', e.target.checked)} /></td>
+              <td style={{ padding: 2, textAlign: 'right' }}>{(d.amount||0).toLocaleString()}</td>
+              <td style={{ padding: 2 }}><Button type="link" danger size="small" onClick={() => removeDetail(i)}>✕</Button></td></tr>)}</tbody></table>}
+          <div style={{ textAlign: 'right', marginBottom: 8 }}>小計: <strong>{details.reduce((s,d) => s + (d.amount||0), 0).toLocaleString()}</strong> 円</div>
+        </div>
         {editingRecord && <Form.Item name="status" label="状態"><Select><Option value="下書き">下書き</Option><Option value="送付済">送付済</Option><Option value="入金済">入金済</Option></Select></Form.Item>}
         <Form.Item name="remark" label="備考"><Input.TextArea rows={2} /></Form.Item>
       </Form>

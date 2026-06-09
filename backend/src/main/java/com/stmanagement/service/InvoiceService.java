@@ -1,11 +1,16 @@
 package com.stmanagement.service;
 
 import com.stmanagement.dto.InvoiceDTO;
+import com.stmanagement.dto.InvoiceDetailDTO;
 import com.stmanagement.dto.OrderDocumentDTO;
 import com.stmanagement.model.Customer;
+import com.stmanagement.model.Employee;
 import com.stmanagement.model.Invoice;
+import com.stmanagement.model.InvoiceDetail;
 import com.stmanagement.model.OrderDocument;
 import com.stmanagement.repository.CustomerRepository;
+import com.stmanagement.repository.EmployeeRepository;
+import com.stmanagement.repository.InvoiceDetailRepository;
 import com.stmanagement.repository.InvoiceRepository;
 import com.stmanagement.repository.OrderDocumentRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,8 +38,10 @@ import java.util.stream.Collectors;
 public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
+    private final InvoiceDetailRepository detailRepository;
     private final OrderDocumentRepository orderDocumentRepository;
     private final CustomerRepository customerRepository;
+    private final EmployeeRepository employeeRepository;
     private final Path uploadDir = Paths.get("uploads");
 
     public Page<InvoiceDTO> findAll(Integer year, Integer month, Long customerId, int page, int size) {
@@ -52,6 +59,7 @@ public class InvoiceService {
     public InvoiceDTO findById(Long id) {
         Invoice inv = invoiceRepository.findById(id).orElseThrow(() -> new RuntimeException("請求書が見つかりません: " + id));
         InvoiceDTO dto = toDTO(inv);
+        dto.setDetails(detailRepository.findByInvoiceId(id).stream().map(this::toDetailDTO).collect(Collectors.toList()));
         dto.setDocuments(orderDocumentRepository.findByInvoiceId(id).stream().map(this::toDocDTO).collect(Collectors.toList()));
         return dto;
     }
@@ -62,7 +70,9 @@ public class InvoiceService {
             throw new RuntimeException("請求書番号 " + dto.getInvoiceNumber() + " は既に存在します");
         Invoice inv = toEntity(dto);
         inv.setStatus("下書き");
-        return toDTO(invoiceRepository.save(inv));
+        inv = invoiceRepository.save(inv);
+        saveDetails(inv.getId(), dto.getDetails());
+        return toDTO(inv);
     }
 
     @Transactional
@@ -80,7 +90,9 @@ public class InvoiceService {
         inv.setTotalWithTax(dto.getAmount() + tax);
         inv.setSubject(dto.getSubject());
         inv.setStatus(dto.getStatus()); inv.setRemark(dto.getRemark());
-        return toDTO(invoiceRepository.save(inv));
+        inv = invoiceRepository.save(inv);
+        if (dto.getDetails() != null) { detailRepository.deleteByInvoiceId(id); saveDetails(id, dto.getDetails()); }
+        return toDTO(inv);
     }
 
     @Transactional
@@ -139,6 +151,23 @@ public class InvoiceService {
 
     public String getDocumentFileName(Long docId) {
         return orderDocumentRepository.findById(docId).map(OrderDocument::getFileName).orElse("download");
+    }
+
+    private void saveDetails(Long invoiceId, List<InvoiceDetailDTO> details) {
+        if (details == null) return;
+        for (InvoiceDetailDTO d : details) {
+            double amount = (d.getQuantity() != null ? d.getQuantity() : 0) * (d.getUnitPrice() != null ? d.getUnitPrice() : 0);
+            detailRepository.save(InvoiceDetail.builder().invoiceId(invoiceId).employeeId(d.getEmployeeId())
+                    .description(d.getDescription()).quantity(d.getQuantity()).unitPrice(d.getUnitPrice())
+                    .amount(amount).isOvertime(d.getIsOvertime() != null ? d.getIsOvertime() : false).build());
+        }
+    }
+
+    private InvoiceDetailDTO toDetailDTO(InvoiceDetail d) {
+        String name = d.getEmployeeId() != null ? employeeRepository.findById(d.getEmployeeId()).map(Employee::getName).orElse("") : "";
+        return InvoiceDetailDTO.builder().id(d.getId()).invoiceId(d.getInvoiceId()).employeeId(d.getEmployeeId())
+                .employeeName(name).description(d.getDescription()).quantity(d.getQuantity())
+                .unitPrice(d.getUnitPrice()).amount(d.getAmount()).isOvertime(d.getIsOvertime()).build();
     }
 
     private OrderDocumentDTO toDocDTO(OrderDocument doc) {
