@@ -159,9 +159,9 @@ export default function Invoice() {
           <h4 style={{ color: '#1890ff', marginBottom: 8 }}>● 請求明細</h4>
           <Button type="dashed" onClick={addDetail} style={{ marginBottom: 8 }}>＋ 明細行追加</Button>
           {details.length > 0 && <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 8 }}><thead><tr style={{ background: '#fafafa' }}>
-            <th style={{ padding: 4 }}>社員</th><th style={{ padding: 4 }}>項目</th><th style={{ padding: 4, width: 60 }}>数量</th><th style={{ padding: 4, width: 90 }}>単価</th><th style={{ padding: 4, width: 40 }}>残業</th><th style={{ padding: 4, width: 90 }}>金額</th><th style={{ padding: 4, width: 50 }}></th></tr></thead><tbody>
+            <th style={{ padding: 4 }}>担当者</th><th style={{ padding: 4 }}>項目</th><th style={{ padding: 4, width: 60 }}>数量</th><th style={{ padding: 4, width: 90 }}>単価</th><th style={{ padding: 4, width: 40 }}>残業</th><th style={{ padding: 4, width: 90 }}>金額</th><th style={{ padding: 4, width: 50 }}></th></tr></thead><tbody>
             {details.map((d, i) => <tr key={i}>
-              <td style={{ padding: 2 }}><Select value={d.employeeId} onChange={v => updateDetail(i, 'employeeId', v)} style={{ width: '100%' }} size="small" placeholder="-" allowClear>{employees.map(e => <Option key={e.id} value={e.id}>{e.name}</Option>)}</Select></td>
+              <td style={{ padding: 2 }}><Input value={d.employeeName} onChange={e => updateDetail(i, 'employeeName', e.target.value)} size="small" placeholder="例: 山田 太郎（BP）" /></td>
               <td style={{ padding: 2 }}><Input value={d.description} onChange={e => updateDetail(i, 'description', e.target.value)} size="small" placeholder="例: 基本設計" /></td>
               <td style={{ padding: 2 }}><Input value={d.quantity} onChange={e => updateDetail(i, 'quantity', Number(e.target.value))} size="small" type="number" /></td>
               <td style={{ padding: 2 }}><Input value={d.unitPrice} onChange={e => updateDetail(i, 'unitPrice', Number(e.target.value))} size="small" type="number" placeholder="時給" /></td>

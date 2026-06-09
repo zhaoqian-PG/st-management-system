@@ -158,13 +158,14 @@ public class InvoiceService {
         for (InvoiceDetailDTO d : details) {
             double amount = (d.getQuantity() != null ? d.getQuantity() : 0) * (d.getUnitPrice() != null ? d.getUnitPrice() : 0);
             detailRepository.save(InvoiceDetail.builder().invoiceId(invoiceId).employeeId(d.getEmployeeId())
-                    .description(d.getDescription()).quantity(d.getQuantity()).unitPrice(d.getUnitPrice())
+                    .employeeName(d.getEmployeeName()).description(d.getDescription())
+                    .quantity(d.getQuantity()).unitPrice(d.getUnitPrice())
                     .amount(amount).isOvertime(d.getIsOvertime() != null ? d.getIsOvertime() : false).build());
         }
     }
 
     private InvoiceDetailDTO toDetailDTO(InvoiceDetail d) {
-        String name = d.getEmployeeId() != null ? employeeRepository.findById(d.getEmployeeId()).map(Employee::getName).orElse("") : "";
+        String name = d.getEmployeeName() != null ? d.getEmployeeName() : (d.getEmployeeId() != null ? employeeRepository.findById(d.getEmployeeId()).map(Employee::getName).orElse("") : "");
         return InvoiceDetailDTO.builder().id(d.getId()).invoiceId(d.getInvoiceId()).employeeId(d.getEmployeeId())
                 .employeeName(name).description(d.getDescription()).quantity(d.getQuantity())
                 .unitPrice(d.getUnitPrice()).amount(d.getAmount()).isOvertime(d.getIsOvertime()).build();

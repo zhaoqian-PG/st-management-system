@@ -245,6 +245,7 @@ CREATE TABLE IF NOT EXISTS invoice_detail (
     id          BIGSERIAL       PRIMARY KEY,
     invoice_id  BIGINT          NOT NULL,
     employee_id BIGINT,
+    employee_name VARCHAR(100),
     description VARCHAR(500),
     quantity    DECIMAL(8,2)    NOT NULL DEFAULT 1,
     unit_price  DECIMAL(12,2)   NOT NULL DEFAULT 0,

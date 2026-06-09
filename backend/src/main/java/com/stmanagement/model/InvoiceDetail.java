@@ -26,6 +26,9 @@ public class InvoiceDetail {
     @Column(name = "employee_id")
     private Long employeeId;
 
+    @Column(name = "employee_name", length = 100)
+    private String employeeName;
+
     @Column(length = 500)
     private String description;
 
