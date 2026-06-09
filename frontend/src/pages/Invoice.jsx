@@ -23,6 +23,7 @@ export default function Invoice() {
   const [details, setDetails] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [invoiceDetails, setInvoiceDetails] = useState([]);
   const [attendanceSummary, setAttendanceSummary] = useState(null);
   const [customerBanks, setCustomerBanks] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -43,7 +44,7 @@ export default function Invoice() {
 
   const handleSelect = async (record) => {
     setSelectedInvoice(record);
-    try { const r = await invoiceApi.getById(record.id); setDocuments(r.data.data.documents || []); } catch { setDocuments([]); }
+    try { const r = await invoiceApi.getById(record.id); setDocuments(r.data.data.documents || []); setInvoiceDetails(r.data.data.details || []); } catch { setDocuments([]); setInvoiceDetails([]); }
     // Fetch related attendance summary for this customer/month
     try { const r = await axios.get('/api/attendance/summary', { params: { year: record.year, month: record.month, employeeId: record.customerId } }); setAttendanceSummary(r.data.data); } catch { setAttendanceSummary(null); }
     // Fetch customer bank accounts
@@ -172,6 +173,19 @@ export default function Invoice() {
           </Card>
         )}
         {customerBanks.filter(b => b.isDefault).length === 0 && selectedInvoice.customerId && <p style={{ color: 'rgba(0,0,0,0.25)', marginBottom: 12 }}>🏦 振込先口座情報は登録されていません</p>}
+        {invoiceDetails.length > 0 && (
+          <Card size="small" title="👥 請求明細（担当者別）" style={{ marginBottom: 12 }}>
+            <Table dataSource={invoiceDetails} rowKey="id" size="small" pagination={false}
+              columns={[
+                { title: '担当者', dataIndex: 'employeeName', width: 130, render: (t, r) => t || (r.employeeId ? `#${r.employeeId}` : '-') },
+                { title: '項目', dataIndex: 'description', ellipsis: true },
+                { title: '数量', dataIndex: 'quantity', width: 80 },
+                { title: '単価', dataIndex: 'unitPrice', width: 90, render: v => v?.toLocaleString() },
+                { title: '金額', dataIndex: 'amount', width: 100, render: v => v?.toLocaleString() },
+                { title: '残業', dataIndex: 'isOvertime', width: 60, render: v => v ? <Tag color="orange">残業</Tag> : null },
+              ]} />
+          </Card>
+        )}
         <Upload showUploadList={false} beforeUpload={(f) => { handleUpload(f, selectedInvoice.id); return false; }}>
           <Button icon={<UploadOutlined />} style={{ marginBottom: 12 }}>＋ 注文書アップロード</Button>
         </Upload>
