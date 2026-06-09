@@ -75,7 +75,25 @@ export default function Invoice() {
     return false;
   };
 
-  const addDetail = () => setDetails([...details, { description: '', quantity: 1, unitPrice: 0, amount: 0, isOvertime: false }]);
+  const addDetail = () => setDetails([...details, { employeeName: '', description: '', quantity: 1, unitPrice: 0, amount: 0, isOvertime: false }]);
+
+  const importFromAttendance = async () => {
+    if (!form.getFieldValue('year') || !form.getFieldValue('month')) { message.warning('年月を選択してください'); return; }
+    try {
+      const r = await axios.get('/api/attendance/monthly-summary', { params: { year: form.getFieldValue('year'), month: form.getFieldValue('month') } });
+      const rows = (r.data.data || []).map(e => ({
+        employeeName: e.employeeName, employeeId: e.employeeId,
+        description: `${e.employeeName} 勤務分`, quantity: e.workHours, unitPrice: 0,
+        amount: 0, isOvertime: false,
+      }));
+      const overtimeRows = (r.data.data || []).filter(e => e.overtimeHours > 0).map(e => ({
+        employeeName: e.employeeName, employeeId: e.employeeId,
+        description: `${e.employeeName} 残業分`, quantity: e.overtimeHours, unitPrice: 0,
+        amount: 0, isOvertime: true,
+      }));
+      setDetails([...details, ...rows, ...overtimeRows]); message.success('勤務データを取込しました');
+    } catch { message.error('取込に失敗しました'); }
+  };
   const updateDetail = (i, field, value) => { const d = [...details]; d[i][field] = value; if (field === 'quantity' || field === 'unitPrice') d[i].amount = (d[i].quantity||0)*(d[i].unitPrice||0); setDetails(d); };
   const removeDetail = (i) => setDetails(details.filter((_, j) => j !== i));
 
@@ -124,7 +142,21 @@ export default function Invoice() {
       <Card title={`📎 請求書詳細: ${selectedInvoice.invoiceNumber}`} style={{ marginTop: 16 }}>
         {selectedInvoice.subject && <p style={{ marginBottom: 8 }}><strong>件名:</strong> {selectedInvoice.subject}</p>}
         {selectedInvoice.customerName && <p style={{ marginBottom: 8 }}><strong>請求先:</strong> {selectedInvoice.customerName}</p>}
-        {attendanceSummary && <p style={{ marginBottom: 12, color: '#1890ff' }}>📅 関連勤務実績: 総勤務 {attendanceSummary.workHours}h / 残業 {attendanceSummary.overtimeHours}h / 勤務日数 {attendanceSummary.workDays}日</p>}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+          <Card size="small" style={{ flex: 1 }} title="📅 関連勤務実績">
+            {attendanceSummary ? <div>
+              <p>総勤務時間: <strong>{attendanceSummary.workHours}h</strong></p>
+              <p>総残業時間: <strong>{attendanceSummary.overtimeHours}h</strong></p>
+              <p>勤務日数: <strong>{attendanceSummary.workDays}日</strong></p>
+              <p>総労働時間: <strong>{attendanceSummary.totalHours}h</strong></p>
+            </div> : <span style={{ color: 'rgba(0,0,0,0.25)' }}>勤務データなし</span>}
+          </Card>
+          <Card size="small" style={{ flex: 2 }} title="💰 請求金額">
+            <p>税抜金額: <strong>¥{selectedInvoice.amount?.toLocaleString()}</strong></p>
+            <p>消費税({selectedInvoice.taxRate || 10}%): <strong>¥{selectedInvoice.taxAmount?.toLocaleString()}</strong></p>
+            <p style={{ fontSize: 16 }}>税込合計: <strong style={{ color: '#cf1322' }}>¥{selectedInvoice.totalWithTax?.toLocaleString()}</strong></p>
+          </Card>
+        </div>
         <Upload showUploadList={false} beforeUpload={(f) => { handleUpload(f, selectedInvoice.id); return false; }}>
           <Button icon={<UploadOutlined />} style={{ marginBottom: 12 }}>＋ 注文書アップロード</Button>
         </Upload>
@@ -157,7 +189,10 @@ export default function Invoice() {
           <Form.Item label="税込合計"><Input value={(() => { const a = Number(form.getFieldValue('amount')) || 0; const r = Number(form.getFieldValue('taxRate')) || 10; const t = Math.round(a * r) / 100; return (a + t).toLocaleString(); })()} disabled /></Form.Item></div>
         <div style={{ borderTop: '2px solid #1890ff', paddingTop: 12, marginTop: 8 }}>
           <h4 style={{ color: '#1890ff', marginBottom: 8 }}>● 請求明細</h4>
-          <Button type="dashed" onClick={addDetail} style={{ marginBottom: 8 }}>＋ 明細行追加</Button>
+          <Space style={{ marginBottom: 8 }}>
+            <Button type="dashed" onClick={addDetail}>＋ 明細行追加</Button>
+            <Button onClick={importFromAttendance}>📅 勤務データ取込</Button>
+          </Space>
           {details.length > 0 && <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 8 }}><thead><tr style={{ background: '#fafafa' }}>
             <th style={{ padding: 4 }}>担当者</th><th style={{ padding: 4 }}>項目</th><th style={{ padding: 4, width: 60 }}>数量</th><th style={{ padding: 4, width: 90 }}>単価</th><th style={{ padding: 4, width: 40 }}>残業</th><th style={{ padding: 4, width: 90 }}>金額</th><th style={{ padding: 4, width: 50 }}></th></tr></thead><tbody>
             {details.map((d, i) => <tr key={i}>
