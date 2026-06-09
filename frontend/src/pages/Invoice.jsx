@@ -24,6 +24,7 @@ export default function Invoice() {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [attendanceSummary, setAttendanceSummary] = useState(null);
+  const [customerBanks, setCustomerBanks] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [form] = Form.useForm();
 
@@ -45,6 +46,8 @@ export default function Invoice() {
     try { const r = await invoiceApi.getById(record.id); setDocuments(r.data.data.documents || []); } catch { setDocuments([]); }
     // Fetch related attendance summary for this customer/month
     try { const r = await axios.get('/api/attendance/summary', { params: { year: record.year, month: record.month, employeeId: record.customerId } }); setAttendanceSummary(r.data.data); } catch { setAttendanceSummary(null); }
+    // Fetch customer bank accounts
+    try { const r = await axios.get(`/api/bank-accounts/customer/${record.customerId}`); setCustomerBanks(r.data.data || []); } catch { setCustomerBanks([]); }
   };
 
   const handleCreate = () => { setEditingRecord(null); setDetails([]); form.resetFields(); form.setFieldsValue({ year, month, taxRate: 10 }); setModalVisible(true); };
@@ -157,6 +160,18 @@ export default function Invoice() {
             <p style={{ fontSize: 16 }}>税込合計: <strong style={{ color: '#cf1322' }}>¥{selectedInvoice.totalWithTax?.toLocaleString()}</strong></p>
           </Card>
         </div>
+        {customerBanks.length > 0 && (
+          <Card size="small" title="🏦 振込先口座（データベース参照）" style={{ marginBottom: 12 }}>
+            {customerBanks.map((b, i) => (
+              <p key={b.id} style={{ marginBottom: 4 }}>
+                {i + 1}. <strong>{b.bankName}</strong> {b.branchCode}支店
+                　{b.accountType} {b.accountNumber}　{b.accountHolder}
+                {b.isDefault && <Tag color="gold" style={{ marginLeft: 8 }}>主カード</Tag>}
+              </p>
+            ))}
+          </Card>
+        )}
+        {customerBanks.length === 0 && selectedInvoice.customerId && <p style={{ color: 'rgba(0,0,0,0.25)', marginBottom: 12 }}>🏦 振込先口座情報は登録されていません</p>}
         <Upload showUploadList={false} beforeUpload={(f) => { handleUpload(f, selectedInvoice.id); return false; }}>
           <Button icon={<UploadOutlined />} style={{ marginBottom: 12 }}>＋ 注文書アップロード</Button>
         </Upload>
