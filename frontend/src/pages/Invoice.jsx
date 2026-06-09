@@ -117,8 +117,8 @@ export default function Invoice() {
   const columns = [
     { title: '請求書番号', dataIndex: 'invoiceNumber', width: 150 }, { title: '件名', dataIndex: 'subject', width: 180, ellipsis: true },
     { title: '顧客名', dataIndex: 'customerName', width: 160, ellipsis: true },
-    { title: '請求日', dataIndex: 'invoiceDate', width: 100 },
-    { title: '支払期限', dataIndex: 'dueDate', width: 100 },
+    { title: '請求日', dataIndex: 'invoiceDate', width: 100, ellipsis: true },
+    { title: '支払期限', dataIndex: 'dueDate', width: 100, ellipsis: true },
     { title: '税抜金額', dataIndex: 'amount', width: 110, render: v => v?.toLocaleString() },
     { title: '消費税', dataIndex: 'taxAmount', width: 90, render: v => v?.toLocaleString() },
     { title: '税込合計', dataIndex: 'totalWithTax', width: 120, render: v => <strong>{v?.toLocaleString()}</strong> },
