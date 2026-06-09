@@ -26,6 +26,7 @@ public class InvoiceDTO {
     private Double taxRate;
     private Double taxAmount;
     private Double totalWithTax;
+    private String subject;
     private String status;
     private String remark;
     private List<OrderDocumentDTO> documents;

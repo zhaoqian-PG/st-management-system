@@ -22,6 +22,7 @@ export default function Invoice() {
   const [customers, setCustomers] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [attendanceSummary, setAttendanceSummary] = useState(null);
   const [form] = Form.useForm();
 
   const fetchData = useCallback(async () => {
@@ -39,6 +40,8 @@ export default function Invoice() {
   const handleSelect = async (record) => {
     setSelectedInvoice(record);
     try { const r = await invoiceApi.getById(record.id); setDocuments(r.data.data.documents || []); } catch { setDocuments([]); }
+    // Fetch related attendance summary for this customer/month
+    try { const r = await axios.get('/api/attendance/summary', { params: { year: record.year, month: record.month, employeeId: record.customerId } }); setAttendanceSummary(r.data.data); } catch { setAttendanceSummary(null); }
   };
 
   const handleCreate = () => { setEditingRecord(null); form.resetFields(); form.setFieldsValue({ year, month }); setModalVisible(true); };
@@ -68,7 +71,8 @@ export default function Invoice() {
     onOk: async () => { try { await invoiceApi.deleteDocument(docId); setDocuments(documents.filter(d => d.id !== docId)); } catch {} } });
 
   const columns = [
-    { title: '請求書番号', dataIndex: 'invoiceNumber', width: 150 }, { title: '顧客名', dataIndex: 'customerName', width: 160, ellipsis: true },
+    { title: '請求書番号', dataIndex: 'invoiceNumber', width: 150 }, { title: '件名', dataIndex: 'subject', width: 180, ellipsis: true },
+    { title: '顧客名', dataIndex: 'customerName', width: 160, ellipsis: true },
     { title: '請求日', dataIndex: 'invoiceDate', width: 100 },
     { title: '支払期限', dataIndex: 'dueDate', width: 100 },
     { title: '税抜金額', dataIndex: 'amount', width: 110, render: v => v?.toLocaleString() },
@@ -106,6 +110,9 @@ export default function Invoice() {
 
     {selectedInvoice && (
       <Card title={`📎 請求書詳細: ${selectedInvoice.invoiceNumber}`} style={{ marginTop: 16 }}>
+        {selectedInvoice.subject && <p style={{ marginBottom: 8 }}><strong>件名:</strong> {selectedInvoice.subject}</p>}
+        {selectedInvoice.customerName && <p style={{ marginBottom: 8 }}><strong>請求先:</strong> {selectedInvoice.customerName}</p>}
+        {attendanceSummary && <p style={{ marginBottom: 12, color: '#1890ff' }}>📅 関連勤務実績: 総勤務 {attendanceSummary.workHours}h / 残業 {attendanceSummary.overtimeHours}h / 勤務日数 {attendanceSummary.workDays}日</p>}
         <Upload showUploadList={false} beforeUpload={(f) => { handleUpload(f, selectedInvoice.id); return false; }}>
           <Button icon={<UploadOutlined />} style={{ marginBottom: 12 }}>＋ 注文書アップロード</Button>
         </Upload>
@@ -118,7 +125,9 @@ export default function Invoice() {
       <Form form={form} layout="vertical" style={{ marginTop: 8 }}>
         <Form.Item name="invoiceNumber" label="請求書番号" rules={[{ required: true }]}>
           <Input placeholder="例: INV-2026-0601" maxLength={50} /></Form.Item>
-        <Form.Item name="customerId" label="顧客" rules={[{ required: true }]}>
+        <Form.Item name="subject" label="件名">
+          <Input placeholder="例: システム開発費用" maxLength={500} /></Form.Item>
+        <Form.Item name="customerId" label="請求先" rules={[{ required: true }]}>
           <Select placeholder="選択" showSearch filterOption={(i,o)=>o.children.toLowerCase().includes(i.toLowerCase())}>
             {customers.map(c => <Option key={c.id} value={c.id}>{c.companyName} ({c.customerCode})</Option>)}</Select></Form.Item>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>

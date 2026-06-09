@@ -213,6 +213,7 @@ CREATE TABLE IF NOT EXISTS invoice (
     tax_rate        DECIMAL(4,2)    DEFAULT 10.00,
     tax_amount      DECIMAL(12,2)   DEFAULT 0,
     total_with_tax  DECIMAL(12,2)   DEFAULT 0,
+    subject         VARCHAR(500),
     status          VARCHAR(20)     NOT NULL DEFAULT '下書き',
     remark          TEXT,
     create_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -233,6 +234,7 @@ COMMENT ON COLUMN invoice.amount IS '請求金額（税抜）';
 COMMENT ON COLUMN invoice.tax_rate IS '消費税率（%）';
 COMMENT ON COLUMN invoice.tax_amount IS '消費税額';
 COMMENT ON COLUMN invoice.total_with_tax IS '税込合計金額';
+COMMENT ON COLUMN invoice.subject IS '件名・プロジェクト名';
 COMMENT ON COLUMN invoice.status IS 'ステータス：下書き / 送付済 / 入金済';
 
 CREATE INDEX IF NOT EXISTS idx_invoice_customer_id ON invoice(customer_id);

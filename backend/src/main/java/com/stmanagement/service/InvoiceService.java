@@ -78,6 +78,7 @@ public class InvoiceService {
         double tax = Math.round(dto.getAmount() * (dto.getTaxRate() != null ? dto.getTaxRate() : 10.0)) / 100.0;
         inv.setTaxAmount(tax);
         inv.setTotalWithTax(dto.getAmount() + tax);
+        inv.setSubject(dto.getSubject());
         inv.setStatus(dto.getStatus()); inv.setRemark(dto.getRemark());
         return toDTO(invoiceRepository.save(inv));
     }
@@ -114,7 +115,7 @@ public class InvoiceService {
                 .customerId(inv.getCustomerId()).customerName(name)
                 .year(inv.getYear()).month(inv.getMonth()).invoiceDate(inv.getInvoiceDate()).dueDate(inv.getDueDate())
                 .amount(inv.getAmount()).taxRate(inv.getTaxRate()).taxAmount(inv.getTaxAmount())
-                .totalWithTax(inv.getTotalWithTax())
+                .totalWithTax(inv.getTotalWithTax()).subject(inv.getSubject())
                 .status(inv.getStatus()).remark(inv.getRemark()).build();
     }
 
@@ -126,7 +127,7 @@ public class InvoiceService {
                 .year(dto.getYear()).month(dto.getMonth())
                 .invoiceDate(dto.getInvoiceDate()).dueDate(dto.getDueDate())
                 .amount(amount).taxRate(rate).taxAmount(tax).totalWithTax(amount + tax)
-                .remark(dto.getRemark()).build();
+                .subject(dto.getSubject()).remark(dto.getRemark()).build();
     }
 
     public Resource getDocumentFile(Long docId) {

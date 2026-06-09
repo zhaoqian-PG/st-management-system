@@ -50,6 +50,9 @@ public class Invoice {
     @Column(name = "total_with_tax")
     private Double totalWithTax;
 
+    @Column(length = 500)
+    private String subject;
+
     @Column(length = 20, nullable = false)
     private String status;
 
