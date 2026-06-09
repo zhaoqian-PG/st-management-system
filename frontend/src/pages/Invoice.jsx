@@ -46,7 +46,18 @@ export default function Invoice() {
     setSelectedInvoice(record);
     try { const r = await invoiceApi.getById(record.id); setDocuments(r.data.data.documents || []); setInvoiceDetails(r.data.data.details || []); } catch { setDocuments([]); setInvoiceDetails([]); }
     // Fetch related attendance summary for this customer/month
-    try { const r = await axios.get('/api/attendance/monthly-summary', { params: { year: record.year, month: record.month } }); setAttendanceSummary(r.data.data || []); } catch { setAttendanceSummary(null); }
+    try {
+      const details = r.data.data.details || [];
+      const detailEmps = details.filter(d => d.employeeId).map(d => ({ id: d.employeeId, name: d.employeeName }));
+      if (detailEmps.length > 0) {
+        const seen = new Set(); const summaries = [];
+        for (const emp of detailEmps) {
+          if (seen.has(emp.id)) continue; seen.add(emp.id);
+          try { const sr = await axios.get('/api/attendance/summary', { params: { year: record.year, month: record.month, employeeId: emp.id } }); if (sr.data.data) summaries.push({ ...sr.data.data, employeeName: emp.name, employeeId: emp.id }); } catch {}
+        }
+        setAttendanceSummary(summaries);
+      } else setAttendanceSummary(null);
+    } catch { setAttendanceSummary(null); }
     // Fetch customer bank accounts
     try { const r = await axios.get(`/api/bank-accounts/customer/${record.customerId}`); setCustomerBanks(r.data.data || []); } catch { setCustomerBanks([]); }
   };
@@ -174,18 +185,6 @@ export default function Invoice() {
             <p style={{ fontSize: 16 }}>税込合計: <strong style={{ color: '#cf1322' }}>¥{selectedInvoice.totalWithTax?.toLocaleString()}</strong></p>
           </Card>
         </div>
-        {customerBanks.filter(b => b.isDefault).length > 0 && (
-          <Card size="small" title="🏦 振込先口座（データベース参照）" style={{ marginBottom: 12 }}>
-            {customerBanks.filter(b => b.isDefault).map((b, i) => (
-              <p key={b.id} style={{ marginBottom: 4 }}>
-                {i + 1}. <strong>{b.bankName}</strong> {b.branchCode}支店
-                　{b.accountType} {b.accountNumber}　{b.accountHolder}
-                {b.isDefault && <Tag color="gold" style={{ marginLeft: 8 }}>主カード</Tag>}
-              </p>
-            ))}
-          </Card>
-        )}
-        {customerBanks.filter(b => b.isDefault).length === 0 && selectedInvoice.customerId && <p style={{ color: 'rgba(0,0,0,0.25)', marginBottom: 12 }}>🏦 振込先口座情報は登録されていません</p>}
         {invoiceDetails.length > 0 && (
           <Card size="small" title="👥 請求明細（担当者別）" style={{ marginBottom: 12 }}>
             <Table dataSource={invoiceDetails} rowKey="id" size="small" pagination={false}
@@ -199,6 +198,18 @@ export default function Invoice() {
               ]} />
           </Card>
         )}
+        {customerBanks.filter(b => b.isDefault).length > 0 && (
+          <Card size="small" title="🏦 振込先口座" style={{ marginBottom: 12 }}>
+            {customerBanks.filter(b => b.isDefault).map((b) => (
+              <p key={b.id} style={{ marginBottom: 4 }}>
+                <strong>{b.bankName}</strong> {b.branchCode}支店
+                　{b.accountType} {b.accountNumber}　{b.accountHolder}
+                {b.isDefault && <Tag color="gold" style={{ marginLeft: 8 }}>主カード</Tag>}
+              </p>
+            ))}
+          </Card>
+        )}
+        {customerBanks.filter(b => b.isDefault).length === 0 && selectedInvoice.customerId && <p style={{ color: 'rgba(0,0,0,0.25)', marginBottom: 12 }}>🏦 振込先口座情報は登録されていません</p>}
         <Upload showUploadList={false} beforeUpload={(f) => { handleUpload(f, selectedInvoice.id); return false; }}>
           <Button icon={<UploadOutlined />} style={{ marginBottom: 12 }}>＋ 注文書アップロード</Button>
         </Upload>
