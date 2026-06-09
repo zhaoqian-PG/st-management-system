@@ -46,7 +46,7 @@ export default function Invoice() {
     setSelectedInvoice(record);
     try { const r = await invoiceApi.getById(record.id); setDocuments(r.data.data.documents || []); setInvoiceDetails(r.data.data.details || []); } catch { setDocuments([]); setInvoiceDetails([]); }
     // Fetch related attendance summary for this customer/month
-    try { const r = await axios.get('/api/attendance/summary', { params: { year: record.year, month: record.month, employeeId: record.customerId } }); setAttendanceSummary(r.data.data); } catch { setAttendanceSummary(null); }
+    try { const r = await axios.get('/api/attendance/monthly-summary', { params: { year: record.year, month: record.month } }); setAttendanceSummary(r.data.data || []); } catch { setAttendanceSummary(null); }
     // Fetch customer bank accounts
     try { const r = await axios.get(`/api/bank-accounts/customer/${record.customerId}`); setCustomerBanks(r.data.data || []); } catch { setCustomerBanks([]); }
   };
@@ -147,13 +147,26 @@ export default function Invoice() {
         {selectedInvoice.subject && <p style={{ marginBottom: 8 }}><strong>件名:</strong> {selectedInvoice.subject}</p>}
         {selectedInvoice.customerName && <p style={{ marginBottom: 8 }}><strong>請求先:</strong> {selectedInvoice.customerName}</p>}
         <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
-          <Card size="small" style={{ flex: 1 }} title="📅 関連勤務実績">
-            {attendanceSummary ? <div>
-              <p>総勤務時間: <strong>{attendanceSummary.workHours}h</strong></p>
-              <p>総残業時間: <strong>{attendanceSummary.overtimeHours}h</strong></p>
-              <p>勤務日数: <strong>{attendanceSummary.workDays}日</strong></p>
-              <p>総労働時間: <strong>{attendanceSummary.totalHours}h</strong></p>
-            </div> : <span style={{ color: 'rgba(0,0,0,0.25)' }}>勤務データなし</span>}
+          <Card size="small" style={{ flex: 1 }} title="📅 当月勤務実績">
+            {attendanceSummary && attendanceSummary.length > 0 ? <div>
+              {(() => {
+                const tw = attendanceSummary.reduce((s, e) => s + (e.workHours || 0), 0);
+                const to = attendanceSummary.reduce((s, e) => s + (e.overtimeHours || 0), 0);
+                const th = attendanceSummary.reduce((s, e) => s + (e.totalHours || 0), 0);
+                const td = attendanceSummary.reduce((s, e) => s + (e.workDays || 0), 0);
+                return (<>
+                  <p>総勤務: <strong>{Math.round(tw * 10) / 10}h</strong>　総残業: <strong>{Math.round(to * 10) / 10}h</strong></p>
+                  <p>総労働: <strong>{Math.round(th * 10) / 10}h</strong>　勤務日数: <strong>{td}日</strong></p>
+                  <Table dataSource={attendanceSummary} rowKey="employeeId" size="small" pagination={false} style={{ marginTop: 8 }}
+                    columns={[
+                      { title: '社員', dataIndex: 'employeeName', width: 80 },
+                      { title: '勤務(h)', dataIndex: 'workHours', width: 65 },
+                      { title: '残業(h)', dataIndex: 'overtimeHours', width: 65 },
+                      { title: '日数', dataIndex: 'workDays', width: 40 },
+                    ]} />
+                </>);
+              })()}
+            </div> : <span style={{ color: 'rgba(0,0,0,0.25)' }}>当月勤務データなし</span>}
           </Card>
           <Card size="small" style={{ flex: 2 }} title="💰 請求金額">
             <p>税抜金額: <strong>¥{selectedInvoice.amount?.toLocaleString()}</strong></p>
