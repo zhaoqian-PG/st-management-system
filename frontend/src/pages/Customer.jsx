@@ -155,7 +155,7 @@ export default function Customer() {
           <span style={{ flex: 1 }} />
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>新規登録</Button>
         </div>
-        <Table columns={columns} dataSource={data} rowKey="id" loading={loading}
+        <Table columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }}
           pagination={{ current: page, pageSize: PAGE_SIZE, total, showSizeChanger: false, showTotal: (t) => `全 ${t} 件`, onChange: (p) => setPage(p) }} />
       </Card>
 

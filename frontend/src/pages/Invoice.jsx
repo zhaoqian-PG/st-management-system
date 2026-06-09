@@ -137,7 +137,7 @@ export default function Invoice() {
           {customers.map(c => <Option key={c.id} value={c.id}>{c.companyName} ({c.customerCode})</Option>)}</Select>
         <span style={{ flex: 1 }} /><Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>新規登録</Button>
       </div>
-      <Table columns={columns} dataSource={data} rowKey="id" loading={loading}
+      <Table columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }}
         onRow={r => ({ onClick: () => handleSelect(r), style: { background: selectedInvoice?.id === r.id ? '#e6f7ff' : undefined, cursor: 'pointer' } })}
         pagination={{ current: page, pageSize: PAGE_SIZE, total, showSizeChanger: false, showTotal: t => `全 ${t} 件`, onChange: p => setPage(p) }} />
     </Card>
