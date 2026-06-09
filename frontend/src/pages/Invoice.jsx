@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, Upload } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, Upload, DatePicker } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import { invoiceApi } from '../services/invoiceApi';
 import axios from 'axios';
@@ -42,12 +42,13 @@ export default function Invoice() {
   };
 
   const handleCreate = () => { setEditingRecord(null); form.resetFields(); form.setFieldsValue({ year, month }); setModalVisible(true); };
-  const handleEdit = (r) => { setEditingRecord(r); form.setFieldsValue(r); setModalVisible(true); };
+  const handleEdit = (r) => { setEditingRecord(r); form.setFieldsValue({ ...r, invoiceDate: r.invoiceDate ? dayjs(r.invoiceDate) : null, dueDate: r.dueDate ? dayjs(r.dueDate) : null }); setModalVisible(true); };
 
   const handleSubmit = async () => {
     try { const v = await form.validateFields(); setFormLoading(true);
-      if (editingRecord) { await invoiceApi.update(editingRecord.id, v); message.success('更新しました'); }
-      else { await invoiceApi.create(v); message.success('登録しました'); }
+      const payload = { ...v, invoiceDate: v.invoiceDate ? v.invoiceDate.format('YYYY-MM-DD') : null, dueDate: v.dueDate ? v.dueDate.format('YYYY-MM-DD') : null };
+      if (editingRecord) { await invoiceApi.update(editingRecord.id, payload); message.success('更新しました'); }
+      else { await invoiceApi.create(payload); message.success('登録しました'); }
       setModalVisible(false); fetchData();
     } catch (e) { if (e.response?.data?.error) message.error(e.response.data.error); }
     finally { setFormLoading(false); }
@@ -67,9 +68,12 @@ export default function Invoice() {
     onOk: async () => { try { await invoiceApi.deleteDocument(docId); setDocuments(documents.filter(d => d.id !== docId)); } catch {} } });
 
   const columns = [
-    { title: '請求書番号', dataIndex: 'invoiceNumber', width: 150 }, { title: '顧客名', dataIndex: 'customerName', width: 180, ellipsis: true },
-    { title: '年月', key: 'ym', width: 100, render: (_, r) => `${r.year}/${r.month}` },
-    { title: '金額(円)', dataIndex: 'amount', width: 120, render: v => v?.toLocaleString() },
+    { title: '請求書番号', dataIndex: 'invoiceNumber', width: 150 }, { title: '顧客名', dataIndex: 'customerName', width: 160, ellipsis: true },
+    { title: '請求日', dataIndex: 'invoiceDate', width: 100 },
+    { title: '支払期限', dataIndex: 'dueDate', width: 100 },
+    { title: '税抜金額', dataIndex: 'amount', width: 110, render: v => v?.toLocaleString() },
+    { title: '消費税', dataIndex: 'taxAmount', width: 90, render: v => v?.toLocaleString() },
+    { title: '税込合計', dataIndex: 'totalWithTax', width: 120, render: v => <strong>{v?.toLocaleString()}</strong> },
     { title: '状態', dataIndex: 'status', width: 90, render: t => {
       const m = { '下書き': ['gold', '下書き'], '送付済': ['blue', '送付済'], '入金済': ['green', '入金済'] };
       return <Tag color={m[t]?.[0]}>{m[t]?.[1] || t}</Tag>;
@@ -122,8 +126,14 @@ export default function Invoice() {
             <Select>{[2024,2025,2026,2027].map(y => <Option key={y} value={y}>{y}</Option>)}</Select></Form.Item>
           <Form.Item name="month" label="月度" rules={[{ required: true }]}>
             <Select>{Array.from({length:12},(_,i)=>i+1).map(m => <Option key={m} value={m}>{m}</Option>)}</Select></Form.Item></div>
-        <Form.Item name="amount" label="金額(円)" rules={[{ required: true }]}>
-          <Input type="number" min={0} /></Form.Item>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+          <Form.Item name="invoiceDate" label="請求日"><DatePicker style={{ width: '100%' }} /></Form.Item>
+          <Form.Item name="dueDate" label="支払期限"><DatePicker style={{ width: '100%' }} /></Form.Item></div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+          <Form.Item name="amount" label="税抜金額(円)" rules={[{ required: true }]}>
+            <Input type="number" min={0} /></Form.Item>
+          <Form.Item name="taxRate" label="消費税率(%)"><Input type="number" min={0} max={100} placeholder="10" /></Form.Item>
+          <Form.Item label="税込合計"><Input value={(() => { const a = Number(form.getFieldValue('amount')) || 0; const r = Number(form.getFieldValue('taxRate')) || 10; const t = Math.round(a * r) / 100; return (a + t).toLocaleString(); })()} disabled /></Form.Item></div>
         {editingRecord && <Form.Item name="status" label="状態"><Select><Option value="下書き">下書き</Option><Option value="送付済">送付済</Option><Option value="入金済">入金済</Option></Select></Form.Item>}
         <Form.Item name="remark" label="備考"><Input.TextArea rows={2} /></Form.Item>
       </Form>

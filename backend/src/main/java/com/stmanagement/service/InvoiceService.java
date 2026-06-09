@@ -72,7 +72,13 @@ public class InvoiceService {
             throw new RuntimeException("請求書番号 " + dto.getInvoiceNumber() + " は既に存在します");
         inv.setInvoiceNumber(dto.getInvoiceNumber()); inv.setCustomerId(dto.getCustomerId());
         inv.setYear(dto.getYear()); inv.setMonth(dto.getMonth());
-        inv.setAmount(dto.getAmount()); inv.setStatus(dto.getStatus()); inv.setRemark(dto.getRemark());
+        inv.setInvoiceDate(dto.getInvoiceDate()); inv.setDueDate(dto.getDueDate());
+        inv.setAmount(dto.getAmount());
+        inv.setTaxRate(dto.getTaxRate() != null ? dto.getTaxRate() : 10.0);
+        double tax = Math.round(dto.getAmount() * (dto.getTaxRate() != null ? dto.getTaxRate() : 10.0)) / 100.0;
+        inv.setTaxAmount(tax);
+        inv.setTotalWithTax(dto.getAmount() + tax);
+        inv.setStatus(dto.getStatus()); inv.setRemark(dto.getRemark());
         return toDTO(invoiceRepository.save(inv));
     }
 
@@ -106,13 +112,20 @@ public class InvoiceService {
         String name = customerRepository.findById(inv.getCustomerId()).map(Customer::getCompanyName).orElse("");
         return InvoiceDTO.builder().id(inv.getId()).invoiceNumber(inv.getInvoiceNumber())
                 .customerId(inv.getCustomerId()).customerName(name)
-                .year(inv.getYear()).month(inv.getMonth()).amount(inv.getAmount())
+                .year(inv.getYear()).month(inv.getMonth()).invoiceDate(inv.getInvoiceDate()).dueDate(inv.getDueDate())
+                .amount(inv.getAmount()).taxRate(inv.getTaxRate()).taxAmount(inv.getTaxAmount())
+                .totalWithTax(inv.getTotalWithTax())
                 .status(inv.getStatus()).remark(inv.getRemark()).build();
     }
 
     private Invoice toEntity(InvoiceDTO dto) {
+        double amount = dto.getAmount() != null ? dto.getAmount() : 0;
+        double rate = dto.getTaxRate() != null ? dto.getTaxRate() : 10.0;
+        double tax = Math.round(amount * rate) / 100.0;
         return Invoice.builder().invoiceNumber(dto.getInvoiceNumber()).customerId(dto.getCustomerId())
-                .year(dto.getYear()).month(dto.getMonth()).amount(dto.getAmount())
+                .year(dto.getYear()).month(dto.getMonth())
+                .invoiceDate(dto.getInvoiceDate()).dueDate(dto.getDueDate())
+                .amount(amount).taxRate(rate).taxAmount(tax).totalWithTax(amount + tax)
                 .remark(dto.getRemark()).build();
     }
 

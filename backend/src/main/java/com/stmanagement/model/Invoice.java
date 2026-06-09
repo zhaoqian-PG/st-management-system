@@ -32,8 +32,23 @@ public class Invoice {
     @Column(nullable = false)
     private Integer month;
 
+    @Column(name = "invoice_date")
+    private java.time.LocalDate invoiceDate;
+
+    @Column(name = "due_date")
+    private java.time.LocalDate dueDate;
+
     @Column(nullable = false)
     private Double amount;
+
+    @Column(name = "tax_rate")
+    private Double taxRate;
+
+    @Column(name = "tax_amount")
+    private Double taxAmount;
+
+    @Column(name = "total_with_tax")
+    private Double totalWithTax;
 
     @Column(length = 20, nullable = false)
     private String status;

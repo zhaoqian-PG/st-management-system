@@ -20,7 +20,12 @@ public class InvoiceDTO {
     private String customerName;
     @NotNull private Integer year;
     @NotNull private Integer month;
+    private java.time.LocalDate invoiceDate;
+    private java.time.LocalDate dueDate;
     @NotNull private Double amount;
+    private Double taxRate;
+    private Double taxAmount;
+    private Double totalWithTax;
     private String status;
     private String remark;
     private List<OrderDocumentDTO> documents;
