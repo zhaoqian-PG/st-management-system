@@ -16,8 +16,8 @@ export default function Invoice() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
-  const [year, setYear] = useState(dayjs().year());
-  const [month, setMonth] = useState(dayjs().month() + 1);
+  const [year, setYear] = useState(null);
+  const [month, setMonth] = useState(null);
   const [customerId, setCustomerId] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -27,7 +27,7 @@ export default function Invoice() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await invoiceApi.list({ page: page - 1, size: PAGE_SIZE, year, month, customerId: customerId || undefined });
+      const res = await invoiceApi.list({ page: page - 1, size: PAGE_SIZE, year: year || undefined, month: month || undefined, customerId: customerId || undefined });
       setData(res.data.data.content || []); setTotal(res.data.data.totalElements || 0);
     } catch { message.error('データの取得に失敗しました'); }
     finally { setLoading(false); }
