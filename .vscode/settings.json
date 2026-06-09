@@ -47,5 +47,6 @@
   // General
   "terminal.integrated.defaultProfile.windows": "bash",
   "git.enabled": true,
-  "workbench.colorTheme": "Dark+"
+  "workbench.colorTheme": "Dark+",
+  "java.debug.settings.onBuildFailureProceed": true
 }

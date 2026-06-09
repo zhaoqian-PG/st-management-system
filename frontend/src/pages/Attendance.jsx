@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, TimePicker } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, TimePicker, Statistic } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CalendarOutlined, DownloadOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { attendanceApi } from '../services/attendanceApi';
 import axios from 'axios';
@@ -20,10 +20,16 @@ export default function Attendance() {
   const [month, setMonth] = useState(dayjs().month() + 1);
   const [employeeId, setEmployeeId] = useState(null);
   const [employees, setEmployees] = useState([]);
+  const [summary, setSummary] = useState({ workHours: 0, overtimeHours: 0, totalHours: 0, workDays: 0, totalRecords: 0 });
   const [monthlySummary, setMonthlySummary] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [form] = Form.useForm();
   const role = localStorage.getItem('userRole') || 'USER';
+
+  const fetchSummary = async () => {
+    if (!employeeId || employeeId <= 0) return;
+    try { const r = await axios.get('/api/attendance/summary', { params: { year, month, employeeId } }); setSummary(r.data.data); } catch {}
+  };
 
   const fetchMonthlySummary = async () => {
     try { const r = await axios.get('/api/attendance/monthly-summary', { params: { year, month } }); setMonthlySummary(r.data.data || []); } catch {}
@@ -38,7 +44,7 @@ export default function Attendance() {
     finally { setLoading(false); }
   }, [page, year, month, employeeId]);
 
-  useEffect(() => { fetchData(); fetchMonthlySummary(); }, [fetchData]);
+  useEffect(() => { fetchData(); fetchSummary(); fetchMonthlySummary(); }, [fetchData]);
   useEffect(() => {
     axios.get('/api/employee?size=200').then(r => {
       const empList = r.data.data.content || [];
@@ -124,6 +130,14 @@ export default function Attendance() {
         <Button icon={<DownloadOutlined />} onClick={() => window.open(employeeId ? `/api/attendance/export?year=${year}&month=${month}&employeeId=${employeeId}` : `/api/attendance/export-all?year=${year}&month=${month}`)}>CSV出力</Button>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>新規登録</Button>
       </div>
+      {employeeId && employeeId > 0 && (
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+          <Card size="small" style={{ flex: 1 }}><Statistic title="総勤務時間(h)" value={summary.workHours} suffix="h" /></Card>
+          <Card size="small" style={{ flex: 1 }}><Statistic title="総残業時間(h)" value={summary.overtimeHours} suffix="h" /></Card>
+          <Card size="small" style={{ flex: 1 }}><Statistic title="総労働時間(h)" value={summary.totalHours} suffix="h" /></Card>
+          <Card size="small" style={{ flex: 1 }}><Statistic title="勤務日数" value={summary.workDays} suffix="日" /></Card>
+        </div>
+      )}
       {role === 'ADMIN' && (
         <Card title="📊 社員別月次集計" size="small" style={{ marginBottom: 16 }}>
           <Table columns={[
