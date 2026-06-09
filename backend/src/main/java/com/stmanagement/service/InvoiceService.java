@@ -149,6 +149,35 @@ public class InvoiceService {
         return r;
     }
 
+    public String exportInvoiceCsv(Long invoiceId) {
+        Invoice inv = invoiceRepository.findById(invoiceId).orElseThrow(() -> new RuntimeException("請求書が見つかりません"));
+        String customerName = customerRepository.findById(inv.getCustomerId()).map(Customer::getCompanyName).orElse("");
+        List<InvoiceDetail> details = detailRepository.findByInvoiceId(invoiceId);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("請求書\n");
+        sb.append("請求書番号,").append(inv.getInvoiceNumber()).append("\n");
+        sb.append("請求先,").append(customerName).append("\n");
+        sb.append("件名,").append(inv.getSubject() != null ? inv.getSubject() : "").append("\n");
+        sb.append("請求日,").append(inv.getInvoiceDate() != null ? inv.getInvoiceDate() : "").append("\n");
+        sb.append("支払期限,").append(inv.getDueDate() != null ? inv.getDueDate() : "").append("\n");
+        sb.append("請求年月,").append(inv.getYear()).append("年").append(inv.getMonth()).append("月\n\n");
+
+        sb.append("担当者,項目,数量,単価,金額,残業\n");
+        double sub = 0;
+        for (InvoiceDetail d : details) {
+            String name = d.getEmployeeName() != null ? d.getEmployeeName() : "";
+            sb.append(name).append(",").append(d.getDescription() != null ? d.getDescription() : "").append(",");
+            sb.append(d.getQuantity()).append(",").append(d.getUnitPrice()).append(",");
+            sb.append(d.getAmount()).append(",").append(d.getIsOvertime() ? "○" : "").append("\n");
+            sub += d.getAmount() != null ? d.getAmount() : 0;
+        }
+        sb.append("\n小計,,").append(sub).append("\n");
+        sb.append("消費税(").append(inv.getTaxRate() != null ? inv.getTaxRate() : 10).append("%),,").append(inv.getTaxAmount() != null ? inv.getTaxAmount() : 0).append("\n");
+        sb.append("税込合計,,").append(inv.getTotalWithTax() != null ? inv.getTotalWithTax() : 0).append("\n");
+        return sb.toString();
+    }
+
     public String getDocumentFileName(Long docId) {
         return orderDocumentRepository.findById(docId).map(OrderDocument::getFileName).orElse("download");
     }

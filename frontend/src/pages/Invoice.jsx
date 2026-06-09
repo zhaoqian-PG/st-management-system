@@ -157,7 +157,7 @@ export default function Invoice() {
     </Card>
 
     {selectedInvoice && (
-      <Card title={`📎 請求書詳細: ${selectedInvoice.invoiceNumber}`} style={{ marginTop: 16 }}>
+      <Card title={`📎 請求書詳細: ${selectedInvoice.invoiceNumber}`} extra={<Button icon={<DownloadOutlined />} onClick={() => window.open(`/api/invoice/export/${selectedInvoice.id}`)}>請求書出力</Button>} style={{ marginTop: 16 }}>
         {selectedInvoice.subject && <p style={{ marginBottom: 8 }}><strong>件名:</strong> {selectedInvoice.subject}</p>}
         {selectedInvoice.customerName && <p style={{ marginBottom: 8 }}><strong>請求先:</strong> {selectedInvoice.customerName}</p>}
         <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>

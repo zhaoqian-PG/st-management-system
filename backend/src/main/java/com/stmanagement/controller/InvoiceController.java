@@ -81,4 +81,17 @@ public class InvoiceController {
         invoiceService.deleteDocument(docId);
         return ResponseEntity.ok(ApiResponse.success(null, "ファイルを削除しました"));
     }
+
+    @GetMapping(value = "/export/{id}", produces = "text/csv; charset=UTF-8")
+    public ResponseEntity<byte[]> exportInvoice(@PathVariable Long id) {
+        String csv = invoiceService.exportInvoiceCsv(id);
+        byte[] bom = new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
+        byte[] csvBytes = csv.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] result = new byte[bom.length + csvBytes.length];
+        System.arraycopy(bom, 0, result, 0, bom.length);
+        System.arraycopy(csvBytes, 0, result, bom.length, csvBytes.length);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"invoice_" + id + ".csv\"")
+                .body(result);
+    }
 }
