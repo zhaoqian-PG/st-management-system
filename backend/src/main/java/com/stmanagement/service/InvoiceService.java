@@ -162,7 +162,7 @@ public class InvoiceService {
         // Get primary bank account for this customer
         String bankInfo = "";
         List<com.stmanagement.model.BankAccount> bankAccounts = bankAccountRepository.findByCustomerId(inv.getCustomerId());
-        var defaultBank = bankAccounts.stream().filter(b -> b.getIsDefault() != null && b.getIsDefault()).findFirst()
+        com.stmanagement.model.BankAccount defaultBank = bankAccounts.stream().filter(b -> b.getIsDefault() != null && b.getIsDefault()).findFirst()
                 .orElse(bankAccounts.isEmpty() ? null : bankAccounts.get(0));
         if (defaultBank != null) {
             bankInfo = defaultBank.getBankName() + " " + defaultBank.getBranchCode() + "支店 "
