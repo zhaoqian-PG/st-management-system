@@ -6,6 +6,8 @@
 -- ============================================================
 -- 既存テーブル削除（依存関係を考慮した順序）
 -- ============================================================
+DROP TABLE IF EXISTS purchase_order_detail CASCADE;
+DROP TABLE IF EXISTS purchase_order CASCADE;
 DROP TABLE IF EXISTS order_documents CASCADE;
 DROP TABLE IF EXISTS invoice CASCADE;
 DROP TABLE IF EXISTS attendance CASCADE;
@@ -474,11 +476,11 @@ VALUES
     ('INV-2026-0401', 3, 2026, 4, 2300000.00, '入金済', 'ソフトウェアライセンス');
 
 -- 注文書（3件）
-INSERT INTO purchase_order (order_number, customer_id, order_date, delivery_date, subject, recipient_dept, recipient_name, amount, tax_rate, status, remark)
+INSERT INTO purchase_order (order_number, customer_id, order_date, delivery_date, subject, recipient_dept, recipient_name, amount, tax_rate, status, remark, create_time, update_time)
 VALUES
-    ('PO-2026-0001', 1, '2026-05-01', '2026-06-15', 'サーバー機器一式', '情報システム部', '山田 太郎', 5000000.00, 10.00, '発注済', '新規プロジェクト用'),
-    ('PO-2026-0002', 2, '2026-05-10', '2026-06-30', 'ネットワーク工事', '総務部', '佐藤 健一', 2500000.00, 10.00, '下書き', '大阪支店増設'),
-    ('PO-2026-0003', 3, '2026-05-15', '2026-07-15', 'ソフトウェア開発', '開発部', '田中 美咲', 8000000.00, 10.00, '検収済', '基幹システム改修');
+    ('PO-2026-0001', 1, '2026-05-01', '2026-06-15', 'サーバー機器一式', '情報システム部', '山田 太郎', 5000000.00, 10.00, '発注済', '新規プロジェクト用', NOW(), NOW()),
+    ('PO-2026-0002', 2, '2026-05-10', '2026-06-30', 'ネットワーク工事', '総務部', '佐藤 健一', 2500000.00, 10.00, '下書き', '大阪支店増設', NOW(), NOW()),
+    ('PO-2026-0003', 3, '2026-05-15', '2026-07-15', 'ソフトウェア開発', '開発部', '田中 美咲', 8000000.00, 10.00, '検収済', '基幹システム改修', NOW(), NOW());
 
 INSERT INTO purchase_order_detail (order_id, item_name, quantity, unit_price, amount) VALUES
     (1, 'サーバー本体', 2, 1500000.00, 3000000.00),
