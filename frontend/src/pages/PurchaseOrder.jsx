@@ -44,7 +44,7 @@ export default function PurchaseOrder() {
   const handleDelete = (r) => Modal.confirm({ title:'削除', content:`注文書 ${r.orderNumber} を削除しますか？`, okText:'削除', cancelText:'キャンセル', okType:'danger', centered:true,
     onOk: async () => { try { await purchaseOrderApi.delete(r.id); setSelectedOrder(null); fetchData(); } catch {} } });
 
-  const addDetail = () => setDetails([...details, { itemName: '', quantity: 1, unitPrice: 0, amount: 0 }]);
+  const addDetail = () => setDetails([...details, { employeeName: '', itemName: '', quantity: 1, unitPrice: 0, amount: 0 }]);
   const updDetail = (i, f, v) => { const d=[...details]; d[i][f]=v; if(f==='quantity'||f==='unitPrice') d[i].amount=(d[i].quantity||0)*(d[i].unitPrice||0); setDetails(d); };
   const remDetail = (i) => setDetails(details.filter((_,j)=>j!==i));
 
@@ -69,8 +69,22 @@ export default function PurchaseOrder() {
         pagination={{current:page,pageSize:PAGE_SIZE,total,showSizeChanger:false,showTotal:t=>`全 ${t} 件`,onChange:p=>setPage(p)}} />
     </Card>
     {selectedOrder && <Card title={`📎 注文書詳細: ${selectedOrder.orderNumber}`} style={{marginTop:16}}>
+      <div style={{display:'flex',gap:16,marginBottom:16}}>
+        <Card size="small" style={{flex:1}} title="📋 基本情報">
+          <p><strong>発注先:</strong> {selectedOrder.customerName}</p>
+          {selectedOrder.recipientDept && <p><strong>部署:</strong> {selectedOrder.recipientDept}</p>}
+          {selectedOrder.recipientName && <p><strong>担当:</strong> {selectedOrder.recipientName}</p>}
+          <p><strong>注文日:</strong> {selectedOrder.orderDate}</p>
+          {selectedOrder.deliveryDate && <p><strong>納品期限:</strong> {selectedOrder.deliveryDate}</p>}
+        </Card>
+        <Card size="small" style={{flex:1}} title="💰 金額">
+          <p>税抜金額: <strong>¥{selectedOrder.amount?.toLocaleString()}</strong></p>
+          <p>消費税({selectedOrder.taxRate||10}%): <strong>¥{selectedOrder.taxAmount?.toLocaleString()}</strong></p>
+          <p style={{fontSize:16}}>税込合計: <strong style={{color:'#cf1322'}}>¥{selectedOrder.totalWithTax?.toLocaleString()}</strong></p>
+        </Card>
+      </div>
       <Table dataSource={orderDetails} rowKey="id" size="small" pagination={false} locale={{emptyText:'明細はありません'}}
-        columns={[{title:'品名',dataIndex:'itemName',ellipsis:true},{title:'数量',dataIndex:'quantity',width:80},{title:'単価',dataIndex:'unitPrice',width:90,render:v=>v?.toLocaleString()},{title:'金額',dataIndex:'amount',width:100,render:v=>v?.toLocaleString()},{title:'備考',dataIndex:'remark',width:120}]} />
+        columns={[{title:'担当者',dataIndex:'employeeName',width:100},{title:'項目',dataIndex:'itemName',ellipsis:true},{title:'数量',dataIndex:'quantity',width:80},{title:'単価',dataIndex:'unitPrice',width:90,render:v=>v?.toLocaleString()},{title:'金額',dataIndex:'amount',width:100,render:v=>v?.toLocaleString()}]} />
     </Card>}
     <Modal title={editingRecord?'注文書編集':'注文書新規登録'} open={modalVisible} onOk={handleSubmit} onCancel={()=>setModalVisible(false)}
       confirmLoading={formLoading} okText="保存" cancelText="キャンセル" destroyOnClose centered width={900}>
@@ -89,8 +103,8 @@ export default function PurchaseOrder() {
         <div style={{borderTop:'2px solid #722ed1',paddingTop:12,marginTop:8}}>
           <h4 style={{color:'#722ed1',marginBottom:8}}>● 注文明細</h4>
           <Button type="dashed" onClick={addDetail} style={{marginBottom:8}}>＋ 明細行追加</Button>
-          {details.length>0 && <table style={{width:'100%',borderCollapse:'collapse',marginBottom:8}}><thead><tr style={{background:'#fafafa'}}><th style={{padding:4}}>品名</th><th style={{padding:4,width:70}}>数量</th><th style={{padding:4,width:90}}>単価</th><th style={{padding:4,width:90}}>金額</th><th style={{padding:4,width:50}}></th></tr></thead><tbody>
-            {details.map((d,i)=><tr key={i}><td style={{padding:2}}><Input value={d.itemName} onChange={e=>updDetail(i,'itemName',e.target.value)} size="small"/></td><td style={{padding:2}}><Input value={d.quantity} onChange={e=>updDetail(i,'quantity',Number(e.target.value))} size="small" type="number"/></td><td style={{padding:2}}><Input value={d.unitPrice} onChange={e=>updDetail(i,'unitPrice',Number(e.target.value))} size="small" type="number"/></td><td style={{padding:2,textAlign:'right'}}>{(d.amount||0).toLocaleString()}</td><td style={{padding:2}}><Button type="link" danger size="small" onClick={()=>remDetail(i)}>✕</Button></td></tr>)}</tbody></table>}
+          {details.length>0 && <table style={{width:'100%',borderCollapse:'collapse',marginBottom:8}}><thead><tr style={{background:'#fafafa'}}><th style={{padding:4}}>担当者</th><th style={{padding:4}}>項目</th><th style={{padding:4,width:70}}>数量</th><th style={{padding:4,width:90}}>単価</th><th style={{padding:4,width:90}}>金額</th><th style={{padding:4,width:50}}></th></tr></thead><tbody>
+            {details.map((d,i)=><tr key={i}><td style={{padding:2}}><Input value={d.employeeName} onChange={e=>updDetail(i,'employeeName',e.target.value)} size="small" placeholder="担当者"/></td><td style={{padding:2}}><Input value={d.itemName} onChange={e=>updDetail(i,'itemName',e.target.value)} size="small" placeholder="品名"/></td><td style={{padding:2}}><Input value={d.quantity} onChange={e=>updDetail(i,'quantity',Number(e.target.value))} size="small" type="number"/></td><td style={{padding:2}}><Input value={d.unitPrice} onChange={e=>updDetail(i,'unitPrice',Number(e.target.value))} size="small" type="number"/></td><td style={{padding:2,textAlign:'right'}}>{(d.amount||0).toLocaleString()}</td><td style={{padding:2}}><Button type="link" danger size="small" onClick={()=>remDetail(i)}>✕</Button></td></tr>)}</tbody></table>}
         </div>
         <Form.Item name="remark" label="備考"><Input.TextArea rows={2}/></Form.Item>
       </Form>

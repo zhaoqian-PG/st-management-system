@@ -80,7 +80,8 @@ public class PurchaseOrderService {
     private void saveDetails(Long orderId, List<PurchaseOrderDetailDTO> details) {
         if (details == null) return;
         for (PurchaseOrderDetailDTO d : details) {
-            detailRepository.save(PurchaseOrderDetail.builder().orderId(orderId).itemName(d.getItemName())
+            detailRepository.save(PurchaseOrderDetail.builder().orderId(orderId)
+                    .employeeName(d.getEmployeeName()).itemName(d.getItemName())
                     .quantity(d.getQuantity()).unitPrice(d.getUnitPrice())
                     .amount((d.getQuantity() != null ? d.getQuantity() : 0) * (d.getUnitPrice() != null ? d.getUnitPrice() : 0))
                     .remark(d.getRemark()).build());
@@ -110,7 +111,8 @@ public class PurchaseOrderService {
 
     private PurchaseOrderDetailDTO toDetailDTO(PurchaseOrderDetail d) {
         return PurchaseOrderDetailDTO.builder().id(d.getId()).orderId(d.getOrderId())
-                .itemName(d.getItemName()).quantity(d.getQuantity()).unitPrice(d.getUnitPrice())
+                .employeeName(d.getEmployeeName()).itemName(d.getItemName())
+                .quantity(d.getQuantity()).unitPrice(d.getUnitPrice())
                 .amount(d.getAmount()).remark(d.getRemark()).build();
     }
 }

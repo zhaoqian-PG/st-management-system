@@ -23,6 +23,9 @@ public class PurchaseOrderDetail {
     @Column(name = "order_id", nullable = false)
     private Long orderId;
 
+    @Column(name = "employee_name", length = 100)
+    private String employeeName;
+
     @Column(name = "item_name", length = 500, nullable = false)
     private String itemName;
 

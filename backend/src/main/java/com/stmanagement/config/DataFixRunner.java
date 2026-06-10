@@ -33,11 +33,11 @@ public class DataFixRunner implements CommandLineRunner {
             // Add detail data for purchase orders
             int podCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM purchase_order_detail", Integer.class);
             if (podCount == 0) {
-                jdbcTemplate.update("INSERT INTO purchase_order_detail (order_id, item_name, quantity, unit_price, amount, create_time) SELECT id, 'サーバー本体', 2, 1500000.00, 3000000.00, NOW() FROM purchase_order WHERE order_number = 'PO-2026-0001'");
-                jdbcTemplate.update("INSERT INTO purchase_order_detail (order_id, item_name, quantity, unit_price, amount, create_time) SELECT id, 'NASストレージ', 1, 800000.00, 800000.00, NOW() FROM purchase_order WHERE order_number = 'PO-2026-0001'");
-                jdbcTemplate.update("INSERT INTO purchase_order_detail (order_id, item_name, quantity, unit_price, amount, create_time) SELECT id, 'ルーター', 3, 500000.00, 1500000.00, NOW() FROM purchase_order WHERE order_number = 'PO-2026-0002'");
-                jdbcTemplate.update("INSERT INTO purchase_order_detail (order_id, item_name, quantity, unit_price, amount, create_time) SELECT id, '設計書作成', 1, 3000000.00, 3000000.00, NOW() FROM purchase_order WHERE order_number = 'PO-2026-0003'");
-                jdbcTemplate.update("INSERT INTO purchase_order_detail (order_id, item_name, quantity, unit_price, amount, create_time) SELECT id, 'プログラミング', 1, 4000000.00, 4000000.00, NOW() FROM purchase_order WHERE order_number = 'PO-2026-0003'");
+                jdbcTemplate.update("INSERT INTO purchase_order_detail (order_id, employee_name, item_name, quantity, unit_price, amount, create_time) SELECT id, '山田 太郎', 'サーバー本体', 2, 1500000.00, 3000000.00, NOW() FROM purchase_order WHERE order_number = 'PO-2026-0001'");
+                jdbcTemplate.update("INSERT INTO purchase_order_detail (order_id, employee_name, item_name, quantity, unit_price, amount, create_time) SELECT id, '鈴木 花子', 'NASストレージ', 1, 800000.00, 800000.00, NOW() FROM purchase_order WHERE order_number = 'PO-2026-0001'");
+                jdbcTemplate.update("INSERT INTO purchase_order_detail (order_id, employee_name, item_name, quantity, unit_price, amount, create_time) SELECT id, '佐藤 健一', 'ルーター', 3, 500000.00, 1500000.00, NOW() FROM purchase_order WHERE order_number = 'PO-2026-0002'");
+                jdbcTemplate.update("INSERT INTO purchase_order_detail (order_id, employee_name, item_name, quantity, unit_price, amount, create_time) SELECT id, '田中 美咲', '設計書作成', 1, 3000000.00, 3000000.00, NOW() FROM purchase_order WHERE order_number = 'PO-2026-0003'");
+                jdbcTemplate.update("INSERT INTO purchase_order_detail (order_id, employee_name, item_name, quantity, unit_price, amount, create_time) SELECT id, '伊藤 大輔', 'プログラミング', 1, 4000000.00, 4000000.00, NOW() FROM purchase_order WHERE order_number = 'PO-2026-0003'");
             }
         }
         // Sync employee.torihiki_no = bank_account.torihiki_no (group key)
