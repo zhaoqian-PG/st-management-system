@@ -352,7 +352,27 @@ CREATE TABLE IF NOT EXISTS purchase_order_detail (
 
 CREATE INDEX IF NOT EXISTS idx_pod_order ON purchase_order_detail(order_id);
 
--- 10. 注文書添付テーブル（旧注文書テーブル）
+-- 11. 発注書テーブル（我社→他社）
+CREATE TABLE IF NOT EXISTS supplier_order (
+    id              BIGSERIAL       PRIMARY KEY,
+    order_number    VARCHAR(50)     NOT NULL UNIQUE,
+    supplier_name   VARCHAR(200)    NOT NULL,
+    order_date      DATE            NOT NULL,
+    delivery_date   DATE,
+    subject         VARCHAR(500),
+    amount          DECIMAL(12,2)   NOT NULL DEFAULT 0,
+    tax_rate        DECIMAL(4,2)    DEFAULT 10.00,
+    tax_amount      DECIMAL(12,2)   DEFAULT 0,
+    total_with_tax  DECIMAL(12,2)   DEFAULT 0,
+    status          VARCHAR(20)     NOT NULL DEFAULT '下書き',
+    remark          TEXT,
+    create_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_so_supplier ON supplier_order(supplier_name);
+
+-- 12. 注文書添付テーブル（旧注文書テーブル）
 CREATE TABLE IF NOT EXISTS order_documents (
     id          BIGSERIAL       PRIMARY KEY,
     invoice_id  BIGINT          NOT NULL,

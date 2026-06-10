@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Layout as AntLayout, Menu, Button, message } from 'antd';
-import { UserOutlined, ShopOutlined, CalendarOutlined, FileTextOutlined, SafetyOutlined, ShoppingOutlined, LogoutOutlined } from '@ant-design/icons';
+import { UserOutlined, ShopOutlined, CalendarOutlined, FileTextOutlined, SafetyOutlined, ShoppingOutlined, SendOutlined, LogoutOutlined } from '@ant-design/icons';
 
 const { Header, Sider, Content } = AntLayout;
 
@@ -11,6 +11,7 @@ const allMenuItems = [
   { key: '/attendance', icon: <CalendarOutlined />, label: '勤務管理', adminOnly: false },
   { key: '/invoice', icon: <FileTextOutlined />, label: '請求書管理', adminOnly: true },
   { key: '/purchase-order', icon: <ShoppingOutlined />, label: '注文書管理', adminOnly: true },
+  { key: '/supplier-order', icon: <SendOutlined />, label: '発注管理', adminOnly: true },
   { key: '/bank-accounts', icon: <SafetyOutlined />, label: '銀行口座管理', adminOnly: true },
 ];
 
