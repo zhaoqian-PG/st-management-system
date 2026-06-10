@@ -281,7 +281,50 @@ CREATE TABLE IF NOT EXISTS employee_attachment (
 COMMENT ON TABLE employee_attachment IS '社員添付ファイル';
 CREATE INDEX IF NOT EXISTS idx_emp_att_employee ON employee_attachment(employee_id);
 
--- 8. 注文書テーブル（添付資料）
+-- 9. 注文書テーブル
+CREATE TABLE IF NOT EXISTS purchase_order (
+    id              BIGSERIAL       PRIMARY KEY,
+    order_number    VARCHAR(50)     NOT NULL UNIQUE,
+    customer_id     BIGINT          NOT NULL,
+    order_date      DATE            NOT NULL,
+    delivery_date   DATE,
+    subject         VARCHAR(500),
+    amount          DECIMAL(12,2)   NOT NULL DEFAULT 0,
+    tax_rate        DECIMAL(4,2)    DEFAULT 10.00,
+    tax_amount      DECIMAL(12,2)   DEFAULT 0,
+    total_with_tax  DECIMAL(12,2)   DEFAULT 0,
+    status          VARCHAR(20)     NOT NULL DEFAULT '下書き',
+    remark          TEXT,
+    create_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_po_customer FOREIGN KEY (customer_id) REFERENCES customer(id) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE purchase_order IS '注文書';
+COMMENT ON COLUMN purchase_order.order_number IS '注文番号';
+COMMENT ON COLUMN purchase_order.order_date IS '注文日';
+COMMENT ON COLUMN purchase_order.delivery_date IS '納品期限';
+COMMENT ON COLUMN purchase_order.status IS '下書き/発注済/納品済/検収済';
+
+CREATE INDEX IF NOT EXISTS idx_po_customer ON purchase_order(customer_id);
+
+CREATE TABLE IF NOT EXISTS purchase_order_detail (
+    id              BIGSERIAL       PRIMARY KEY,
+    order_id        BIGINT          NOT NULL,
+    item_name       VARCHAR(500)    NOT NULL,
+    quantity        DECIMAL(8,2)    NOT NULL DEFAULT 1,
+    unit_price      DECIMAL(12,2)   NOT NULL DEFAULT 0,
+    amount          DECIMAL(12,2)   NOT NULL DEFAULT 0,
+    remark          VARCHAR(500),
+    create_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_pod_order FOREIGN KEY (order_id) REFERENCES purchase_order(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_pod_order ON purchase_order_detail(order_id);
+
+-- 10. 注文書添付テーブル（旧注文書テーブル）
 CREATE TABLE IF NOT EXISTS order_documents (
     id          BIGSERIAL       PRIMARY KEY,
     invoice_id  BIGINT          NOT NULL,

@@ -9,6 +9,7 @@ import Customer from './pages/Customer';
 import BankAccount from './pages/BankAccount';
 import Attendance from './pages/Attendance';
 import Invoice from './pages/Invoice';
+import PurchaseOrder from './pages/PurchaseOrder';
 import Login from './pages/Login';
 import './App.css';
 
@@ -42,6 +43,7 @@ function App() {
         <Route path="/customer" element={<Customer />} />
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/invoice" element={<Invoice />} />
+        <Route path="/purchase-order" element={<PurchaseOrder />} />
         <Route path="/bank-accounts" element={<BankAccount />} />
       </Route>
     </Routes>
