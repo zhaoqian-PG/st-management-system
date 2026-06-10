@@ -10,7 +10,6 @@ import BankAccount from './pages/BankAccount';
 import Attendance from './pages/Attendance';
 import Invoice from './pages/Invoice';
 import PurchaseOrder from './pages/PurchaseOrder';
-import SupplierOrder from './pages/SupplierOrder';
 import Login from './pages/Login';
 import './App.css';
 
@@ -45,7 +44,6 @@ function App() {
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/invoice" element={<Invoice />} />
         <Route path="/purchase-order" element={<PurchaseOrder />} />
-        <Route path="/supplier-order" element={<SupplierOrder />} />
         <Route path="/bank-accounts" element={<BankAccount />} />
       </Route>
     </Routes>
