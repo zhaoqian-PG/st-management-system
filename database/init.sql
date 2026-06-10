@@ -6,10 +6,13 @@
 -- ============================================================
 -- 既存テーブル削除（依存関係を考慮した順序）
 -- ============================================================
+DROP TABLE IF EXISTS supplier_order CASCADE;
 DROP TABLE IF EXISTS purchase_order_detail CASCADE;
 DROP TABLE IF EXISTS purchase_order CASCADE;
 DROP TABLE IF EXISTS order_documents CASCADE;
+DROP TABLE IF EXISTS invoice_detail CASCADE;
 DROP TABLE IF EXISTS invoice CASCADE;
+DROP TABLE IF EXISTS employee_attachment CASCADE;
 DROP TABLE IF EXISTS attendance CASCADE;
 DROP TABLE IF EXISTS bank_account CASCADE;
 DROP TABLE IF EXISTS customer CASCADE;
