@@ -7,8 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.io.IOException;
 
 @RestController @RequestMapping("/api/purchase-order") @RequiredArgsConstructor
 public class PurchaseOrderController {
@@ -44,16 +46,33 @@ public class PurchaseOrderController {
         return ResponseEntity.ok(ApiResponse.success(null, "注文書を削除しました"));
     }
 
-    @GetMapping(value = "/export/{id}", produces = "text/csv; charset=UTF-8")
-    public ResponseEntity<byte[]> exportOrder(@PathVariable Long id) {
-        String csv = purchaseOrderService.exportOrderCsv(id);
-        byte[] bom = new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
-        byte[] csvBytes = csv.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        byte[] result = new byte[bom.length + csvBytes.length];
-        System.arraycopy(bom, 0, result, 0, bom.length);
-        System.arraycopy(csvBytes, 0, result, bom.length, csvBytes.length);
-        return ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"purchase_order_" + id + ".csv\"")
-                .body(result);
+    @PostMapping("/{id}/upload")
+    public ResponseEntity<?> uploadAttachment(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        try {
+            purchaseOrderService.uploadAttachment(id, file);
+            return ResponseEntity.ok(ApiResponse.success(null, "ファイルをアップロードしました"));
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("アップロード失敗: " + e.getMessage(), 400));
+        }
+    }
+
+    @GetMapping("/{id}/download")
+    public ResponseEntity<?> downloadAttachment(@PathVariable Long id) {
+        try {
+            org.springframework.core.io.Resource resource = purchaseOrderService.getAttachmentFile(id);
+            String fileName = purchaseOrderService.getAttachmentFileName(id);
+            return ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/{id}/attachment")
+    public ResponseEntity<?> deleteAttachment(@PathVariable Long id) {
+        purchaseOrderService.deleteAttachment(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "ファイルを削除しました"));
     }
 }

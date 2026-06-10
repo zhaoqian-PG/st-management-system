@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ShoppingOutlined, DownloadOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, Upload } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ShoppingOutlined, UploadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { purchaseOrderApi } from '../services/purchaseOrderApi';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -68,7 +68,13 @@ export default function PurchaseOrder() {
         onRow={r=>({onClick:()=>handleSelect(r),style:{background:selectedOrder?.id===r.id?'#e6f7ff':undefined,cursor:'pointer'}})}
         pagination={{current:page,pageSize:PAGE_SIZE,total,showSizeChanger:false,showTotal:t=>`全 ${t} 件`,onChange:p=>setPage(p)}} />
     </Card>
-    {selectedOrder && <Card title={`📎 注文書詳細: ${selectedOrder.orderNumber}`} extra={<Button icon={<DownloadOutlined />} onClick={() => window.open(`/api/purchase-order/export/${selectedOrder.id}`)}>注文書出力</Button>} style={{marginTop:16}}>
+    {selectedOrder && <Card title={`📎 注文書詳細: ${selectedOrder.orderNumber}`} style={{marginTop:16}}
+      extra={<Space>
+        <Upload showUploadList={false} beforeUpload={async (f) => { const fd=new FormData(); fd.append('file',f); try { await axios.post(`/api/purchase-order/${selectedOrder.id}/upload`,fd); message.success('アップロードしました'); const r=await purchaseOrderApi.getById(selectedOrder.id); setSelectedOrder({...selectedOrder,attachmentPath:r.data.data.attachmentPath}); } catch { message.error('失敗'); } return false; }}>
+          <Button icon={<UploadOutlined />}>発注書添付</Button>
+        </Upload>
+        {selectedOrder.attachmentPath && <Button icon={<DownloadOutlined />} onClick={() => window.open(`/api/purchase-order/${selectedOrder.id}/download`)}>DL</Button>}
+      </Space>}>
       <div style={{display:'flex',gap:16,marginBottom:16}}>
         <Card size="small" style={{flex:1}} title="📋 基本情報">
           <p><strong>発注先:</strong> {selectedOrder.customerName}</p>

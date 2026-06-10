@@ -75,6 +75,40 @@ public class PurchaseOrderService {
 
     @Transactional public void delete(Long id) { detailRepository.deleteByOrderId(id); orderRepository.deleteById(id); }
 
+    @Transactional
+    public void uploadAttachment(Long id, MultipartFile file) throws IOException {
+        PurchaseOrder po = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("注文書が見つかりません"));
+        java.nio.file.Path uploadDir = java.nio.file.Paths.get("uploads");
+        java.nio.file.Files.createDirectories(uploadDir);
+        String name = "po_" + id + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        java.nio.file.Files.copy(file.getInputStream(), uploadDir.resolve(name));
+        po.setAttachmentPath(uploadDir.resolve(name).toString());
+        orderRepository.save(po);
+    }
+
+    public org.springframework.core.io.Resource getAttachmentFile(Long id) {
+        PurchaseOrder po = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("注文書が見つかりません"));
+        if (po.getAttachmentPath() == null) throw new RuntimeException("添付ファイルがありません");
+        org.springframework.core.io.Resource r = new FileSystemResource(java.nio.file.Paths.get(po.getAttachmentPath()));
+        if (!r.exists()) throw new RuntimeException("ファイルが存在しません");
+        return r;
+    }
+
+    public String getAttachmentFileName(Long id) {
+        return orderRepository.findById(id).map(PurchaseOrder::getAttachmentPath)
+                .map(p -> p.substring(p.lastIndexOf('_') + 1)).orElse("download");
+    }
+
+    @Transactional
+    public void deleteAttachment(Long id) {
+        PurchaseOrder po = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("注文書が見つかりません"));
+        if (po.getAttachmentPath() != null) {
+            try { java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(po.getAttachmentPath())); } catch (IOException ignored) {}
+            po.setAttachmentPath(null);
+            orderRepository.save(po);
+        }
+    }
+
     public String exportOrderCsv(Long orderId) {
         PurchaseOrder po = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("注文書が見つかりません"));
         Customer cust = customerRepository.findById(po.getCustomerId()).orElse(null);

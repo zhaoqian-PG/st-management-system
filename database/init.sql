@@ -315,10 +315,13 @@ CREATE TABLE IF NOT EXISTS purchase_order (
     create_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
+    attachment_path VARCHAR(500),
+
     CONSTRAINT fk_po_customer FOREIGN KEY (customer_id) REFERENCES customer(id) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE purchase_order IS '注文書';
+COMMENT ON COLUMN purchase_order.attachment_path IS '添付ファイルパス（他社発注書）';
 COMMENT ON COLUMN purchase_order.order_number IS '注文番号';
 COMMENT ON COLUMN purchase_order.order_date IS '注文日';
 COMMENT ON COLUMN purchase_order.delivery_date IS '納品期限';

@@ -32,5 +32,6 @@ public class PurchaseOrderDTO {
     private Double totalWithTax;
     private String status;
     private String remark;
+    private String attachmentPath;
     private List<PurchaseOrderDetailDTO> details;
 }

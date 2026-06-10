@@ -75,6 +75,9 @@ public class PurchaseOrder {
     @Column(columnDefinition = "TEXT")
     private String remark;
 
+    @Column(name = "attachment_path", length = 500)
+    private String attachmentPath;
+
     @Column(name = "create_time", nullable = false, updatable = false)
     private LocalDateTime createTime;
 
