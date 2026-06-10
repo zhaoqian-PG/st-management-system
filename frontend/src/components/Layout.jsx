@@ -10,7 +10,7 @@ const allMenuItems = [
   { key: '/customer', icon: <ShopOutlined />, label: '顧客管理', adminOnly: true },
   { key: '/attendance', icon: <CalendarOutlined />, label: '勤務管理', adminOnly: false },
   { key: '/invoice', icon: <FileTextOutlined />, label: '請求書管理', adminOnly: true },
-  { key: '/purchase-order', icon: <ShoppingOutlined />, label: '注文書管理', adminOnly: true },
+  { key: '/purchase-order', icon: <ShoppingOutlined />, label: '受注管理', adminOnly: true },
   { key: '/bank-accounts', icon: <SafetyOutlined />, label: '銀行口座管理', adminOnly: true },
 ];
 
