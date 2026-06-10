@@ -22,6 +22,13 @@ public class DataFixRunner implements CommandLineRunner {
         jdbcTemplate.update("UPDATE employee SET status = '在職' WHERE leave_date IS NULL AND status = '離職'");
         // Reset admin password to plain text for dev login
         jdbcTemplate.update("UPDATE \"user\" SET password = 'admin123' WHERE username = 'admin' AND length(password) > 20");
+        // Add purchase_order sample data if empty
+        int poCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM purchase_order", Integer.class);
+        if (poCount == 0) {
+            jdbcTemplate.update("INSERT INTO purchase_order (order_number, customer_id, order_date, delivery_date, subject, recipient_dept, recipient_name, amount, tax_rate, status, remark) VALUES ('PO-2026-0001', 1, '2026-05-01', '2026-06-15', 'サーバー機器一式', '情報システム部', '山田 太郎', 5000000.00, 10.00, '発注済', '新規プロジェクト用')");
+            jdbcTemplate.update("INSERT INTO purchase_order (order_number, customer_id, order_date, delivery_date, subject, recipient_dept, recipient_name, amount, tax_rate, status, remark) VALUES ('PO-2026-0002', 2, '2026-05-10', '2026-06-30', 'ネットワーク工事', '総務部', '佐藤 健一', 2500000.00, 10.00, '下書き', '大阪支店増設')");
+            jdbcTemplate.update("INSERT INTO purchase_order (order_number, customer_id, order_date, delivery_date, subject, recipient_dept, recipient_name, amount, tax_rate, status, remark) VALUES ('PO-2026-0003', 3, '2026-05-15', '2026-07-15', 'ソフトウェア開発', '開発部', '田中 美咲', 8000000.00, 10.00, '検収済', '基幹システム改修')");
+        }
         // Sync employee.torihiki_no = bank_account.torihiki_no (group key)
         jdbcTemplate.update("UPDATE employee e SET torihiki_no = (" +
             "SELECT ba.torihiki_no FROM bank_account ba WHERE ba.employee_id = e.id AND ba.category = 'EMPLOYEE' FETCH FIRST 1 ROW ONLY" +
