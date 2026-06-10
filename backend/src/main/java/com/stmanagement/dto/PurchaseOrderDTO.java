@@ -18,6 +18,10 @@ public class PurchaseOrderDTO {
     private String customerName;
     @NotNull private LocalDate orderDate;
     private LocalDate deliveryDate;
+    private String recipientDept;
+    private String recipientName;
+    private String recipientAddr;
+    private String recipientTel;
     private String subject;
     private Double amount;
     private Double taxRate;

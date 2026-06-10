@@ -288,6 +288,10 @@ CREATE TABLE IF NOT EXISTS purchase_order (
     customer_id     BIGINT          NOT NULL,
     order_date      DATE            NOT NULL,
     delivery_date   DATE,
+    recipient_dept  VARCHAR(100),
+    recipient_name  VARCHAR(100),
+    recipient_addr  VARCHAR(500),
+    recipient_tel   VARCHAR(20),
     subject         VARCHAR(500),
     amount          DECIMAL(12,2)   NOT NULL DEFAULT 0,
     tax_rate        DECIMAL(4,2)    DEFAULT 10.00,
@@ -305,6 +309,10 @@ COMMENT ON TABLE purchase_order IS '注文書';
 COMMENT ON COLUMN purchase_order.order_number IS '注文番号';
 COMMENT ON COLUMN purchase_order.order_date IS '注文日';
 COMMENT ON COLUMN purchase_order.delivery_date IS '納品期限';
+COMMENT ON COLUMN purchase_order.recipient_dept IS '発注先部署';
+COMMENT ON COLUMN purchase_order.recipient_name IS '発注先担当者';
+COMMENT ON COLUMN purchase_order.recipient_addr IS '発注先住所';
+COMMENT ON COLUMN purchase_order.recipient_tel IS '発注先TEL';
 COMMENT ON COLUMN purchase_order.status IS '下書き/発注済/納品済/検収済';
 
 CREATE INDEX IF NOT EXISTS idx_po_customer ON purchase_order(customer_id);
@@ -465,7 +473,24 @@ VALUES
     ('INV-2026-0502', 2, 2026, 5,  850000.00, '送付済', 'サーバー保守費用'),
     ('INV-2026-0401', 3, 2026, 4, 2300000.00, '入金済', 'ソフトウェアライセンス');
 
--- 注文書（2件 / INV-2026-0501 に紐付く）
+-- 注文書（3件）
+INSERT INTO purchase_order (order_number, customer_id, order_date, delivery_date, subject, recipient_dept, recipient_name, amount, tax_rate, status, remark)
+VALUES
+    ('PO-2026-0001', 1, '2026-05-01', '2026-06-15', 'サーバー機器一式', '情報システム部', '山田 太郎', 5000000.00, 10.00, '発注済', '新規プロジェクト用'),
+    ('PO-2026-0002', 2, '2026-05-10', '2026-06-30', 'ネットワーク工事', '総務部', '佐藤 健一', 2500000.00, 10.00, '下書き', '大阪支店増設'),
+    ('PO-2026-0003', 3, '2026-05-15', '2026-07-15', 'ソフトウェア開発', '開発部', '田中 美咲', 8000000.00, 10.00, '検収済', '基幹システム改修');
+
+INSERT INTO purchase_order_detail (order_id, item_name, quantity, unit_price, amount) VALUES
+    (1, 'サーバー本体', 2, 1500000.00, 3000000.00),
+    (1, 'NASストレージ', 1, 800000.00, 800000.00),
+    (1, 'UPS電源', 2, 600000.00, 1200000.00),
+    (2, 'ルーター', 3, 500000.00, 1500000.00),
+    (2, 'LANケーブル', 100, 10000.00, 1000000.00),
+    (3, '設計書作成', 1, 3000000.00, 3000000.00),
+    (3, 'プログラミング', 1, 4000000.00, 4000000.00),
+    (3, 'テスト', 1, 1000000.00, 1000000.00);
+
+-- 注文書添付（2件 / INV-2026-0501 に紐付く）
 INSERT INTO order_documents (invoice_id, file_name, file_path, file_size)
 VALUES
     (1, '注文書_20260501.pdf', 'invoices/2026/05/order_20260501.pdf', 245760),

@@ -33,6 +33,18 @@ public class PurchaseOrder {
     @Column(name = "delivery_date")
     private LocalDate deliveryDate;
 
+    @Column(name = "recipient_dept", length = 100)
+    private String recipientDept;
+
+    @Column(name = "recipient_name", length = 100)
+    private String recipientName;
+
+    @Column(name = "recipient_addr", length = 500)
+    private String recipientAddr;
+
+    @Column(name = "recipient_tel", length = 20)
+    private String recipientTel;
+
     @Column(length = 500)
     private String subject;
 

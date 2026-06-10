@@ -63,6 +63,8 @@ public class PurchaseOrderService {
             throw new RuntimeException("注文番号 " + dto.getOrderNumber() + " は既に存在します");
         po.setOrderNumber(dto.getOrderNumber()); po.setCustomerId(dto.getCustomerId());
         po.setOrderDate(dto.getOrderDate()); po.setDeliveryDate(dto.getDeliveryDate());
+        po.setRecipientDept(dto.getRecipientDept()); po.setRecipientName(dto.getRecipientName());
+        po.setRecipientAddr(dto.getRecipientAddr()); po.setRecipientTel(dto.getRecipientTel());
         po.setSubject(dto.getSubject()); po.setAmount(dto.getAmount());
         double rate = dto.getTaxRate() != null ? dto.getTaxRate() : 10;
         double tax = dto.getAmount() != null ? Math.round(dto.getAmount() * rate) / 100.0 : 0;
@@ -89,6 +91,8 @@ public class PurchaseOrderService {
         String name = customerRepository.findById(po.getCustomerId()).map(Customer::getCompanyName).orElse("");
         return PurchaseOrderDTO.builder().id(po.getId()).orderNumber(po.getOrderNumber()).customerId(po.getCustomerId())
                 .customerName(name).orderDate(po.getOrderDate()).deliveryDate(po.getDeliveryDate())
+                .recipientDept(po.getRecipientDept()).recipientName(po.getRecipientName())
+                .recipientAddr(po.getRecipientAddr()).recipientTel(po.getRecipientTel())
                 .subject(po.getSubject()).amount(po.getAmount()).taxRate(po.getTaxRate()).taxAmount(po.getTaxAmount())
                 .totalWithTax(po.getTotalWithTax()).status(po.getStatus()).remark(po.getRemark()).build();
     }
@@ -98,7 +102,9 @@ public class PurchaseOrderService {
         double rate = dto.getTaxRate() != null ? dto.getTaxRate() : 10;
         double tax = Math.round(amount * rate) / 100.0;
         return PurchaseOrder.builder().orderNumber(dto.getOrderNumber()).customerId(dto.getCustomerId())
-                .orderDate(dto.getOrderDate()).deliveryDate(dto.getDeliveryDate()).subject(dto.getSubject())
+                .orderDate(dto.getOrderDate()).deliveryDate(dto.getDeliveryDate())
+                .recipientDept(dto.getRecipientDept()).recipientName(dto.getRecipientName())
+                .recipientAddr(dto.getRecipientAddr()).recipientTel(dto.getRecipientTel()).subject(dto.getSubject())
                 .amount(amount).taxRate(rate).taxAmount(tax).totalWithTax(amount + tax).remark(dto.getRemark()).build();
     }
 
