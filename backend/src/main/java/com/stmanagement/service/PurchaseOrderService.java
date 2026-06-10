@@ -77,6 +77,45 @@ public class PurchaseOrderService {
 
     @Transactional public void delete(Long id) { detailRepository.deleteByOrderId(id); orderRepository.deleteById(id); }
 
+    public String exportOrderCsv(Long orderId) {
+        PurchaseOrder po = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("注文書が見つかりません"));
+        Customer cust = customerRepository.findById(po.getCustomerId()).orElse(null);
+        String customerName = cust != null ? cust.getCompanyName() : "";
+        String customerAddr = cust != null && cust.getAddress() != null ? cust.getAddress() : "";
+        List<PurchaseOrderDetail> details = detailRepository.findByOrderId(orderId);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("　　　　　　　注　文　書\n\n");
+        sb.append("注文番号: ").append(po.getOrderNumber()).append("\n");
+        sb.append("注文日: ").append(po.getOrderDate()).append("\n");
+        if (po.getDeliveryDate() != null) sb.append("納品期限: ").append(po.getDeliveryDate()).append("\n");
+        sb.append("\n【発注先】\n");
+        sb.append(customerName).append("\n");
+        if (po.getRecipientDept() != null) sb.append(po.getRecipientDept()).append("　");
+        if (po.getRecipientName() != null) sb.append(po.getRecipientName()).append(" 様\n");
+        if (customerAddr != null && !customerAddr.isEmpty()) sb.append(customerAddr).append("\n");
+        if (po.getRecipientTel() != null) sb.append("TEL: ").append(po.getRecipientTel()).append("\n\n");
+        if (po.getSubject() != null && !po.getSubject().isEmpty())
+            sb.append("件名: ").append(po.getSubject()).append("\n\n");
+
+        sb.append("【明細】\n担当者,品名,数量,単価,金額\n");
+        double sub = 0;
+        for (PurchaseOrderDetail d : details) {
+            sb.append(d.getEmployeeName() != null ? d.getEmployeeName() : "").append(",");
+            sb.append(d.getItemName()).append(",").append(d.getQuantity()).append(",");
+            sb.append(d.getUnitPrice()).append(",").append(d.getAmount()).append("\n");
+            sub += d.getAmount() != null ? d.getAmount() : 0;
+        }
+        sb.append("\n小計,,").append(String.format("%.0f", sub)).append("\n");
+        double rate = po.getTaxRate() != null ? po.getTaxRate() : 10;
+        double tax = po.getTaxAmount() != null ? po.getTaxAmount() : Math.round(sub * rate) / 100.0;
+        double total = po.getTotalWithTax() != null ? po.getTotalWithTax() : sub + tax;
+        sb.append("消費税(").append(String.format("%.0f", rate)).append("%),,").append(String.format("%.0f", tax)).append("\n");
+        sb.append("合計,,").append(String.format("%.0f", total)).append("\n\n");
+        sb.append("備考: ").append(po.getRemark() != null ? po.getRemark() : "").append("\n");
+        return sb.toString();
+    }
+
     private void saveDetails(Long orderId, List<PurchaseOrderDetailDTO> details) {
         if (details == null) return;
         for (PurchaseOrderDetailDTO d : details) {

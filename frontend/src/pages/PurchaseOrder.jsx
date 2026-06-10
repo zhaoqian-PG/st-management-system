@@ -68,7 +68,7 @@ export default function PurchaseOrder() {
         onRow={r=>({onClick:()=>handleSelect(r),style:{background:selectedOrder?.id===r.id?'#e6f7ff':undefined,cursor:'pointer'}})}
         pagination={{current:page,pageSize:PAGE_SIZE,total,showSizeChanger:false,showTotal:t=>`全 ${t} 件`,onChange:p=>setPage(p)}} />
     </Card>
-    {selectedOrder && <Card title={`📎 注文書詳細: ${selectedOrder.orderNumber}`} style={{marginTop:16}}>
+    {selectedOrder && <Card title={`📎 注文書詳細: ${selectedOrder.orderNumber}`} extra={<Button icon={<DownloadOutlined />} onClick={() => window.open(`/api/purchase-order/export/${selectedOrder.id}`)}>注文書出力</Button>} style={{marginTop:16}}>
       <div style={{display:'flex',gap:16,marginBottom:16}}>
         <Card size="small" style={{flex:1}} title="📋 基本情報">
           <p><strong>発注先:</strong> {selectedOrder.customerName}</p>

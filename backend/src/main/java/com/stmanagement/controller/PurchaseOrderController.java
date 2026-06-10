@@ -43,4 +43,17 @@ public class PurchaseOrderController {
         purchaseOrderService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(null, "注文書を削除しました"));
     }
+
+    @GetMapping(value = "/export/{id}", produces = "text/csv; charset=UTF-8")
+    public ResponseEntity<byte[]> exportOrder(@PathVariable Long id) {
+        String csv = purchaseOrderService.exportOrderCsv(id);
+        byte[] bom = new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
+        byte[] csvBytes = csv.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] result = new byte[bom.length + csvBytes.length];
+        System.arraycopy(bom, 0, result, 0, bom.length);
+        System.arraycopy(csvBytes, 0, result, bom.length, csvBytes.length);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"purchase_order_" + id + ".csv\"")
+                .body(result);
+    }
 }
