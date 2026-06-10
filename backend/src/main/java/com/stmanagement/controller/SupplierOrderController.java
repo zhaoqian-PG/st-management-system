@@ -4,6 +4,8 @@ import com.stmanagement.common.ApiResponse;
 import com.stmanagement.service.SupplierOrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -22,4 +24,17 @@ public class SupplierOrderController {
     @PostMapping public ResponseEntity<?> create(@RequestBody Map<String,Object> dto) { return ResponseEntity.status(201).body(ApiResponse.success(service.create(dto),"発注書を登録しました")); }
     @PutMapping("/{id}") public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String,Object> dto) { return ResponseEntity.ok(ApiResponse.success(service.update(id,dto),"発注書を更新しました")); }
     @DeleteMapping("/{id}") public ResponseEntity<?> delete(@PathVariable Long id) { service.delete(id); return ResponseEntity.ok(ApiResponse.success(null,"発注書を削除しました")); }
+
+    @GetMapping("/export/{id}")
+    public ResponseEntity<byte[]> exportPdf(@PathVariable Long id) {
+        try {
+            byte[] pdf = service.exportPdf(id);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"hacchusho_" + id + ".pdf\"")
+                    .body(pdf);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

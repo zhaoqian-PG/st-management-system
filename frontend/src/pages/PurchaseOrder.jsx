@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, Upload, Tabs } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ShoppingOutlined, UploadOutlined, DownloadOutlined, SendOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ShoppingOutlined, UploadOutlined, DownloadOutlined, SendOutlined, PrinterOutlined } from '@ant-design/icons';
 import { purchaseOrderApi } from '../services/purchaseOrderApi';
 import { supplierOrderApi } from '../services/supplierOrderApi';
 import axios from 'axios';
@@ -83,7 +83,7 @@ export default function PurchaseOrder() {
     { title:'発注先', dataIndex:'supplierName', width:160 }, { title:'発注日', dataIndex:'orderDate', width:100 },
     { title:'納品期限', dataIndex:'deliveryDate', width:100 }, { title:'税込金額', dataIndex:'totalWithTax', width:120, render:v=>v?.toLocaleString() },
     { title:'状態', dataIndex:'status', width:80, render:t=>(<Tag color={t==='下書き'?'gold':t==='発注済'?'blue':t==='納品済'?'green':'purple'}>{t}</Tag>) },
-    { title:'操作', width:140, fixed:'right', render:(_,r)=><Space><Button type="link" icon={<EditOutlined/>} onClick={()=>handleSoEdit(r)}>編集</Button><Button type="link" danger icon={<DeleteOutlined/>} onClick={()=>handleSoDelete(r)}>削除</Button></Space> },
+    { title:'操作', width:180, fixed:'right', render:(_,r)=><Space><Button type="link" icon={<PrinterOutlined/>} onClick={()=>window.open(`/api/supplier-order/export/${r.id}`)}>PDF</Button><Button type="link" icon={<EditOutlined/>} onClick={()=>handleSoEdit(r)}>編集</Button><Button type="link" danger icon={<DeleteOutlined/>} onClick={()=>handleSoDelete(r)}>削除</Button></Space> },
   ];
 
   const tabItems = [

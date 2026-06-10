@@ -533,6 +533,13 @@ INSERT INTO purchase_order_detail (order_id, employee_name, item_name, quantity,
     (3, '田中 美咲', 'プログラミング', 1, 4000000.00, 4000000.00),
     (3, '伊藤 大輔', 'テスト', 1, 1000000.00, 1000000.00);
 
+-- 発注書（3件 / 我社→他社）
+INSERT INTO supplier_order (order_number, supplier_name, order_date, delivery_date, subject, amount, tax_rate, status, remark, create_time, update_time)
+VALUES
+    ('PO-SUP-2026-0001', '株式会社ネクストシステム', '2026-05-10', '2026-07-01', '外部サーバー構築', 3500000.00, 10.00, '発注済', 'AWS移行プロジェクト用', NOW(), NOW()),
+    ('PO-SUP-2026-0002', 'アイティソリューション株式会社', '2026-05-20', '2026-08-15', 'セキュリティ監査一式', 1800000.00, 10.00, '下書き', NULL, NOW(), NOW()),
+    ('PO-SUP-2026-0003', '株式会社データワークス', '2026-06-01', '2026-09-30', 'データベース設計・構築', 5200000.00, 10.00, '納品済', '新基幹システム用', NOW(), NOW());
+
 -- 注文書添付（2件 / INV-2026-0501 に紐付く）
 INSERT INTO order_documents (invoice_id, file_name, file_path, file_size)
 VALUES
