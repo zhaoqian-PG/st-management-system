@@ -223,8 +223,7 @@ export default function Invoice() {
     <Modal title={editingRecord ? '請求書編集' : '請求書新規登録'} open={modalVisible} onOk={handleSubmit} onCancel={() => setModalVisible(false)}
       confirmLoading={formLoading} okText="保存" cancelText="キャンセル" destroyOnClose centered width={900}>
       <Form form={form} layout="vertical" style={{ marginTop: 8 }}>
-        <Form.Item name="invoiceNumber" label="請求書番号" rules={[{ required: true }]}>
-          <Input placeholder="例: INV-2026-0601" maxLength={50} /></Form.Item>
+        {editingRecord ? (<><Form.Item name="invoiceNumber" hidden><Input /></Form.Item><Form.Item label="請求書番号"><Input value={editingRecord.invoiceNumber} disabled /></Form.Item></>) : <Form.Item label="請求書番号"><Input value="自動採番（INV-YYYY-NNNN）" disabled /></Form.Item>}
         <Form.Item name="subject" label="件名">
           <Input placeholder="例: システム開発費用" maxLength={500} /></Form.Item>
         <Form.Item name="customerId" label="請求先" rules={[{ required: true }]}>

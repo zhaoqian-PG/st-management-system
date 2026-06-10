@@ -21,7 +21,7 @@ public class PurchaseOrder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_number", length = 50, nullable = false, unique = true)
+    @Column(name = "order_number", length = 50, nullable = false, unique = true, insertable = false)
     private String orderNumber;
 
     @Column(name = "customer_id", nullable = false)
@@ -44,6 +44,15 @@ public class PurchaseOrder {
 
     @Column(name = "recipient_tel", length = 20)
     private String recipientTel;
+
+    @Column(name = "issuer_name", length = 100)
+    private String issuerName;
+
+    @Column(name = "issuer_dept", length = 100)
+    private String issuerDept;
+
+    @Column(name = "issuer_tel", length = 20)
+    private String issuerTel;
 
     @Column(length = 500)
     private String subject;

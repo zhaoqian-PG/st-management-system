@@ -68,9 +68,8 @@ public class InvoiceService {
 
     @Transactional
     public InvoiceDTO create(InvoiceDTO dto) {
-        if (invoiceRepository.existsByInvoiceNumber(dto.getInvoiceNumber()))
-            throw new RuntimeException("請求書番号 " + dto.getInvoiceNumber() + " は既に存在します");
         Invoice inv = toEntity(dto);
+        inv.setInvoiceNumber(null); // DB auto-generates
         inv.setStatus("下書き");
         inv = invoiceRepository.save(inv);
         saveDetails(inv.getId(), dto.getDetails());
@@ -80,9 +79,7 @@ public class InvoiceService {
     @Transactional
     public InvoiceDTO update(Long id, InvoiceDTO dto) {
         Invoice inv = invoiceRepository.findById(id).orElseThrow(() -> new RuntimeException("請求書が見つかりません: " + id));
-        if (!inv.getInvoiceNumber().equals(dto.getInvoiceNumber()) && invoiceRepository.existsByInvoiceNumber(dto.getInvoiceNumber()))
-            throw new RuntimeException("請求書番号 " + dto.getInvoiceNumber() + " は既に存在します");
-        inv.setInvoiceNumber(dto.getInvoiceNumber()); inv.setCustomerId(dto.getCustomerId());
+        inv.setCustomerId(dto.getCustomerId());
         inv.setYear(dto.getYear()); inv.setMonth(dto.getMonth());
         inv.setInvoiceDate(dto.getInvoiceDate()); inv.setDueDate(dto.getDueDate());
         inv.setAmount(dto.getAmount());

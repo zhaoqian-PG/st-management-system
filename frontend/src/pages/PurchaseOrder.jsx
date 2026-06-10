@@ -34,7 +34,7 @@ export default function PurchaseOrder() {
   const handleSubmit = async () => {
     try { const v = await form.validateFields(); setFormLoading(true);
       const payload = { ...v, orderDate: v.orderDate.format('YYYY-MM-DD'), deliveryDate: v.deliveryDate ? v.deliveryDate.format('YYYY-MM-DD') : null, details,
-        amount: details.reduce((s,d)=>s+(d.amount||0)+(d.quantity||0)*(d.unitPrice||0), 0) };
+        amount: details.reduce((s,d)=>s+((d.quantity||0)*(d.unitPrice||0)), 0) };
       if (editingRecord) { await purchaseOrderApi.update(editingRecord.id, payload); message.success('更新しました'); }
       else { await purchaseOrderApi.create(payload); message.success('登録しました'); }
       setModalVisible(false); fetchData();
@@ -89,17 +89,19 @@ export default function PurchaseOrder() {
     <Modal title={editingRecord?'注文書編集':'注文書新規登録'} open={modalVisible} onOk={handleSubmit} onCancel={()=>setModalVisible(false)}
       confirmLoading={formLoading} okText="保存" cancelText="キャンセル" destroyOnClose centered width={900}>
       <Form form={form} layout="vertical" style={{marginTop:8}}>
-        <Form.Item name="orderNumber" label="注文番号" rules={[{required:true}]}><Input placeholder="PO-2026-0001" maxLength={50}/></Form.Item>
+        {editingRecord ? (<><Form.Item name="orderNumber" hidden><Input /></Form.Item><Form.Item label="注文番号"><Input value={editingRecord.orderNumber} disabled /></Form.Item></>) : <Form.Item label="注文番号"><Input value="自動採番（PO-YYYY-NNNN）" disabled /></Form.Item>}
         <Form.Item name="subject" label="件名"><Input placeholder="例: システム開発一式" maxLength={500}/></Form.Item>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}}>
           <Form.Item name="customerId" label="発注先" rules={[{required:true}]}><Select placeholder="選択" showSearch filterOption={(i,o)=>o.children.toLowerCase().includes(i.toLowerCase())}>{customers.map(c=><Option key={c.id} value={c.id}>{c.companyName} ({c.customerCode})</Option>)}</Select></Form.Item>
           <Form.Item name="status" label="状態">{editingRecord?<Select><Option value="下書き">下書き</Option><Option value="発注済">発注済</Option><Option value="納品済">納品済</Option><Option value="検収済">検収済</Option></Select>:<Input value="下書き" disabled/>}</Form.Item>
           <Form.Item name="orderDate" label="注文日" rules={[{required:true}]}><DatePicker style={{width:'100%'}}/></Form.Item>
-          <Form.Item name="deliveryDate" label="納品期限"><DatePicker style={{width:'100%'}}/></Form.Item></div>
+          <Form.Item name="deliveryDate" label="納品期限"><DatePicker style={{width:'100%'}}/></Form.Item>
+          <Form.Item name="issuerName" label="発注元担当者"><Input placeholder="自社担当者" maxLength={100}/></Form.Item>
+          <Form.Item name="issuerDept" label="発注元部署"><Input placeholder="自社部署" maxLength={100}/></Form.Item></div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0 16px'}}>
-          <Form.Item label="税抜金額"><Input value={details.reduce((s,d)=>s+(d.amount||0)+(d.quantity||0)*(d.unitPrice||0),0).toLocaleString()} disabled/></Form.Item>
+          <Form.Item label="税抜金額"><Input value={details.reduce((s,d)=>s+((d.quantity||0)*(d.unitPrice||0)),0).toLocaleString()} disabled/></Form.Item>
           <Form.Item name="taxRate" label="消費税率(%)"><Input type="number" min={0} max={100} placeholder="10"/></Form.Item>
-          <Form.Item label="税込合計"><Input value={(()=>{const sub=details.reduce((s,d)=>s+(d.amount||0)+(d.quantity||0)*(d.unitPrice||0),0);const r=Number(form.getFieldValue('taxRate'))||10;return (sub+Math.round(sub*r)/100).toLocaleString();})()} disabled/></Form.Item></div>
+          <Form.Item label="税込合計"><Input value={(()=>{const sub=details.reduce((s,d)=>s+((d.quantity||0)*(d.unitPrice||0)),0);const r=Number(form.getFieldValue('taxRate'))||10;return (sub+Math.round(sub*r)/100).toLocaleString();})()} disabled/></Form.Item></div>
         <div style={{borderTop:'2px solid #722ed1',paddingTop:12,marginTop:8}}>
           <h4 style={{color:'#722ed1',marginBottom:8}}>● 注文明細</h4>
           <Button type="dashed" onClick={addDetail} style={{marginBottom:8}}>＋ 明細行追加</Button>

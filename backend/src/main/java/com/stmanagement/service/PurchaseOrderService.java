@@ -47,9 +47,8 @@ public class PurchaseOrderService {
 
     @Transactional
     public PurchaseOrderDTO create(PurchaseOrderDTO dto) {
-        if (orderRepository.existsByOrderNumber(dto.getOrderNumber()))
-            throw new RuntimeException("注文番号 " + dto.getOrderNumber() + " は既に存在します");
         PurchaseOrder po = toEntity(dto);
+        po.setOrderNumber(null); // DB auto-generates
         po.setStatus("下書き");
         po = orderRepository.save(po);
         if (dto.getDetails() != null) saveDetails(po.getId(), dto.getDetails());
@@ -59,12 +58,11 @@ public class PurchaseOrderService {
     @Transactional
     public PurchaseOrderDTO update(Long id, PurchaseOrderDTO dto) {
         PurchaseOrder po = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("注文書が見つかりません: " + id));
-        if (!po.getOrderNumber().equals(dto.getOrderNumber()) && orderRepository.existsByOrderNumber(dto.getOrderNumber()))
-            throw new RuntimeException("注文番号 " + dto.getOrderNumber() + " は既に存在します");
-        po.setOrderNumber(dto.getOrderNumber()); po.setCustomerId(dto.getCustomerId());
+        po.setCustomerId(dto.getCustomerId());
         po.setOrderDate(dto.getOrderDate()); po.setDeliveryDate(dto.getDeliveryDate());
         po.setRecipientDept(dto.getRecipientDept()); po.setRecipientName(dto.getRecipientName());
         po.setRecipientAddr(dto.getRecipientAddr()); po.setRecipientTel(dto.getRecipientTel());
+        po.setIssuerName(dto.getIssuerName()); po.setIssuerDept(dto.getIssuerDept()); po.setIssuerTel(dto.getIssuerTel());
         po.setSubject(dto.getSubject()); po.setAmount(dto.getAmount());
         double rate = dto.getTaxRate() != null ? dto.getTaxRate() : 10;
         double tax = dto.getAmount() != null ? Math.round(dto.getAmount() * rate) / 100.0 : 0;
@@ -133,6 +131,7 @@ public class PurchaseOrderService {
                 .customerName(name).orderDate(po.getOrderDate()).deliveryDate(po.getDeliveryDate())
                 .recipientDept(po.getRecipientDept()).recipientName(po.getRecipientName())
                 .recipientAddr(po.getRecipientAddr()).recipientTel(po.getRecipientTel())
+                .issuerName(po.getIssuerName()).issuerDept(po.getIssuerDept()).issuerTel(po.getIssuerTel())
                 .subject(po.getSubject()).amount(po.getAmount()).taxRate(po.getTaxRate()).taxAmount(po.getTaxAmount())
                 .totalWithTax(po.getTotalWithTax()).status(po.getStatus()).remark(po.getRemark()).build();
     }

@@ -13,7 +13,7 @@ import java.util.List;
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class PurchaseOrderDTO {
     private Long id;
-    @NotBlank private String orderNumber;
+    private String orderNumber;
     @NotNull private Long customerId;
     private String customerName;
     @NotNull private LocalDate orderDate;
@@ -22,6 +22,9 @@ public class PurchaseOrderDTO {
     private String recipientName;
     private String recipientAddr;
     private String recipientTel;
+    private String issuerName;
+    private String issuerDept;
+    private String issuerTel;
     private String subject;
     private Double amount;
     private Double taxRate;

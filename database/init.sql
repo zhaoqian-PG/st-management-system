@@ -18,6 +18,8 @@ DROP TABLE IF EXISTS "user" CASCADE;
 DROP SEQUENCE IF EXISTS torihiki_seq CASCADE;
 DROP SEQUENCE IF EXISTS customer_code_seq CASCADE;
 DROP SEQUENCE IF EXISTS employee_code_seq CASCADE;
+DROP SEQUENCE IF EXISTS invoice_seq CASCADE;
+DROP SEQUENCE IF EXISTS po_seq CASCADE;
 
 -- 取引番号採番シーケンス（MASTERテーブル用）
 CREATE SEQUENCE IF NOT EXISTS torihiki_seq START 1;
@@ -27,6 +29,12 @@ CREATE SEQUENCE IF NOT EXISTS customer_code_seq START 1;
 
 -- 社員番号採番シーケンス
 CREATE SEQUENCE IF NOT EXISTS employee_code_seq START 1;
+
+-- 請求書番号採番シーケンス
+CREATE SEQUENCE IF NOT EXISTS invoice_seq START 1;
+
+-- 注文番号採番シーケンス
+CREATE SEQUENCE IF NOT EXISTS po_seq START 1;
 
 -- 1. ログインユーザーテーブル
 CREATE TABLE IF NOT EXISTS "user" (
@@ -205,7 +213,7 @@ CREATE INDEX IF NOT EXISTS idx_attendance_emp_date     ON attendance(employee_id
 -- 6. 請求書テーブル
 CREATE TABLE IF NOT EXISTS invoice (
     id              BIGSERIAL       PRIMARY KEY,
-    invoice_number  VARCHAR(50)     NOT NULL UNIQUE,
+    invoice_number  VARCHAR(50)     NOT NULL UNIQUE DEFAULT 'INV-' || TO_CHAR(NOW(), 'YYYY') || '-' || LPAD(nextval('invoice_seq')::text, 4, '0'),
     customer_id     BIGINT          NOT NULL,
     year            INT             NOT NULL,
     month           INT             NOT NULL,
@@ -286,7 +294,7 @@ CREATE INDEX IF NOT EXISTS idx_emp_att_employee ON employee_attachment(employee_
 -- 9. 注文書テーブル
 CREATE TABLE IF NOT EXISTS purchase_order (
     id              BIGSERIAL       PRIMARY KEY,
-    order_number    VARCHAR(50)     NOT NULL UNIQUE,
+    order_number    VARCHAR(50)     NOT NULL UNIQUE DEFAULT 'PO-' || TO_CHAR(NOW(), 'YYYY') || '-' || LPAD(nextval('po_seq')::text, 4, '0'),
     customer_id     BIGINT          NOT NULL,
     order_date      DATE            NOT NULL,
     delivery_date   DATE,
@@ -294,6 +302,9 @@ CREATE TABLE IF NOT EXISTS purchase_order (
     recipient_name  VARCHAR(100),
     recipient_addr  VARCHAR(500),
     recipient_tel   VARCHAR(20),
+    issuer_name     VARCHAR(100),
+    issuer_dept     VARCHAR(100),
+    issuer_tel      VARCHAR(20),
     subject         VARCHAR(500),
     amount          DECIMAL(12,2)   NOT NULL DEFAULT 0,
     tax_rate        DECIMAL(4,2)    DEFAULT 10.00,
@@ -315,6 +326,9 @@ COMMENT ON COLUMN purchase_order.recipient_dept IS '発注先部署';
 COMMENT ON COLUMN purchase_order.recipient_name IS '発注先担当者';
 COMMENT ON COLUMN purchase_order.recipient_addr IS '発注先住所';
 COMMENT ON COLUMN purchase_order.recipient_tel IS '発注先TEL';
+COMMENT ON COLUMN purchase_order.issuer_name IS '発注元担当者';
+COMMENT ON COLUMN purchase_order.issuer_dept IS '発注元部署';
+COMMENT ON COLUMN purchase_order.issuer_tel IS '発注元TEL';
 COMMENT ON COLUMN purchase_order.status IS '下書き/発注済/納品済/検収済';
 
 CREATE INDEX IF NOT EXISTS idx_po_customer ON purchase_order(customer_id);

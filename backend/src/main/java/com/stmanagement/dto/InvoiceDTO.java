@@ -15,7 +15,7 @@ import java.util.List;
 @Builder
 public class InvoiceDTO {
     private Long id;
-    @NotBlank private String invoiceNumber;
+    private String invoiceNumber;
     @NotNull private Long customerId;
     private String customerName;
     @NotNull private Integer year;
