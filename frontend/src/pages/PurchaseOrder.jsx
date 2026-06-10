@@ -50,18 +50,18 @@ export default function PurchaseOrder() {
 
   const columns = [
     { title:'注文番号', dataIndex:'orderNumber', width:150 }, { title:'件名', dataIndex:'subject', width:180, ellipsis:true },
-    { title:'受注先', dataIndex:'customerName', width:160, ellipsis:true }, { title:'注文日', dataIndex:'orderDate', width:100 },
+    { title:'発注先', dataIndex:'customerName', width:160, ellipsis:true }, { title:'注文日', dataIndex:'orderDate', width:100 },
     { title:'納品期限', dataIndex:'deliveryDate', width:100 }, { title:'金額', dataIndex:'totalWithTax', width:120, render: v => v?.toLocaleString() },
-    { title:'状態', dataIndex:'status', width:80, render: t => { const m={'下書き':['gold','下書き'],'受注済':['blue','受注済'],'納品済':['green','納品済'],'検収済':['purple','検収済']}; return <Tag color={m[t]?.[0]}>{m[t]?.[1]||t}</Tag>; }},
+    { title:'状態', dataIndex:'status', width:80, render: t => { const m={'下書き':['gold','下書き'],'発注済':['blue','発注済'],'納品済':['green','納品済'],'検収済':['purple','検収済']}; return <Tag color={m[t]?.[0]}>{m[t]?.[1]||t}</Tag>; }},
     { title:'操作', width:140, fixed:'right', render:(_,r)=><Space><Button type="link" icon={<EditOutlined/>} onClick={()=>handleEdit(r)}>編集</Button><Button type="link" danger icon={<DeleteOutlined/>} onClick={()=>handleDelete(r)}>削除</Button></Space> },
   ];
 
   return (<div>
-    <h2 style={{marginBottom:20}}><ShoppingOutlined /> 受注管理</h2>
+    <h2 style={{marginBottom:20}}><ShoppingOutlined /> 注文書管理</h2>
     <Card>
       <div style={{display:'flex',gap:12,marginBottom:16,alignItems:'center',flexWrap:'wrap'}}>
-        <Select placeholder="全受注先" allowClear value={customerId} onChange={setCustomerId} style={{width:220}} showSearch filterOption={(i,o)=>o.children.toLowerCase().includes(i.toLowerCase())}>{customers.map(c=><Option key={c.id} value={c.id}>{c.companyName} ({c.customerCode})</Option>)}</Select>
-        <Select placeholder="全状態" allowClear value={statusFilter} onChange={setStatusFilter} style={{width:120}}><Option value="下書き">下書き</Option><Option value="受注済">受注済</Option><Option value="納品済">納品済</Option><Option value="検収済">検収済</Option></Select>
+        <Select placeholder="全発注先" allowClear value={customerId} onChange={setCustomerId} style={{width:220}} showSearch filterOption={(i,o)=>o.children.toLowerCase().includes(i.toLowerCase())}>{customers.map(c=><Option key={c.id} value={c.id}>{c.companyName} ({c.customerCode})</Option>)}</Select>
+        <Select placeholder="全状態" allowClear value={statusFilter} onChange={setStatusFilter} style={{width:120}}><Option value="下書き">下書き</Option><Option value="発注済">発注済</Option><Option value="納品済">納品済</Option><Option value="検収済">検収済</Option></Select>
         <span style={{flex:1}} /><Button type="primary" icon={<PlusOutlined/>} onClick={handleCreate}>新規登録</Button>
       </div>
       <Table columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{x:'max-content'}}
@@ -71,7 +71,7 @@ export default function PurchaseOrder() {
     {selectedOrder && <Card title={`📎 注文書詳細: ${selectedOrder.orderNumber}`} extra={<Button icon={<DownloadOutlined />} onClick={() => window.open(`/api/purchase-order/export/${selectedOrder.id}`)}>注文書出力</Button>} style={{marginTop:16}}>
       <div style={{display:'flex',gap:16,marginBottom:16}}>
         <Card size="small" style={{flex:1}} title="📋 基本情報">
-          <p><strong>受注先:</strong> {selectedOrder.customerName}</p>
+          <p><strong>発注先:</strong> {selectedOrder.customerName}</p>
           {selectedOrder.recipientDept && <p><strong>部署:</strong> {selectedOrder.recipientDept}</p>}
           {selectedOrder.recipientName && <p><strong>担当:</strong> {selectedOrder.recipientName}</p>}
           <p><strong>注文日:</strong> {selectedOrder.orderDate}</p>
@@ -92,12 +92,12 @@ export default function PurchaseOrder() {
         {editingRecord ? (<><Form.Item name="orderNumber" hidden><Input /></Form.Item><Form.Item label="注文番号"><Input value={editingRecord.orderNumber} disabled /></Form.Item></>) : <Form.Item label="注文番号"><Input value="自動採番（PO-YYYY-NNNN）" disabled /></Form.Item>}
         <Form.Item name="subject" label="件名"><Input placeholder="例: システム開発一式" maxLength={500}/></Form.Item>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}}>
-          <Form.Item name="customerId" label="受注先" rules={[{required:true}]}><Select placeholder="選択" showSearch filterOption={(i,o)=>o.children.toLowerCase().includes(i.toLowerCase())}>{customers.map(c=><Option key={c.id} value={c.id}>{c.companyName} ({c.customerCode})</Option>)}</Select></Form.Item>
-          <Form.Item name="status" label="状態">{editingRecord?<Select><Option value="下書き">下書き</Option><Option value="受注済">受注済</Option><Option value="納品済">納品済</Option><Option value="検収済">検収済</Option></Select>:<Input value="下書き" disabled/>}</Form.Item>
+          <Form.Item name="customerId" label="発注先" rules={[{required:true}]}><Select placeholder="選択" showSearch filterOption={(i,o)=>o.children.toLowerCase().includes(i.toLowerCase())}>{customers.map(c=><Option key={c.id} value={c.id}>{c.companyName} ({c.customerCode})</Option>)}</Select></Form.Item>
+          <Form.Item name="status" label="状態">{editingRecord?<Select><Option value="下書き">下書き</Option><Option value="発注済">発注済</Option><Option value="納品済">納品済</Option><Option value="検収済">検収済</Option></Select>:<Input value="下書き" disabled/>}</Form.Item>
           <Form.Item name="orderDate" label="注文日" rules={[{required:true}]}><DatePicker style={{width:'100%'}}/></Form.Item>
           <Form.Item name="deliveryDate" label="納品期限"><DatePicker style={{width:'100%'}}/></Form.Item>
-          <Form.Item name="issuerName" label="受注元担当者"><Input placeholder="自社担当者" maxLength={100}/></Form.Item>
-          <Form.Item name="issuerDept" label="受注元部署"><Input placeholder="自社部署" maxLength={100}/></Form.Item></div>
+          <Form.Item name="issuerName" label="発注元担当者"><Input placeholder="自社担当者" maxLength={100}/></Form.Item>
+          <Form.Item name="issuerDept" label="発注元部署"><Input placeholder="自社部署" maxLength={100}/></Form.Item></div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0 16px'}}>
           <Form.Item label="税抜金額"><Input value={details.reduce((s,d)=>s+((d.quantity||0)*(d.unitPrice||0)),0).toLocaleString()} disabled/></Form.Item>
           <Form.Item name="taxRate" label="消費税率(%)"><Input type="number" min={0} max={100} placeholder="10"/></Form.Item>

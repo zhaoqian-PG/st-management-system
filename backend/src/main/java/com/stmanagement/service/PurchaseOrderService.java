@@ -87,7 +87,7 @@ public class PurchaseOrderService {
         sb.append("注文番号: ").append(po.getOrderNumber()).append("\n");
         sb.append("注文日: ").append(po.getOrderDate()).append("\n");
         if (po.getDeliveryDate() != null) sb.append("納品期限: ").append(po.getDeliveryDate()).append("\n");
-        sb.append("\n【受注先】\n");
+        sb.append("\n【発注先】\n");
         sb.append(customerName).append("\n");
         if (po.getRecipientDept() != null) sb.append(po.getRecipientDept()).append("　");
         if (po.getRecipientName() != null) sb.append(po.getRecipientName()).append(" 様\n");
