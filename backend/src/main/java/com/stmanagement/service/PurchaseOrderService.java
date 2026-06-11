@@ -1,11 +1,14 @@
 package com.stmanagement.service;
 
+import com.stmanagement.dto.PurchaseOrderAttachmentDTO;
 import com.stmanagement.dto.PurchaseOrderDTO;
 import com.stmanagement.dto.PurchaseOrderDetailDTO;
 import com.stmanagement.model.Customer;
 import com.stmanagement.model.PurchaseOrder;
+import com.stmanagement.model.PurchaseOrderAttachment;
 import com.stmanagement.model.PurchaseOrderDetail;
 import com.stmanagement.repository.CustomerRepository;
+import com.stmanagement.repository.PurchaseOrderAttachmentRepository;
 import com.stmanagement.repository.PurchaseOrderDetailRepository;
 import com.stmanagement.repository.PurchaseOrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +18,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,6 +35,7 @@ public class PurchaseOrderService {
 
     private final PurchaseOrderRepository orderRepository;
     private final PurchaseOrderDetailRepository detailRepository;
+    private final PurchaseOrderAttachmentRepository attachmentRepository;
     private final CustomerRepository customerRepository;
 
     public Page<PurchaseOrderDTO> findAll(Long customerId, String status, int page, int size) {
@@ -42,13 +45,14 @@ public class PurchaseOrderService {
             if (status != null && !status.isEmpty()) predicates.add(cb.equal(root.get("status"), status));
             return cb.and(predicates.toArray(new Predicate[0]));
         };
-        return orderRepository.findAll(spec, PageRequest.of(page, size, Sort.by("orderDate").descending())).map(this::toDTO);
+        return orderRepository.findAll(spec, PageRequest.of(page, size, Sort.by("orderNumber").ascending())).map(this::toDTO);
     }
 
     public PurchaseOrderDTO findById(Long id) {
         PurchaseOrder po = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("注文書が見つかりません: " + id));
         PurchaseOrderDTO dto = toDTO(po);
         dto.setDetails(detailRepository.findByOrderId(id).stream().map(this::toDetailDTO).collect(Collectors.toList()));
+        dto.setAttachments(attachmentRepository.findByOrderId(id).stream().map(this::toAttachDTO).collect(Collectors.toList()));
         return dto;
     }
 
@@ -80,40 +84,45 @@ public class PurchaseOrderService {
         return toDTO(po);
     }
 
-    @Transactional public void delete(Long id) { detailRepository.deleteByOrderId(id); orderRepository.deleteById(id); }
+    @Transactional public void delete(Long id) { detailRepository.deleteByOrderId(id); attachmentRepository.deleteByOrderId(id); orderRepository.deleteById(id); }
 
     @Transactional
     public void uploadAttachment(Long id, MultipartFile file) throws IOException {
-        PurchaseOrder po = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("注文書が見つかりません"));
-        java.nio.file.Path uploadDir = java.nio.file.Paths.get("uploads");
-        java.nio.file.Files.createDirectories(uploadDir);
-        String name = "po_" + id + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        java.nio.file.Files.copy(file.getInputStream(), uploadDir.resolve(name));
-        po.setAttachmentPath(uploadDir.resolve(name).toString());
+        orderRepository.findById(id).orElseThrow(() -> new RuntimeException("注文書が見つかりません"));
+        Path uploadDir = Paths.get("uploads");
+        Files.createDirectories(uploadDir);
+        String storedName = "po_" + id + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        Path filePath = uploadDir.resolve(storedName);
+        Files.copy(file.getInputStream(), filePath);
+        // Also update the legacy attachment_path on purchase_order for backward compat
+        PurchaseOrder po = orderRepository.findById(id).get();
+        po.setAttachmentPath(filePath.toString());
         orderRepository.save(po);
+        // Save to attachment table
+        attachmentRepository.save(PurchaseOrderAttachment.builder()
+                .orderId(id).fileName(file.getOriginalFilename())
+                .filePath(filePath.toString()).fileSize(file.getSize()).build());
     }
 
-    public org.springframework.core.io.Resource getAttachmentFile(Long id) {
-        PurchaseOrder po = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("注文書が見つかりません"));
-        if (po.getAttachmentPath() == null) throw new RuntimeException("添付ファイルがありません");
-        org.springframework.core.io.Resource r = new FileSystemResource(java.nio.file.Paths.get(po.getAttachmentPath()));
+    public org.springframework.core.io.Resource getAttachmentFile(Long attachId) {
+        PurchaseOrderAttachment att = attachmentRepository.findById(attachId)
+                .orElseThrow(() -> new RuntimeException("添付ファイルが見つかりません"));
+        org.springframework.core.io.Resource r = new FileSystemResource(Paths.get(att.getFilePath()));
         if (!r.exists()) throw new RuntimeException("ファイルが存在しません");
         return r;
     }
 
-    public String getAttachmentFileName(Long id) {
-        return orderRepository.findById(id).map(PurchaseOrder::getAttachmentPath)
-                .map(p -> p.substring(p.lastIndexOf('_') + 1)).orElse("download");
+    public String getAttachmentFileName(Long attachId) {
+        return attachmentRepository.findById(attachId)
+                .map(PurchaseOrderAttachment::getFileName).orElse("download");
     }
 
     @Transactional
-    public void deleteAttachment(Long id) {
-        PurchaseOrder po = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("注文書が見つかりません"));
-        if (po.getAttachmentPath() != null) {
-            try { java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(po.getAttachmentPath())); } catch (IOException ignored) {}
-            po.setAttachmentPath(null);
-            orderRepository.save(po);
-        }
+    public void deleteAttachment(Long attachId) {
+        PurchaseOrderAttachment att = attachmentRepository.findById(attachId)
+                .orElseThrow(() -> new RuntimeException("添付ファイルが見つかりません"));
+        try { Files.deleteIfExists(Paths.get(att.getFilePath())); } catch (IOException ignored) {}
+        attachmentRepository.delete(att);
     }
 
     public String exportOrderCsv(Long orderId) {
@@ -174,7 +183,8 @@ public class PurchaseOrderService {
                 .recipientAddr(po.getRecipientAddr()).recipientTel(po.getRecipientTel())
                 .issuerName(po.getIssuerName()).issuerDept(po.getIssuerDept()).issuerTel(po.getIssuerTel())
                 .subject(po.getSubject()).amount(po.getAmount()).taxRate(po.getTaxRate()).taxAmount(po.getTaxAmount())
-                .totalWithTax(po.getTotalWithTax()).status(po.getStatus()).remark(po.getRemark()).build();
+                .totalWithTax(po.getTotalWithTax()).status(po.getStatus()).remark(po.getRemark())
+                .attachmentPath(po.getAttachmentPath()).build();
     }
 
     private PurchaseOrder toEntity(PurchaseOrderDTO dto) {
@@ -184,7 +194,9 @@ public class PurchaseOrderService {
         return PurchaseOrder.builder().orderNumber(dto.getOrderNumber()).customerId(dto.getCustomerId())
                 .orderDate(dto.getOrderDate()).deliveryDate(dto.getDeliveryDate())
                 .recipientDept(dto.getRecipientDept()).recipientName(dto.getRecipientName())
-                .recipientAddr(dto.getRecipientAddr()).recipientTel(dto.getRecipientTel()).subject(dto.getSubject())
+                .recipientAddr(dto.getRecipientAddr()).recipientTel(dto.getRecipientTel())
+                .issuerName(dto.getIssuerName()).issuerDept(dto.getIssuerDept()).issuerTel(dto.getIssuerTel())
+                .subject(dto.getSubject())
                 .amount(amount).taxRate(rate).taxAmount(tax).totalWithTax(amount + tax).remark(dto.getRemark()).build();
     }
 
@@ -193,5 +205,10 @@ public class PurchaseOrderService {
                 .employeeName(d.getEmployeeName()).itemName(d.getItemName())
                 .quantity(d.getQuantity()).unitPrice(d.getUnitPrice())
                 .amount(d.getAmount()).remark(d.getRemark()).build();
+    }
+
+    private PurchaseOrderAttachmentDTO toAttachDTO(PurchaseOrderAttachment a) {
+        return PurchaseOrderAttachmentDTO.builder().id(a.getId()).orderId(a.getOrderId())
+                .fileName(a.getFileName()).filePath(a.getFilePath()).fileSize(a.getFileSize()).build();
     }
 }

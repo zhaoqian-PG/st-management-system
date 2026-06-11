@@ -54,7 +54,7 @@ public class InvoiceService {
             if (customerId != null) predicates.add(cb.equal(root.get("customerId"), customerId));
             return cb.and(predicates.toArray(new Predicate[0]));
         };
-        return invoiceRepository.findAll(spec, PageRequest.of(page, size, Sort.by("invoiceNumber").descending()))
+        return invoiceRepository.findAll(spec, PageRequest.of(page, size, Sort.by("invoiceNumber").ascending()))
                 .map(this::toDTO);
     }
 

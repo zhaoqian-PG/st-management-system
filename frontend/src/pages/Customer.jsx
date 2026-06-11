@@ -97,7 +97,7 @@ export default function Customer() {
 
   const handleDeleteConfirm = (record) => {
     Modal.confirm({ title: '削除確認', content: `顧客 ${record.customerCode} ${record.companyName} を削除しますか？`, okText: '削除', cancelText: 'キャンセル', okType: 'danger', centered: true,
-      onOk: async () => { try { await customerApi.delete(record.id); message.success('削除しました'); fetchData(); } catch (e) { message.error('エラー'); } } });
+      onOk: async () => { try { await customerApi.delete(record.id); message.success('削除しました'); fetchData(); } catch (e) { message.error('削除に失敗しました'); } } });
   };
 
   const handleBindBank = async () => {

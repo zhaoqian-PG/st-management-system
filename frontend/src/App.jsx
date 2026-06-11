@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Spin } from 'antd';
+import { Spin, ConfigProvider } from 'antd';
+import jaJP from 'antd/locale/ja_JP';
 import axios from 'axios';
 import Layout from './components/Layout';
 import PlaceholderPage from './components/PlaceholderPage';
@@ -36,17 +37,19 @@ function App() {
   if (!loggedIn) return <Login onLogin={handleLogin} />;
 
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<Attendance />} />
-        <Route path="/employee" element={<Employee />} />
-        <Route path="/customer" element={<Customer />} />
-        <Route path="/attendance" element={<Attendance />} />
-        <Route path="/invoice" element={<Invoice />} />
-        <Route path="/purchase-order" element={<PurchaseOrder />} />
-        <Route path="/bank-accounts" element={<BankAccount />} />
-      </Route>
-    </Routes>
+    <ConfigProvider locale={jaJP}>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Attendance />} />
+          <Route path="/employee" element={<Employee />} />
+          <Route path="/customer" element={<Customer />} />
+          <Route path="/attendance" element={<Attendance />} />
+          <Route path="/invoice" element={<Invoice />} />
+          <Route path="/purchase-order" element={<PurchaseOrder />} />
+          <Route path="/bank-accounts" element={<BankAccount />} />
+        </Route>
+      </Routes>
+    </ConfigProvider>
   );
 }
 

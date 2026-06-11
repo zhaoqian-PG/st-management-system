@@ -149,7 +149,7 @@ export default function Employee() {
     if (!files || files.length === 0) { setUploading(false); return; }
     doUpload(editingRecord.id, Array.from(files)).then(() => employeeApi.getById(editingRecord.id))
       .then(r => { setAttachments(r.data.data.attachments || []); message.success('アップロードしました'); })
-      .catch(() => message.error('失敗')).finally(() => setUploading(false));
+      .catch(() => message.error('アップロードに失敗しました')).finally(() => setUploading(false));
   };
 
   const handleDownload = (att) => { window.open(`/api/employee/attachments/${att.id}/download`); };
@@ -160,7 +160,7 @@ export default function Employee() {
   const handleBatchImport = async (file) => {
     setImporting(true);
     try { const fd = new FormData(); fd.append('file', file); const r = await employeeApi.batchImport(fd); message.success(r.data.message); fetchData(); }
-    catch { message.error('失敗'); } finally { setImporting(false); }
+    catch { message.error('インポートに失敗しました'); } finally { setImporting(false); }
   };
   const handleExportAll = () => { window.open('/api/employee/export'); };
 

@@ -89,7 +89,7 @@ export default function Invoice() {
   const handleUpload = async (file, invId) => {
     const fd = new FormData(); fd.append('file', file);
     try { await invoiceApi.uploadDocument(invId, fd); const r = await invoiceApi.getById(invId); setDocuments(r.data.data.documents || []); message.success('アップロードしました'); }
-    catch { message.error('失敗'); }
+    catch { message.error('アップロードに失敗しました'); }
     return false;
   };
 
@@ -142,7 +142,7 @@ export default function Invoice() {
   ];
 
   return (<div>
-    <h2 style={{ marginBottom: 20 }}><FileTextOutlined /> 請求書・注文書管理</h2>
+    <h2 style={{ marginBottom: 20 }}><FileTextOutlined /> 請求書管理</h2>
     <Card>
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
         <Select value={year} onChange={setYear} style={{ width: 100 }}>{[2024,2025,2026,2027].map(y => <Option key={y} value={y}>{y}</Option>)}</Select><span>年</span>

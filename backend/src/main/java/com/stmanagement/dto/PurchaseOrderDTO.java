@@ -34,4 +34,5 @@ public class PurchaseOrderDTO {
     private String remark;
     private String attachmentPath;
     private List<PurchaseOrderDetailDTO> details;
+    private List<PurchaseOrderAttachmentDTO> attachments;
 }

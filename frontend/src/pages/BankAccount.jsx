@@ -96,7 +96,7 @@ export default function BankAccount() {
       okText: '削除', cancelText: 'キャンセル', okType: 'danger', centered: true,
       onOk: async () => {
         try { await bankAccountApi.delete(record.id); message.success('削除しました'); fetchData(); }
-        catch (err) { message.error(err.response?.data?.error || 'エラー'); }
+        catch (err) { message.error(err.response?.data?.error || '削除に失敗しました'); }
       },
     });
   };

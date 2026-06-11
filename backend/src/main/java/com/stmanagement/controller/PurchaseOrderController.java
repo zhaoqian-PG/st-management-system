@@ -56,11 +56,11 @@ public class PurchaseOrderController {
         }
     }
 
-    @GetMapping("/{id}/download")
-    public ResponseEntity<?> downloadAttachment(@PathVariable Long id) {
+    @GetMapping("/attachment/{attachId}/download")
+    public ResponseEntity<?> downloadAttachment(@PathVariable Long attachId) {
         try {
-            org.springframework.core.io.Resource resource = purchaseOrderService.getAttachmentFile(id);
-            String fileName = purchaseOrderService.getAttachmentFileName(id);
+            org.springframework.core.io.Resource resource = purchaseOrderService.getAttachmentFile(attachId);
+            String fileName = purchaseOrderService.getAttachmentFileName(attachId);
             return ResponseEntity.ok()
                     .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
                     .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
@@ -70,9 +70,9 @@ public class PurchaseOrderController {
         }
     }
 
-    @DeleteMapping("/{id}/attachment")
-    public ResponseEntity<?> deleteAttachment(@PathVariable Long id) {
-        purchaseOrderService.deleteAttachment(id);
+    @DeleteMapping("/attachment/{attachId}")
+    public ResponseEntity<?> deleteAttachment(@PathVariable Long attachId) {
+        purchaseOrderService.deleteAttachment(attachId);
         return ResponseEntity.ok(ApiResponse.success(null, "ファイルを削除しました"));
     }
 }

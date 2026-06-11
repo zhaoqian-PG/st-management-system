@@ -6,6 +6,8 @@
 -- ============================================================
 -- 既存テーブル削除（依存関係を考慮した順序）
 -- ============================================================
+DROP TABLE IF EXISTS purchase_order_attachment CASCADE;
+DROP TABLE IF EXISTS supplier_order_detail CASCADE;
 DROP TABLE IF EXISTS supplier_order CASCADE;
 DROP TABLE IF EXISTS purchase_order_detail CASCADE;
 DROP TABLE IF EXISTS purchase_order CASCADE;
@@ -22,6 +24,7 @@ DROP SEQUENCE IF EXISTS torihiki_seq CASCADE;
 DROP SEQUENCE IF EXISTS customer_code_seq CASCADE;
 DROP SEQUENCE IF EXISTS employee_code_seq CASCADE;
 DROP SEQUENCE IF EXISTS invoice_seq CASCADE;
+DROP SEQUENCE IF EXISTS so_seq CASCADE;
 DROP SEQUENCE IF EXISTS po_seq CASCADE;
 
 -- 取引番号採番シーケンス（MASTERテーブル用）
@@ -38,6 +41,9 @@ CREATE SEQUENCE IF NOT EXISTS invoice_seq START 1;
 
 -- 注文番号採番シーケンス
 CREATE SEQUENCE IF NOT EXISTS po_seq START 1;
+
+-- 発注番号採番シーケンス
+CREATE SEQUENCE IF NOT EXISTS so_seq START 1;
 
 -- 1. ログインユーザーテーブル
 CREATE TABLE IF NOT EXISTS "user" (
@@ -355,13 +361,39 @@ CREATE TABLE IF NOT EXISTS purchase_order_detail (
 
 CREATE INDEX IF NOT EXISTS idx_pod_order ON purchase_order_detail(order_id);
 
+-- 10. 注文書添付ファイルテーブル
+CREATE TABLE IF NOT EXISTS purchase_order_attachment (
+    id          BIGSERIAL       PRIMARY KEY,
+    order_id    BIGINT          NOT NULL,
+    file_name   VARCHAR(255)    NOT NULL,
+    file_path   VARCHAR(500)    NOT NULL,
+    file_size   BIGINT          NOT NULL DEFAULT 0,
+    create_time TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_poa_order FOREIGN KEY (order_id) REFERENCES purchase_order(id) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE purchase_order_attachment IS '注文書添付ファイル';
+COMMENT ON COLUMN purchase_order_attachment.file_name IS '元ファイル名';
+COMMENT ON COLUMN purchase_order_attachment.file_path IS '保存パス';
+COMMENT ON COLUMN purchase_order_attachment.file_size IS 'ファイルサイズ（byte）';
+
+CREATE INDEX IF NOT EXISTS idx_poa_order ON purchase_order_attachment(order_id);
+
 -- 11. 発注書テーブル（我社→他社）
 CREATE TABLE IF NOT EXISTS supplier_order (
     id              BIGSERIAL       PRIMARY KEY,
-    order_number    VARCHAR(50)     NOT NULL UNIQUE,
+    order_number    VARCHAR(50)     NOT NULL UNIQUE DEFAULT 'PO-SUP-' || TO_CHAR(NOW(), 'YYYY') || '-' || LPAD(nextval('so_seq')::text, 4, '0'),
     supplier_name   VARCHAR(200)    NOT NULL,
     order_date      DATE            NOT NULL,
     delivery_date   DATE,
+    issuer_name     VARCHAR(100),
+    issuer_dept     VARCHAR(100),
+    issuer_tel      VARCHAR(20),
+    supplier_contact VARCHAR(100),
+    supplier_dept   VARCHAR(100),
+    supplier_tel    VARCHAR(20),
+    supplier_addr   VARCHAR(500),
     subject         VARCHAR(500),
     amount          DECIMAL(12,2)   NOT NULL DEFAULT 0,
     tax_rate        DECIMAL(4,2)    DEFAULT 10.00,
@@ -373,6 +405,21 @@ CREATE TABLE IF NOT EXISTS supplier_order (
     update_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS supplier_order_detail (
+    id              BIGSERIAL       PRIMARY KEY,
+    order_id        BIGINT          NOT NULL,
+    employee_name   VARCHAR(100),
+    item_name       VARCHAR(500)    NOT NULL,
+    quantity        DECIMAL(8,2)    NOT NULL DEFAULT 1,
+    unit_price      DECIMAL(12,2)   NOT NULL DEFAULT 0,
+    amount          DECIMAL(12,2)   NOT NULL DEFAULT 0,
+    remark          VARCHAR(500),
+    create_time     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_sod_order FOREIGN KEY (order_id) REFERENCES supplier_order(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_sod_order ON supplier_order_detail(order_id);
 CREATE INDEX IF NOT EXISTS idx_so_supplier ON supplier_order(supplier_name);
 
 -- 12. 注文書添付テーブル（旧注文書テーブル）
@@ -533,12 +580,43 @@ INSERT INTO purchase_order_detail (order_id, employee_name, item_name, quantity,
     (3, '田中 美咲', 'プログラミング', 1, 4000000.00, 4000000.00),
     (3, '伊藤 大輔', 'テスト', 1, 1000000.00, 1000000.00);
 
--- 発注書（3件 / 我社→他社）
-INSERT INTO supplier_order (order_number, supplier_name, order_date, delivery_date, subject, amount, tax_rate, status, remark, create_time, update_time)
+-- 発注書（8件 / 我社→他社）
+INSERT INTO supplier_order (order_number, supplier_name, order_date, delivery_date, issuer_name, issuer_dept, issuer_tel, supplier_contact, supplier_dept, supplier_tel, supplier_addr, subject, amount, tax_rate, status, remark, create_time, update_time)
 VALUES
-    ('PO-SUP-2026-0001', '株式会社ネクストシステム', '2026-05-10', '2026-07-01', '外部サーバー構築', 3500000.00, 10.00, '発注済', 'AWS移行プロジェクト用', NOW(), NOW()),
-    ('PO-SUP-2026-0002', 'アイティソリューション株式会社', '2026-05-20', '2026-08-15', 'セキュリティ監査一式', 1800000.00, 10.00, '下書き', NULL, NOW(), NOW()),
-    ('PO-SUP-2026-0003', '株式会社データワークス', '2026-06-01', '2026-09-30', 'データベース設計・構築', 5200000.00, 10.00, '納品済', '新基幹システム用', NOW(), NOW());
+    ('PO-SUP-2026-0001', '株式会社ネクストシステム', '2026-05-10', '2026-07-01', '山田 太郎', '営業部', '090-1111-2222', '佐々木 健', '開発部', '03-1234-5678', '東京都港区赤坂1-2-3', '外部サーバー構築', 3500000.00, 10.00, '発注済', 'AWS移行プロジェクト用', NOW(), NOW()),
+    ('PO-SUP-2026-0002', 'アイティソリューション株式会社', '2026-05-20', '2026-08-15', '鈴木 花子', '技術部', '090-3333-4444', '高橋 直子', '営業部', '06-9876-5432', '大阪府大阪市中央区本町2-3-4', 'セキュリティ監査一式', 1800000.00, 10.00, '下書き', NULL, NOW(), NOW()),
+    ('PO-SUP-2026-0003', '株式会社データワークス', '2026-06-01', '2026-09-30', '佐藤 健一', '経理部', '090-5555-6666', '伊藤 正和', '開発部', '052-1111-2222', '愛知県名古屋市中区栄3-4-5', 'データベース設計・構築', 5200000.00, 10.00, '納品済', '新基幹システム用', NOW(), NOW()),
+    ('PO-SUP-2026-0004', '株式会社ネットクリエイト', '2026-04-15', '2026-06-30', '伊藤 大輔', '営業部', '090-9999-0000', '渡辺 誠', '技術部', '092-3333-4444', '福岡県福岡市博多区博多駅前4-5-6', 'Webサイトリニューアル', 2800000.00, 10.00, '検収済', 'コーポレートサイト刷新', NOW(), NOW()),
+    ('PO-SUP-2026-0005', '株式会社クラウドテック', '2026-06-05', '2026-10-31', '田中 美咲', '人事部', '090-7777-8888', '松本 直子', '開発部', '03-5555-6666', '東京都新宿区西新宿2-3-4', 'クラウド基盤移行支援', 6500000.00, 10.00, '下書き', 'オンプレ→AWS移行', NOW(), NOW()),
+    ('PO-SUP-2026-0006', '株式会社メディアラボ', '2026-03-20', '2026-05-15', '山田 太郎', '営業部', '090-1111-2222', '小川 健太', 'メディア部', '03-7777-8888', '東京都渋谷区道玄坂5-6-7', '動画配信システム開発', 4200000.00, 10.00, '発注済', 'ライブ配信機能追加', NOW(), NOW()),
+    ('PO-SUP-2026-0007', '株式会社テクノソリューション', '2026-02-10', '2026-04-20', '佐藤 健一', '経理部', '090-5555-6666', '木村 由美', '営業部', '06-2222-3333', '大阪府大阪市北区梅田1-2-3', 'ERPシステム導入支援', 8800000.00, 10.00, '納品済', '会計・人事モジュール', NOW(), NOW()),
+    ('PO-SUP-2026-0008', '株式会社セキュアネット', '2026-06-08', '2026-12-31', '鈴木 花子', '技術部', '090-3333-4444', '中村 博', 'セキュリティ部', '03-9999-0000', '東京都千代田区丸の内3-4-5', '情報セキュリティ強化', 3100000.00, 10.00, '下書き', 'ISO27001取得支援', NOW(), NOW());
+
+-- 発注明細（supplier_order_detail）
+INSERT INTO supplier_order_detail (order_id, employee_name, item_name, quantity, unit_price, amount) VALUES
+    (1, '山田 太郎', 'サーバー設計・構築', 1, 2000000.00, 2000000.00),
+    (1, '山田 太郎', 'ネットワーク設定', 1, 1000000.00, 1000000.00),
+    (1, '鈴木 花子', 'AWS環境移行支援', 1, 500000.00, 500000.00),
+    (2, '鈴木 花子', 'セキュリティ診断', 1, 1200000.00, 1200000.00),
+    (2, '伊藤 大輔', '脆弱性レポート作成', 1, 600000.00, 600000.00),
+    (3, '佐藤 健一', 'DB設計', 1, 2500000.00, 2500000.00),
+    (3, '佐藤 健一', 'データ移行', 1, 1700000.00, 1700000.00),
+    (3, '田中 美咲', 'パフォーマンステスト', 1, 1000000.00, 1000000.00),
+    (4, '伊藤 大輔', 'デザイン制作', 1, 1200000.00, 1200000.00),
+    (4, '伊藤 大輔', 'フロントエンド開発', 1, 1000000.00, 1000000.00),
+    (4, '山田 太郎', 'CMS構築', 1, 600000.00, 600000.00),
+    (5, '田中 美咲', 'インフラ設計', 1, 3000000.00, 3000000.00),
+    (5, '田中 美咲', '移行リハーサル', 2, 750000.00, 1500000.00),
+    (5, '鈴木 花子', '動作検証', 1, 2000000.00, 2000000.00),
+    (6, '山田 太郎', '配信基盤構築', 1, 2500000.00, 2500000.00),
+    (6, '山田 太郎', 'エンコーダー設定', 1, 1000000.00, 1000000.00),
+    (6, '伊藤 大輔', 'CDN設定', 1, 700000.00, 700000.00),
+    (7, '佐藤 健一', 'ERPパッケージ選定', 1, 3000000.00, 3000000.00),
+    (7, '佐藤 健一', 'カスタマイズ開発', 1, 4000000.00, 4000000.00),
+    (7, '田中 美咲', 'データ移行・検証', 1, 1800000.00, 1800000.00),
+    (8, '鈴木 花子', 'リスクアセスメント', 1, 1500000.00, 1500000.00),
+    (8, '鈴木 花子', 'ポリシー策定支援', 1, 800000.00, 800000.00),
+    (8, '山田 太郎', '監査対応訓練', 1, 800000.00, 800000.00);
 
 -- 注文書添付（2件 / INV-2026-0501 に紐付く）
 INSERT INTO order_documents (invoice_id, file_name, file_path, file_size)
