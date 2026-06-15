@@ -191,4 +191,24 @@ class PurchaseOrderServiceTest {
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
     }
+
+    @Test void testExportOrderCsv() {
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(detailRepository.findByOrderId(1L)).thenReturn(Collections.emptyList());
+
+        String csv = service.exportOrderCsv(1L);
+        assertNotNull(csv);
+        assertFalse(csv.isEmpty());
+    }
+
+    @Test void testDeleteAttachment_NotFound() {
+        when(attachmentRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> service.deleteAttachment(99L));
+    }
+
+    @Test void testGetAttachmentFile_NotFound() {
+        when(attachmentRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> service.getAttachmentFile(99L));
+    }
 }

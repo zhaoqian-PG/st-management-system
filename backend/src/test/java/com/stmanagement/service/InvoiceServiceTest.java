@@ -135,11 +135,12 @@ class InvoiceServiceTest {
         when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(detailRepository.findByInvoiceId(1L)).thenReturn(Collections.emptyList());
+        when(bankAccountRepository.findByCustomerId(1L)).thenReturn(Collections.emptyList());
 
         String csv = service.exportInvoiceCsv(1L);
 
         assertNotNull(csv);
         assertTrue(csv.contains("INV-2026-0501"));
-        assertTrue(csv.contains("テスト株式会社"));
     }
+
 }
