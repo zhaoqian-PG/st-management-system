@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -90,10 +91,18 @@ class PurchaseOrderControllerTest {
                 .andExpect(jsonPath("$.message").value("注文書を更新しました"));
     }
 
-    @Test
-    void testDelete() throws Exception {
+    @Test void testDelete() throws Exception {
         mockMvc.perform(delete("/api/purchase-order/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("注文書を削除しました"));
+    }
+    @Test void testDeleteAttachment() throws Exception {
+        mockMvc.perform(delete("/api/purchase-order/attachment/1")).andExpect(status().isOk());
+    }
+    @Test void testDownloadAttachment() throws Exception {
+        org.springframework.core.io.Resource res = new org.springframework.core.io.ByteArrayResource("test".getBytes());
+        when(service.getAttachmentFile(1L)).thenReturn(res);
+        when(service.getAttachmentFileName(1L)).thenReturn("test.pdf");
+        mockMvc.perform(get("/api/purchase-order/attachment/1/download")).andExpect(status().isOk());
     }
 }

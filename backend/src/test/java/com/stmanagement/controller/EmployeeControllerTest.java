@@ -73,9 +73,14 @@ class EmployeeControllerTest {
                 .andExpect(status().isOk());
     }
 
-    @Test
-    void testDelete() throws Exception {
-        mockMvc.perform(delete("/api/employee/1"))
-                .andExpect(status().isOk());
+    @Test void testDelete() throws Exception {
+        mockMvc.perform(delete("/api/employee/1")).andExpect(status().isOk());
+    }
+    @Test void testExport() throws Exception {
+        when(service.exportCsv()).thenReturn("csv");
+        mockMvc.perform(get("/api/employee/export")).andExpect(status().isOk());
+    }
+    @Test void testDeleteAttachment() throws Exception {
+        mockMvc.perform(delete("/api/employee/attachments/1")).andExpect(status().isOk());
     }
 }
