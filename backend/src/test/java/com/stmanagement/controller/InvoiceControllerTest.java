@@ -72,10 +72,18 @@ class InvoiceControllerTest {
                 .andExpect(status().isOk());
     }
 
-    @Test
-    void testDelete() throws Exception {
-        mockMvc.perform(delete("/api/invoice/1"))
-                .andExpect(status().isOk());
+    @Test void testDelete() throws Exception {
+        mockMvc.perform(delete("/api/invoice/1")).andExpect(status().isOk());
+    }
+    @Test void testFindById_full() throws Exception {
+        InvoiceDTO dto = makeDTO();
+        dto.setDocuments(Collections.emptyList());
+        when(service.findById(1L)).thenReturn(dto);
+        mockMvc.perform(get("/api/invoice/1")).andExpect(status().isOk());
+    }
+    @Test void testExport() throws Exception {
+        when(service.exportInvoiceCsv(1L)).thenReturn("csv");
+        mockMvc.perform(get("/api/invoice/export/1")).andExpect(status().isOk());
     }
 
     private InvoiceDTO makeDTO() {
