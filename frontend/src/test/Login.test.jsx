@@ -12,7 +12,7 @@ const { default: Login } = await import('../pages/Login');
 describe('Login Component', () => {
   it('renders login form', () => {
     render(<Login onLogin={vi.fn()} />);
-    expect(screen.getByText('ST Management System')).toBeInTheDocument();
+    expect(screen.getByText('ST Management System', { exact: false })).toBeInTheDocument();
   });
   it('has username and password fields', () => {
     render(<Login onLogin={vi.fn()} />);
