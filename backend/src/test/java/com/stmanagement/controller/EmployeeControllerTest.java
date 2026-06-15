@@ -97,4 +97,12 @@ class EmployeeControllerTest {
             .multipart("/api/employee/batch-import").file(file))
             .andExpect(status().isOk());
     }
+    @Test void testUploadFiles() throws Exception {
+        when(service.uploadFiles(eq(1L), any())).thenReturn(java.util.Collections.emptyList());
+        org.springframework.mock.web.MockMultipartFile file =
+            new org.springframework.mock.web.MockMultipartFile("files","doc.pdf","application/pdf","data".getBytes());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+            .multipart("/api/employee/1/upload").file(file))
+            .andExpect(status().isOk());
+    }
 }
