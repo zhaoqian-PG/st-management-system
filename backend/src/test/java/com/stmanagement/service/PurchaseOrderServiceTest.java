@@ -211,4 +211,11 @@ class PurchaseOrderServiceTest {
         when(attachmentRepository.findById(99L)).thenReturn(Optional.empty());
         assertThrows(RuntimeException.class, () -> service.getAttachmentFile(99L));
     }
+
+    @Test void testGetAttachmentFileName_success() {
+        PurchaseOrderAttachment att = new PurchaseOrderAttachment();
+        att.setId(1L); att.setFileName("myfile.pdf");
+        when(attachmentRepository.findById(1L)).thenReturn(Optional.of(att));
+        assertEquals("myfile.pdf", service.getAttachmentFileName(1L));
+    }
 }

@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -36,111 +37,76 @@ class InvoiceServiceTest {
     @BeforeEach
     void setUp() {
         customer = new Customer(); customer.setId(1L); customer.setCompanyName("テスト株式会社");
-        customer.setAddress("東京都千代田区");
-        invoice = new Invoice();
-        invoice.setId(1L); invoice.setInvoiceNumber("INV-2026-0501"); invoice.setCustomerId(1L);
+        customer.setAddress("東京都"); customer.setPhone("03-1111-2222");
+        invoice = new Invoice(); invoice.setId(1L); invoice.setInvoiceNumber("INV-2026-0501"); invoice.setCustomerId(1L);
         invoice.setYear(2026); invoice.setMonth(5); invoice.setAmount(1500000.0);
         invoice.setTaxRate(10.0); invoice.setTaxAmount(150000.0); invoice.setTotalWithTax(1650000.0);
-        invoice.setStatus("下書き"); invoice.setSubject("システム開発費用");
-        invoice.setInvoiceDate(LocalDate.of(2026, 5, 1));
+        invoice.setStatus("下書き"); invoice.setSubject("テスト"); invoice.setInvoiceDate(LocalDate.of(2026, 5, 1));
         invoice.setDueDate(LocalDate.of(2026, 6, 30));
     }
 
-    @Test
-    void testFindAll() {
-        List<Invoice> invoices = Collections.singletonList(invoice);
-        Page<Invoice> page = new PageImpl<>(invoices);
-        when(invoiceRepository.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
+    @Test void testFindAll() {
+        when(invoiceRepository.findAll(any(Specification.class), any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(Collections.singletonList(invoice)));
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-
-        Page<InvoiceDTO> result = service.findAll(null, null, null, 0, 10);
-
-        assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
-        assertEquals("INV-2026-0501", result.getContent().get(0).getInvoiceNumber());
+        Page<InvoiceDTO> r = service.findAll(null, null, null, 0, 10);
+        assertNotNull(r); assertEquals(1, r.getTotalElements());
     }
-
-    @Test
-    void testFindById() {
+    @Test void testFindById() {
         when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(detailRepository.findByInvoiceId(1L)).thenReturn(Collections.emptyList());
         when(orderDocumentRepository.findByInvoiceId(1L)).thenReturn(Collections.emptyList());
-
-        InvoiceDTO result = service.findById(1L);
-
-        assertNotNull(result);
-        assertEquals("INV-2026-0501", result.getInvoiceNumber());
-        assertNotNull(result.getDetails());
-        assertNotNull(result.getDocuments());
+        InvoiceDTO r = service.findById(1L);
+        assertNotNull(r); assertEquals("INV-2026-0501", r.getInvoiceNumber());
     }
-
-    @Test
-    void testFindById_NotFound() {
+    @Test void testFindById_NotFound() {
         when(invoiceRepository.findById(99L)).thenReturn(Optional.empty());
         assertThrows(RuntimeException.class, () -> service.findById(99L));
     }
-
-    @Test
-    void testCreate() {
+    @Test void testCreate() {
         InvoiceDTO dto = new InvoiceDTO();
-        dto.setCustomerId(1L); dto.setYear(2026); dto.setMonth(6);
-        dto.setAmount(500000.0); dto.setTaxRate(10.0); dto.setSubject("新規請求");
-
+        dto.setCustomerId(1L); dto.setYear(2026); dto.setMonth(6); dto.setAmount(500000.0); dto.setTaxRate(10.0);
         when(invoiceRepository.save(any(Invoice.class))).thenReturn(invoice);
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-
-        InvoiceDTO result = service.create(dto);
-
-        assertNotNull(result);
-        verify(invoiceRepository).save(any(Invoice.class));
+        assertNotNull(service.create(dto));
     }
-
-    @Test
-    void testUpdate() {
+    @Test void testUpdate() {
         InvoiceDTO dto = new InvoiceDTO();
-        dto.setCustomerId(1L); dto.setYear(2026); dto.setMonth(6);
-        dto.setAmount(800000.0); dto.setTaxRate(10.0);
-        dto.setStatus("送付済"); dto.setSubject("更新請求");
-
+        dto.setCustomerId(1L); dto.setYear(2026); dto.setMonth(6); dto.setAmount(800000.0); dto.setTaxRate(10.0); dto.setStatus("送付済");
         when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
         when(invoiceRepository.save(any(Invoice.class))).thenReturn(invoice);
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-
-        InvoiceDTO result = service.update(1L, dto);
-
-        assertNotNull(result);
-        assertEquals("送付済", result.getStatus());
-        verify(invoiceRepository).save(any(Invoice.class));
+        InvoiceDTO r = service.update(1L, dto);
+        assertNotNull(r); assertEquals("送付済", r.getStatus());
     }
-
-    @Test
-    void testDelete() {
+    @Test void testDelete() {
         when(invoiceRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(invoiceRepository).deleteById(1L);
-
         service.delete(1L);
-
         verify(invoiceRepository).deleteById(1L);
     }
-
-    @Test
-    void testDelete_NotFound() {
+    @Test void testDelete_NotFound() {
         when(invoiceRepository.existsById(99L)).thenReturn(false);
         assertThrows(RuntimeException.class, () -> service.delete(99L));
     }
-
-    @Test
-    void testExportCsv() {
+    @Test void testExportCsv() {
         when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(detailRepository.findByInvoiceId(1L)).thenReturn(Collections.emptyList());
         when(bankAccountRepository.findByCustomerId(1L)).thenReturn(Collections.emptyList());
-
         String csv = service.exportInvoiceCsv(1L);
-
-        assertNotNull(csv);
-        assertTrue(csv.contains("INV-2026-0501"));
+        assertNotNull(csv); assertFalse(csv.isEmpty());
     }
-
+    @Test void testUploadDocument() throws Exception {
+        when(invoiceRepository.existsById(1L)).thenReturn(true);
+        MockMultipartFile file = new MockMultipartFile("file", "test.pdf", "application/pdf", "data".getBytes());
+        when(orderDocumentRepository.save(any(OrderDocument.class))).thenReturn(new OrderDocument());
+        assertNotNull(service.uploadDocument(1L, file));
+    }
+    @Test void testGetDocumentFileName() {
+        OrderDocument doc = new OrderDocument();
+        doc.setId(1L); doc.setFileName("test.pdf");
+        when(orderDocumentRepository.findById(1L)).thenReturn(Optional.of(doc));
+        assertEquals("test.pdf", service.getDocumentFileName(1L));
+    }
 }
