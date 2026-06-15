@@ -87,13 +87,30 @@ class AttendanceControllerTest {
                 .andExpect(status().isOk());
     }
 
-    @Test
-    void testMonthlySummary() throws Exception {
+    @Test void testMonthlySummary() throws Exception {
         Map<String, Object> summary = new HashMap<>();
         summary.put("workHours", 160.0); summary.put("overtimeHours", 20.0);
         when(service.getMonthlySummary(anyInt(), anyInt(), anyLong())).thenReturn(summary);
-
-        mockMvc.perform(get("/api/attendance/monthly-summary?year=2026&month=5&employeeId=1"))
-                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/attendance/monthly-summary?year=2026&month=5&employeeId=1")).andExpect(status().isOk());
+    }
+    @Test void testGenerateMonth() throws Exception {
+        when(service.generateMonth(anyInt(), anyInt(), anyLong())).thenReturn(20);
+        mockMvc.perform(post("/api/attendance/generate?year=2026&month=5&employeeId=1")).andExpect(status().isOk());
+    }
+    @Test void testGenerateForAll() throws Exception {
+        when(service.generateMonthForAll(anyInt(), anyInt())).thenReturn(80);
+        mockMvc.perform(post("/api/attendance/generate?year=2026&month=5")).andExpect(status().isOk());
+    }
+    @Test void testExportCsv() throws Exception {
+        when(service.exportCsv(anyInt(), anyInt(), anyLong())).thenReturn("csv");
+        mockMvc.perform(get("/api/attendance/export?year=2026&month=5&employeeId=1")).andExpect(status().isOk());
+    }
+    @Test void testExportAll() throws Exception {
+        when(service.exportCsvAll(anyInt(), anyInt())).thenReturn("csv");
+        mockMvc.perform(get("/api/attendance/export-all?year=2026&month=5")).andExpect(status().isOk());
+    }
+    @Test void testGetAllSummary() throws Exception {
+        when(service.getAllEmployeeMonthlySummary(anyInt(), anyInt())).thenReturn(Collections.emptyList());
+        mockMvc.perform(get("/api/attendance/monthly-summary?year=2026&month=5")).andExpect(status().isOk());
     }
 }
