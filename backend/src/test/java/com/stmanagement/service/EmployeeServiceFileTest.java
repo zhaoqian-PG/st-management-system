@@ -61,4 +61,31 @@ class EmployeeServiceFileTest {
         int count = service.batchImport(file);
         assertEquals(1, count);
     }
+
+    @Test void testDownloadAttachment_notFound() {
+        when(attRepo.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> service.downloadAttachment(99L));
+    }
+
+    @Test void testGetAttachmentFileName_notFound() {
+        when(attRepo.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> service.getAttachmentFileName(99L));
+    }
+
+    @Test void testExportCsv() {
+        when(empRepo.findAll()).thenReturn(Collections.singletonList(emp));
+        String csv = service.exportCsv();
+        assertNotNull(csv);
+        assertTrue(csv.contains("EMP0001"));
+    }
+
+    @Test void testUploadFiles_single() throws Exception {
+        when(empRepo.findById(1L)).thenReturn(Optional.of(emp));
+        MockMultipartFile f1 = new MockMultipartFile("files","doc.pdf","application/pdf","x".getBytes());
+        EmployeeAttachment a1 = new EmployeeAttachment();
+        a1.setId(1L); a1.setEmployeeId(1L); a1.setFileName("doc.pdf"); a1.setFileSize(1L);
+        when(attRepo.save(any())).thenReturn(a1);
+        List<EmployeeDTO.AttachmentInfo> r = service.uploadFiles(1L, new MultipartFile[]{f1});
+        assertNotNull(r); assertEquals(1, r.size());
+    }
 }
