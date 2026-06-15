@@ -6,7 +6,6 @@ import com.stmanagement.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.io.TempDir;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
@@ -17,7 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import java.math.BigInteger;
-import java.nio.file.*;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -48,8 +46,6 @@ class FullServiceCoverageTest {
     @Mock private EmployeeRepository bEmpRepo; @Mock private EntityManager bEm;
     @Mock private Query bQuery;
     @InjectMocks private BankAccountService baService;
-
-    @TempDir Path tempDir;
 
     private Invoice inv; private Customer cust; private Employee emp;
 
@@ -118,9 +114,8 @@ class FullServiceCoverageTest {
         when(eRepo.findAll()).thenReturn(Collections.singletonList(emp));
         assertTrue(empService.exportCsv().contains("EMP0001"));
     }
-    @Test void emp_deleteAttachment() throws Exception {
-        Path tf = tempDir.resolve("d.pdf"); Files.write(tf, "x".getBytes());
-        EmployeeAttachment a = new EmployeeAttachment(); a.setId(1L); a.setFileName("d.pdf"); a.setFilePath(tf.toString());
+    @Test void emp_deleteAttachment() {
+        EmployeeAttachment a = new EmployeeAttachment(); a.setId(1L); a.setFileName("d.pdf"); a.setFilePath("uploads/d.pdf");
         when(eAttRepo.findById(1L)).thenReturn(Optional.of(a)); doNothing().when(eAttRepo).deleteById(1L);
         empService.deleteAttachment(1L); verify(eAttRepo).deleteById(1L);
     }
