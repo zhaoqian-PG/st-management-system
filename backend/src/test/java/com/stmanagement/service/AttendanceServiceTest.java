@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
+import javax.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
@@ -26,6 +27,7 @@ class AttendanceServiceTest {
 
     @Mock private AttendanceRepository attendanceRepo;
     @Mock private EmployeeRepository employeeRepo;
+    @Mock private EntityManager em;
     @InjectMocks private AttendanceService service;
 
     private Attendance att;
@@ -136,4 +138,19 @@ class AttendanceServiceTest {
         assertTrue(result.size() > 0);
     }
 
+    @Test void testGenerateMonth() {
+        when(attendanceRepo.findByEmployeeIdAndWorkDateBetween(anyLong(),any(),any())).thenReturn(Collections.emptyList());
+        when(attendanceRepo.save(any(Attendance.class))).thenReturn(att);
+        int count = service.generateMonth(2026, 5, 1L);
+        assertTrue(count > 0); // May weekdays in May 2026
+    }
+
+    @Test void testGenerateMonthForAll() {
+        emp.setLeaveDate(null);
+        when(employeeRepo.findAll()).thenReturn(Collections.singletonList(emp));
+        when(attendanceRepo.findByEmployeeIdAndWorkDateBetween(anyLong(),any(),any())).thenReturn(Collections.emptyList());
+        when(attendanceRepo.save(any(Attendance.class))).thenReturn(att);
+        int count = service.generateMonthForAll(2026, 5);
+        assertTrue(count > 0);
+    }
 }
