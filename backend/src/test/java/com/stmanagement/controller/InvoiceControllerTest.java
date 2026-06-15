@@ -85,6 +85,12 @@ class InvoiceControllerTest {
         when(service.exportInvoiceCsv(1L)).thenReturn("csv");
         mockMvc.perform(get("/api/invoice/export/1")).andExpect(status().isOk());
     }
+    @Test void testDocumentDownload() throws Exception {
+        org.springframework.core.io.Resource res = new org.springframework.core.io.ByteArrayResource("test".getBytes());
+        when(service.getDocumentFile(1L)).thenReturn(res);
+        when(service.getDocumentFileName(1L)).thenReturn("test.pdf");
+        mockMvc.perform(get("/api/invoice/documents/1/download")).andExpect(status().isOk());
+    }
 
     private InvoiceDTO makeDTO() {
         InvoiceDTO dto = new InvoiceDTO();

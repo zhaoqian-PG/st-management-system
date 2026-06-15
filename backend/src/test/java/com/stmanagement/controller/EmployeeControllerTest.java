@@ -83,4 +83,18 @@ class EmployeeControllerTest {
     @Test void testDeleteAttachment() throws Exception {
         mockMvc.perform(delete("/api/employee/attachments/1")).andExpect(status().isOk());
     }
+    @Test void testDownloadAttachment() throws Exception {
+        org.springframework.core.io.Resource res = new org.springframework.core.io.ByteArrayResource("test".getBytes());
+        when(service.downloadAttachment(1L)).thenReturn(res);
+        when(service.getAttachmentFileName(1L)).thenReturn("test.pdf");
+        mockMvc.perform(get("/api/employee/attachments/1/download")).andExpect(status().isOk());
+    }
+    @Test void testBatchImport() throws Exception {
+        when(service.batchImport(any())).thenReturn(5);
+        org.springframework.mock.web.MockMultipartFile file =
+            new org.springframework.mock.web.MockMultipartFile("file","test.csv","text/csv","data".getBytes());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+            .multipart("/api/employee/batch-import").file(file))
+            .andExpect(status().isOk());
+    }
 }
