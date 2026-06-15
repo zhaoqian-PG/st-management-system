@@ -177,4 +177,57 @@ class SupplierOrderServiceTest {
         when(repo.findById(99L)).thenReturn(Optional.empty());
         assertThrows(RuntimeException.class, () -> service.exportPdf(99L));
     }
+
+    @Test void testCreate_withoutDeliveryDate() {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("orderNumber", "TEST"); dto.put("supplierName", "テスト"); dto.put("orderDate", "2026-06-01");
+        dto.put("amount", 1000000.0); dto.put("taxRate", 10.0);
+        when(repo.save(any(SupplierOrder.class))).thenReturn(order);
+        when(repo.findById(1L)).thenReturn(Optional.of(order));
+        when(detailRepo.findByOrderId(1L)).thenReturn(Collections.emptyList());
+        Map<String, Object> r = service.create(dto);
+        assertNotNull(r);
+    }
+
+    @Test void testCreate_withZeroAmount() {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("orderNumber", "TEST2"); dto.put("supplierName", "テスト"); dto.put("orderDate", "2026-06-01");
+        dto.put("amount", 0); dto.put("taxRate", 0);
+        when(repo.save(any(SupplierOrder.class))).thenReturn(order);
+        when(repo.findById(1L)).thenReturn(Optional.of(order));
+        when(detailRepo.findByOrderId(1L)).thenReturn(Collections.emptyList());
+        Map<String, Object> r = service.create(dto);
+        assertNotNull(r);
+    }
+
+    @Test void testUpdate_withDetails() {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("supplierName", "更新"); dto.put("orderDate", "2026-07-01"); dto.put("amount", 3000000.0);
+        dto.put("taxRate", 10.0);
+        List<Map<String,Object>> details = new ArrayList<>();
+        Map<String,Object> det = new HashMap<>();
+        det.put("employeeName", "担当"); det.put("itemName", "品目"); det.put("quantity", 2.0); det.put("unitPrice", 500000.0);
+        details.add(det);
+        dto.put("details", details);
+        when(repo.findById(1L)).thenReturn(Optional.of(order));
+        when(repo.save(any(SupplierOrder.class))).thenReturn(order);
+        when(detailRepo.findByOrderId(1L)).thenReturn(Collections.emptyList());
+        Map<String, Object> r = service.update(1L, dto);
+        assertNotNull(r);
+    }
+
+    @Test void testExportPdf_withDetails() throws Exception {
+        SupplierOrderDetail detail = SupplierOrderDetail.builder().id(1L).orderId(1L)
+                .employeeName("山田").itemName("テスト品目").quantity(2.0).unitPrice(500000.0).amount(1000000.0).build();
+        when(repo.findById(1L)).thenReturn(Optional.of(order));
+        when(detailRepo.findByOrderId(1L)).thenReturn(Collections.singletonList(detail));
+        byte[] pdf = service.exportPdf(1L);
+        assertNotNull(pdf); assertTrue(pdf.length > 1000);
+    }
+
+    @Test void testFindAll_empty() {
+        when(repo.findAll(any(PageRequest.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
+        Page<Map<String, Object>> r = service.findAll(0, 10);
+        assertNotNull(r); assertEquals(0, r.getTotalElements());
+    }
 }
