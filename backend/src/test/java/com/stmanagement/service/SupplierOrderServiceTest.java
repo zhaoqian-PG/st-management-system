@@ -178,6 +178,45 @@ class SupplierOrderServiceTest {
         assertThrows(RuntimeException.class, () -> service.exportPdf(99L));
     }
 
+    // createJapaneseFont 全フォント戦略カバレッジ
+    @Test void testExportPdf_allFontStrategies() throws Exception {
+        when(repo.findById(1L)).thenReturn(Optional.of(order));
+        when(detailRepo.findByOrderId(1L)).thenReturn(Collections.emptyList());
+        for (int i = 0; i < 3; i++) {
+            byte[] pdf = service.exportPdf(1L);
+            assertNotNull(pdf); assertTrue(pdf.length > 500);
+        }
+    }
+
+    @Test void testExportPdf_withNullOptionalFields() throws Exception {
+        // Null issuer/supplier fields force branches in PDF generation
+        SupplierOrder so = SupplierOrder.builder().id(2L).orderNumber("PO-SUP-2026-0099")
+            .supplierName("最小テスト").orderDate(java.time.LocalDate.now())
+            .amount(100000.0).taxRate(10.0).taxAmount(10000.0).totalWithTax(110000.0)
+            .status("下書き").build();
+        when(repo.findById(2L)).thenReturn(Optional.of(so));
+        when(detailRepo.findByOrderId(2L)).thenReturn(Collections.emptyList());
+        byte[] pdf = service.exportPdf(2L);
+        assertNotNull(pdf); assertTrue(pdf.length > 300);
+    }
+
+    @Test void testExportPdf_withFullFieldsAndDetails() throws Exception {
+        SupplierOrder so = SupplierOrder.builder().id(3L).orderNumber("PO-SUP-2026-0100")
+            .supplierName("フルテスト株式会社").orderDate(java.time.LocalDate.of(2026,6,1))
+            .deliveryDate(java.time.LocalDate.of(2026,9,30)).subject("フルフィールドテスト")
+            .amount(9990000.0).taxRate(10.0).taxAmount(999000.0).totalWithTax(10989000.0)
+            .status("発注済").remark("全項目備考")
+            .issuerName("発注太郎").issuerDept("発注部").issuerTel("090-1111-2222")
+            .supplierContact("受注花子").supplierDept("受注部").supplierTel("03-9999-8888")
+            .supplierAddr("東京都千代田区丸の内1-1-1").build();
+        SupplierOrderDetail d = SupplierOrderDetail.builder().id(1L).orderId(3L)
+            .employeeName("担当者A").itemName("設計作業").quantity(2.0).unitPrice(3000000.0).amount(6000000.0).build();
+        when(repo.findById(3L)).thenReturn(Optional.of(so));
+        when(detailRepo.findByOrderId(3L)).thenReturn(Collections.singletonList(d));
+        byte[] pdf = service.exportPdf(3L);
+        assertNotNull(pdf); assertTrue(pdf.length > 1500);
+    }
+
     @Test void testCreate_withoutDeliveryDate() {
         Map<String, Object> dto = new HashMap<>();
         dto.put("orderNumber", "TEST"); dto.put("supplierName", "テスト"); dto.put("orderDate", "2026-06-01");
