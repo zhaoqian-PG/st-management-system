@@ -396,6 +396,73 @@ class AllInOneTest {
         so.delete((Long)c.get("id"));
     }
 
+    // === ターゲット: CustomerService 76%→90% ===
+    @Test @Order(41) void cust_findAllWithKeyword() {
+        assertNotNull(cust.findAll("テ", 0, 10));
+        assertNotNull(cust.findAll(null, 0, 10));
+    }
+
+    // === ターゲット: InvoiceService 79%→90% ===
+    @Test @Order(42) void inv_deleteDocumentFlow() throws Exception {
+        InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(8);
+        d.setAmount(444000.0); d.setTaxRate(10.0);
+        InvoiceDTO c = inv.create(d);
+        OrderDocumentDTO doc = inv.uploadDocument(c.getId(),
+            new MockMultipartFile("f","delme.pdf","application/pdf","x".getBytes()));
+        assertEquals("delme.pdf", inv.getDocumentFileName(doc.getId()));
+        inv.deleteDocument(doc.getId());
+        inv.delete(c.getId());
+    }
+
+    // === ターゲット: PurchaseOrderService 87%→90% ===
+    @Test @Order(43) void po_updateWithAllFields() {
+        PurchaseOrderDTO d = PurchaseOrderDTO.builder().customerId(1L)
+            .orderDate(LocalDate.now()).deliveryDate(LocalDate.now().plusMonths(1))
+            .subject("全項目更新").amount(600000.0).taxRate(10.0)
+            .issuerName("発注者").issuerDept("発注部").issuerTel("090-1111")
+            .recipientName("受注者").recipientDept("受注部").recipientAddr("東京").recipientTel("03-2222")
+            .remark("備考").build();
+        PurchaseOrderDTO c = po.create(d);
+        c.setStatus("検収済"); c.setSubject("更新済み件名");
+        po.update(c.getId(), c);
+        assertEquals("検収済", po.findById(c.getId()).getStatus());
+        po.delete(c.getId());
+    }
+
+    // === ターゲット: EmployeeService 87%→90% ===
+    @Test @Order(44) void emp_updateWithAllFields() {
+        EmployeeDTO e = new EmployeeDTO(); e.setName("更新太郎"); e.setDepartment("総務部");
+        e.setEmail("up@t.com"); e.setJoinDate(LocalDate.now()); e.setStatus("在職");
+        e.setPhone("090-9999"); e.setJapanAddress("大阪府"); e.setPosition("部長");
+        EmployeeDTO c = emp.create(e);
+        c.setDepartment("経理部"); c.setPosition("課長");
+        emp.update(c.getId(), c);
+        assertEquals("経理部", emp.findById(c.getId()).getDepartment());
+        emp.delete(c.getId());
+    }
+
+    // === ターゲット: BankAccountService 89%→90% ===
+    @Test @Order(45) void ba_updateAccountInfo() {
+        BankAccountDTO d = baDto("89to90");
+        BankAccountDTO c = ba.create(d);
+        c.setBankName("更新銀行名"); c.setAccountNumber("9999999");
+        ba.update(c.getId(), c);
+        assertEquals("更新銀行名", ba.findById(c.getId()).getBankName());
+        ba.delete(c.getId());
+    }
+
+    // === ターゲット: SupplierOrderService 88%→90% ===
+    @Test @Order(46) void so_updateWithStatusChange() {
+        Map<String,Object> d = new HashMap<>();
+        d.put("supplierName","ステータス更新"); d.put("orderDate",LocalDate.now().toString());
+        d.put("amount",4000000.0); d.put("taxRate",10.0);
+        Map<String,Object> c = so.create(d);
+        d.put("status","納品済");
+        so.update((Long)c.get("id"), d);
+        assertEquals("納品済", so.findById((Long)c.get("id")).get("status"));
+        so.delete((Long)c.get("id"));
+    }
+
     private BankAccountDTO baDto(String n) {
         BankAccountDTO d = new BankAccountDTO();
         d.setBankName(n); d.setAccountType("普通"); d.setAccountNumber("8889991");
