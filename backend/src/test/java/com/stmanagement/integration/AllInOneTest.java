@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @Transactional
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class AllInOneIT {
+class AllInOneTest {
 
     @Autowired private BankAccountService ba;
     @Autowired private EmployeeService emp;
