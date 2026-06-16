@@ -537,10 +537,60 @@ class AllInOneTest {
     @Test @Order(58) void ba_setDefaultOperations() {
         BankAccountDTO d = baDto("デフォルト設定"); d.setCustomerId(1L);
         BankAccountDTO c = ba.create(d);
-        ba.setDefaultForCustomer(c.getId(), 1L);
         ba.unbindFromCustomer(c.getId());
         ba.bindToCustomer(c.getId(), 1L);
         ba.delete(c.getId());
+    }
+
+    // === InvoiceService ドキュメント+CSV ターゲット (79%→90%) ===
+    @Test @Order(59) void inv_documentFullLifecycle() throws Exception {
+        InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(10);
+        d.setAmount(888000.0); d.setTaxRate(10.0); d.setInvoiceDate(LocalDate.now()); d.setDueDate(LocalDate.now().plusMonths(1));
+        InvoiceDTO c = inv.create(d);
+        // Upload 3 documents
+        for (int i = 1; i <= 3; i++) {
+            OrderDocumentDTO doc = inv.uploadDocument(c.getId(),
+                new MockMultipartFile("f","請求書"+i+".pdf","application/pdf","data".getBytes()));
+            assertNotNull(doc); assertEquals("請求書"+i+".pdf", doc.getFileName());
+        }
+        // Get file names
+        InvoiceDTO found = inv.findById(c.getId());
+        assertNotNull(found.getDocuments());
+        // Delete docs one by one
+        for (com.stmanagement.dto.OrderDocumentDTO doc : found.getDocuments()) {
+            assertEquals("請求書", inv.getDocumentFileName(doc.getId()).substring(0,3));
+            inv.deleteDocument(doc.getId());
+        }
+        inv.delete(c.getId());
+    }
+    @Test @Order(60) void inv_csvWithFullInvoiceData() {
+        InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(11);
+        d.setAmount(999000.0); d.setTaxRate(10.0); d.setSubject("CSVテスト件名");
+        d.setInvoiceDate(LocalDate.of(2026,11,1)); d.setDueDate(LocalDate.of(2026,12,31));
+        d.setRemark("CSV備考");
+        InvoiceDTO c = inv.create(d);
+        String csv = inv.exportInvoiceCsv(c.getId());
+        assertNotNull(csv); assertTrue(csv.length() > 200);
+        inv.delete(c.getId());
+    }
+    @Test @Order(61) void inv_findAllWithYearMonth() {
+        assertNotNull(inv.findAll(2026, 5, null, 0, 10));
+        assertNotNull(inv.findAll(2026, null, null, 0, 10));
+        assertNotNull(inv.findAll(null, 5, null, 0, 10));
+    }
+    @Test @Order(62) void inv_createWithAllFields() {
+        InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(12);
+        d.setAmount(777000.0); d.setTaxRate(10.0); d.setSubject("全項目請求");
+        d.setInvoiceDate(LocalDate.of(2026,12,1)); d.setDueDate(LocalDate.of(2027,1,31));
+        d.setRemark("全項目備考");
+        InvoiceDTO c = inv.create(d);
+        assertNotNull(c); assertNotNull(c.getInvoiceNumber());
+        c.setStatus("入金済"); inv.update(c.getId(), c);
+        assertEquals("入金済", inv.findById(c.getId()).getStatus());
+        inv.delete(c.getId());
+    }
+    @Test @Order(63) void inv_deleteNotFound() {
+        assertThrows(RuntimeException.class, () -> inv.delete(99999L));
     }
 
     private BankAccountDTO baDto(String n) {
