@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 
 import javax.persistence.EntityManager;
 import java.time.LocalDate;
@@ -54,6 +55,48 @@ class AttendanceServiceTest {
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
+    }
+
+    // findAll: 全 if 分岐網羅 (4パラメータ組み合わせ)
+    @Test void testFindAll_yearMonthOnly_trueBranch() {
+        // year!=null && month!=null → true, employeeId==null → false
+        Page<Attendance> page = new PageImpl<>(Collections.singletonList(att));
+        when(attendanceRepo.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
+        when(employeeRepo.findById(1L)).thenReturn(Optional.of(emp));
+        Page<AttendanceDTO> r = service.findAll(2026, 5, null, 0, 10);
+        assertNotNull(r); assertEquals(1, r.getTotalElements());
+    }
+    @Test void testFindAll_employeeIdOnly_trueBranch() {
+        // employeeId!=null → true, year==null||month==null → false
+        Page<Attendance> page = new PageImpl<>(Collections.singletonList(att));
+        when(attendanceRepo.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
+        when(employeeRepo.findById(1L)).thenReturn(Optional.of(emp));
+        Page<AttendanceDTO> r = service.findAll(null, null, 1L, 0, 10);
+        assertNotNull(r); assertEquals(1, r.getTotalElements());
+    }
+    @Test void testFindAll_allThree_trueBothBranches() {
+        // employeeId!=null AND year!=null&&month!=null → both true
+        Page<Attendance> page = new PageImpl<>(Collections.singletonList(att));
+        when(attendanceRepo.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
+        when(employeeRepo.findById(1L)).thenReturn(Optional.of(emp));
+        Page<AttendanceDTO> r = service.findAll(2026, 5, 1L, 0, 10);
+        assertNotNull(r); assertEquals(1, r.getTotalElements());
+    }
+    @Test void testFindAll_yearOnly_monthNull_falseBranch() {
+        // year!=null but month==null → && evaluates false
+        Page<Attendance> page = new PageImpl<>(Collections.singletonList(att));
+        when(attendanceRepo.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
+        when(employeeRepo.findById(1L)).thenReturn(Optional.of(emp));
+        Page<AttendanceDTO> r = service.findAll(2026, null, null, 0, 10);
+        assertNotNull(r); assertEquals(1, r.getTotalElements());
+    }
+    @Test void testFindAll_monthOnly_yearNull_falseBranch() {
+        // month!=null but year==null → && evaluates false
+        Page<Attendance> page = new PageImpl<>(Collections.singletonList(att));
+        when(attendanceRepo.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
+        when(employeeRepo.findById(1L)).thenReturn(Optional.of(emp));
+        Page<AttendanceDTO> r = service.findAll(null, 5, null, 0, 10);
+        assertNotNull(r); assertEquals(1, r.getTotalElements());
     }
 
     @Test
