@@ -95,6 +95,7 @@ class BaEmTest {
 
     @Test void setDefaultForCustomer() {
         BankAccount b = ba("BK000001","001"); b.setIsDefault(false); b.setCustomerId(2L);
+        when(repo.findById(1L)).thenReturn(Optional.of(b));
         when(repo.findByCustomerId(2L)).thenReturn(Collections.singletonList(b));
         when(repo.save(any())).thenReturn(b);
         svc.setDefaultForCustomer(1L, 2L);
@@ -102,9 +103,10 @@ class BaEmTest {
     }
 
     @Test void setDefaultForEmployee() {
-        BankAccount b = ba("BK000001","001"); b.setIsDefault(false); b.setEmployeeId(2L);
-        when(repo.findAll(any(Specification.class))).thenReturn(Collections.singletonList(b));
-        when(repo.save(any())).thenReturn(b);
+        BankAccount b2 = ba("BK000001","001"); b2.setIsDefault(false); b2.setEmployeeId(2L);
+        when(repo.findById(1L)).thenReturn(Optional.of(b2));
+        when(repo.findAll(any(Specification.class))).thenReturn(Collections.singletonList(b2));
+        when(repo.save(any())).thenReturn(b2);
         svc.setDefaultForEmployee(1L, 2L);
         verify(repo, atLeastOnce()).save(any());
     }

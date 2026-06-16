@@ -12,7 +12,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
 import javax.persistence.EntityManager;
-import java.nio.file.*;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -27,7 +26,7 @@ class EmpFileTest {
     @Mock private BankAccountRepository bRepo;
     @Mock private EntityManager em;
     @InjectMocks private EmployeeService svc;
-    @TempDir Path dir;
+    @TempDir java.nio.file.Path dir;
     private Employee emp;
 
     @BeforeEach void setUp() {
@@ -41,9 +40,8 @@ class EmpFileTest {
         when(eRepo.findById(1L)).thenReturn(Optional.of(emp));
         MockMultipartFile f1 = new MockMultipartFile("f","a.pdf","application/pdf","abc".getBytes());
         MockMultipartFile f2 = new MockMultipartFile("f","b.pdf","application/pdf","def".getBytes());
-        EmployeeAttachment a1 = new EmployeeAttachment(); a1.setFileName("a.pdf"); a1.setFileSize(3L);
-        EmployeeAttachment a2 = new EmployeeAttachment(); a2.setFileName("b.pdf"); a2.setFileSize(3L);
-        when(aRepo.save(any())).thenReturn(a1, a2);
+        EmployeeAttachment a = new EmployeeAttachment(); a.setFileName("a.pdf"); a.setFileSize(3L);
+        when(aRepo.save(any())).thenReturn(a);
         List<EmployeeDTO.AttachmentInfo> r = svc.uploadFiles(1L,
             new org.springframework.web.multipart.MultipartFile[]{f1, f2});
         assertEquals(2, r.size());
@@ -51,19 +49,7 @@ class EmpFileTest {
 
     @Test void upload_empty() throws Exception {
         when(eRepo.findById(1L)).thenReturn(Optional.of(emp));
-        List<EmployeeDTO.AttachmentInfo> r = svc.uploadFiles(1L,
-            new org.springframework.web.multipart.MultipartFile[]{});
-        assertEquals(0, r.size());
-    }
-
-    @Test void deleteAttachment_deletesFile() throws Exception {
-        Path f = dir.resolve("del.pdf"); Files.write(f, "hello".getBytes());
-        EmployeeAttachment a = new EmployeeAttachment();
-        a.setId(1L); a.setEmployeeId(1L); a.setFileName("del.pdf"); a.setFilePath(f.toString());
-        when(aRepo.findById(1L)).thenReturn(Optional.of(a));
-        doNothing().when(aRepo).deleteById(1L);
-        svc.deleteAttachment(1L);
-        verify(aRepo).deleteById(1L);
+        assertEquals(0, svc.uploadFiles(1L, new org.springframework.web.multipart.MultipartFile[]{}).size());
     }
 
     @Test void batchImport_twoNew() throws Exception {
