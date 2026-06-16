@@ -589,8 +589,79 @@ class AllInOneTest {
         assertEquals("入金済", inv.findById(c.getId()).getStatus());
         inv.delete(c.getId());
     }
-    @Test @Order(63) void inv_deleteNotFound() {
-        assertThrows(RuntimeException.class, () -> inv.delete(99999L));
+    @Test @Order(63) void inv_deleteNotFound() { assertThrows(RuntimeException.class, () -> inv.delete(99999L)); }
+
+    // === エッジケース: false分岐 + try-catch + nullパス ===
+    @Test @Order(64) void edge_inv_uploadToNonExistentInvoice() {
+        assertThrows(RuntimeException.class, () -> inv.uploadDocument(99999L,
+            new MockMultipartFile("f","x.pdf","application/pdf","d".getBytes())));
+    }
+    @Test @Order(65) void edge_inv_getDocFile_nonExistent() {
+        assertThrows(RuntimeException.class, () -> inv.getDocumentFile(99999L));
+    }
+    @Test @Order(66) void edge_inv_getDocFileName_nonExistent() {
+        assertThrows(RuntimeException.class, () -> inv.getDocumentFileName(99999L));
+    }
+    @Test @Order(67) void edge_inv_exportCsv_nullFields() {
+        // Create invoice WITHOUT invoiceDate/dueDate/subject → false branches in CSV
+        InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(9);
+        d.setAmount(111000.0); d.setTaxRate(10.0);
+        InvoiceDTO c = inv.create(d);
+        String csv = inv.exportInvoiceCsv(c.getId());
+        assertNotNull(csv);
+        inv.delete(c.getId());
+    }
+    @Test @Order(68) void edge_inv_findById_notFound() {
+        assertThrows(RuntimeException.class, () -> inv.findById(99999L));
+    }
+    @Test @Order(69) void edge_emp_downloadAttach_notFound() {
+        assertThrows(RuntimeException.class, () -> emp.downloadAttachment(99999L));
+    }
+    @Test @Order(70) void edge_emp_getFileName_notFound() {
+        assertThrows(RuntimeException.class, () -> emp.getAttachmentFileName(99999L));
+    }
+    @Test @Order(71) void edge_emp_deleteAttach_notFound() {
+        assertThrows(RuntimeException.class, () -> emp.deleteAttachment(99999L));
+    }
+    @Test @Order(72) void edge_emp_findById_notFound() {
+        assertThrows(RuntimeException.class, () -> emp.findById(99999L));
+    }
+    @Test @Order(73) void edge_po_findById_notFound() {
+        assertThrows(RuntimeException.class, () -> po.findById(99999L));
+    }
+    @Test @Order(74) void edge_po_getAttachFile_notFound() {
+        assertThrows(RuntimeException.class, () -> po.getAttachmentFile(99999L));
+    }
+    @Test @Order(75) void edge_po_deleteAttach_notFound() {
+        assertThrows(RuntimeException.class, () -> po.deleteAttachment(99999L));
+    }
+    @Test @Order(76) void edge_ba_findById_notFound() {
+        assertThrows(RuntimeException.class, () -> ba.findById(99999L));
+    }
+    @Test @Order(77) void edge_ba_update_notFound() {
+        BankAccountDTO d = baDto("存在しない"); assertThrows(RuntimeException.class, () -> ba.update(99999L, d));
+    }
+    @Test @Order(78) void edge_so_findById_notFound() {
+        assertThrows(RuntimeException.class, () -> so.findById(99999L));
+    }
+    @Test @Order(79) void edge_so_exportPdf_notFound() {
+        assertThrows(RuntimeException.class, () -> so.exportPdf(99999L));
+    }
+    @Test @Order(80) void edge_cust_findById_notFound() {
+        assertThrows(RuntimeException.class, () -> cust.findById(99999L));
+    }
+    @Test @Order(81) void edge_att_findById_notFound() {
+        assertThrows(RuntimeException.class, () -> att.findById(99999L));
+    }
+    @Test @Order(82) void edge_att_update_notFound() {
+        AttendanceDTO d = new AttendanceDTO(); d.setEmployeeId(1L); d.setWorkDate(LocalDate.now());
+        d.setWorkHours(8.0); d.setStatus("出勤");
+        assertThrows(RuntimeException.class, () -> att.update(99999L, d));
+    }
+    @Test @Order(83) void edge_att_generate_nullParams() {
+        assertEquals(0, att.generateMonth(null, 5, 1L));
+        assertEquals(0, att.generateMonth(2026, null, 1L));
+        assertEquals(0, att.generateMonth(2026, 5, null));
     }
 
     private BankAccountDTO baDto(String n) {
