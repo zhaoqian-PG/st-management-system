@@ -109,4 +109,17 @@ class InvoiceServiceTest {
         when(orderDocumentRepository.findById(1L)).thenReturn(Optional.of(doc));
         assertEquals("test.pdf", service.getDocumentFileName(1L));
     }
+
+    @Test void testGetDocumentFile_docNotFound() {
+        when(orderDocumentRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> service.getDocumentFile(99L));
+    }
+
+    @Test void testGetDocumentFile_fileNotExists() {
+        OrderDocument doc = new OrderDocument();
+        doc.setId(1L); doc.setFileName("ghost.pdf");
+        doc.setFilePath("uploads/nonexistent_99999.pdf");
+        when(orderDocumentRepository.findById(1L)).thenReturn(Optional.of(doc));
+        assertThrows(RuntimeException.class, () -> service.getDocumentFile(1L));
+    }
 }
