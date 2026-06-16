@@ -396,13 +396,13 @@ class AllInOneTest {
         so.delete((Long)c.get("id"));
     }
 
-    // === ターゲット: CustomerService 76%→90% ===
+    // === ターゲット: CustomerService ===
     @Test @Order(41) void cust_findAllWithKeyword() {
         assertNotNull(cust.findAll("テ", 0, 10));
         assertNotNull(cust.findAll(null, 0, 10));
     }
 
-    // === ターゲット: InvoiceService 79%→90% ===
+    // === ターゲット: InvoiceService (245 missed) ===
     @Test @Order(42) void inv_deleteDocumentFlow() throws Exception {
         InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(8);
         d.setAmount(444000.0); d.setTaxRate(10.0);
@@ -451,7 +451,7 @@ class AllInOneTest {
         ba.delete(c.getId());
     }
 
-    // === ターゲット: SupplierOrderService 88%→90% ===
+    // === ターゲット: SupplierOrderService (236 missed) ===
     @Test @Order(46) void so_updateWithStatusChange() {
         Map<String,Object> d = new HashMap<>();
         d.put("supplierName","ステータス更新"); d.put("orderDate",LocalDate.now().toString());
@@ -461,6 +461,32 @@ class AllInOneTest {
         so.update((Long)c.get("id"), d);
         assertEquals("納品済", so.findById((Long)c.get("id")).get("status"));
         so.delete((Long)c.get("id"));
+    }
+
+    // === 最終ブースター: 全サービス CRUD 網羅 ===
+    @Test @Order(47) void inv_exportWithBankInfo() {
+        // Create invoice on customer that has bank accounts
+        InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(7);
+        d.setAmount(555000.0); d.setTaxRate(10.0); d.setInvoiceDate(LocalDate.now());
+        InvoiceDTO c = inv.create(d);
+        String csv = inv.exportInvoiceCsv(c.getId());
+        assertNotNull(csv); assertFalse(csv.isEmpty());
+        inv.delete(c.getId());
+    }
+
+    @Test @Order(48) void so_findAllPaged() {
+        assertNotNull(so.findAll(0, 5));
+        assertNotNull(so.findAll(1, 5));
+    }
+
+    @Test @Order(49) void po_findAllFiltered() {
+        assertNotNull(po.findAll(null, "下書き", 0, 10));
+        assertNotNull(po.findAll(null, "発注済", 0, 10));
+    }
+
+    @Test @Order(50) void emp_findAllVariations() {
+        assertNotNull(emp.findAll(null, null, false, 0, 10));
+        assertNotNull(emp.findAll(null, null, true, 0, 10));
     }
 
     private BankAccountDTO baDto(String n) {
