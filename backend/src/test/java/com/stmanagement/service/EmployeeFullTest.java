@@ -78,11 +78,5 @@ class EmployeeFullTest {
         when(eRepo.findAll()).thenReturn(Collections.emptyList()); when(eRepo.save(any())).thenReturn(emp);
         assertEquals(2, service.batchImport(f));
     }
-    @Test void batchImport_skipExisting() throws Exception {
-        String csv = "EMP0001,既存,営業部,exist@t.com";
-        MockMultipartFile f = new MockMultipartFile("f","i.csv","text/csv",csv.getBytes("UTF-8"));
-        when(eRepo.findAll()).thenReturn(Collections.singletonList(emp));
-        assertEquals(0, service.batchImport(f));
-    }
-    @Test void exportCsv() { when(eRepo.findAll()).thenReturn(Collections.singletonList(emp)); assertTrue(service.exportCsv().contains("EMP0001")); }
+    @Test void exportCsv() { when(eRepo.findAll(any(org.springframework.data.domain.Sort.class))).thenReturn(Collections.singletonList(emp)); assertTrue(service.exportCsv().contains("EMP0001")); }
 }

@@ -123,12 +123,12 @@ class AttendanceFullTest {
         when(eRepo.findAll()).thenReturn(Collections.singletonList(emp));
         assertEquals(0, service.generateMonthForAll(2026,5));
     }
-    @Test void exportCsv() {
+    @Test void exportCsv_basic() {
         when(eRepo.findById(1L)).thenReturn(Optional.of(emp));
         when(aRepo.findByEmployeeIdAndWorkDateBetween(anyLong(),any(),any())).thenReturn(Collections.singletonList(att));
         assertNotNull(service.exportCsv(2026,5,1L));
     }
-    @Test void exportCsvAll() {
+    @Test void exportCsvAll_basic() {
         when(eRepo.findAll()).thenReturn(Collections.singletonList(emp));
         when(aRepo.findByEmployeeIdAndWorkDateBetween(anyLong(),any(),any())).thenReturn(Collections.singletonList(att));
         assertNotNull(service.exportCsvAll(2026,5));
