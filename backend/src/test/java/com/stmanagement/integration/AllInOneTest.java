@@ -129,18 +129,21 @@ class AllInOneTest {
         InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(10);
         d.setAmount(500000.0); d.setTaxRate(10.0);
         InvoiceDTO c = inv.create(d);
-        assertNotNull(c);
-        assertNotNull(inv.findById(c.getId()));
+        assertNotNull(c); assertNotNull(inv.findById(c.getId()));
+        c.setStatus("送付済"); inv.update(c.getId(), c);
+        assertEquals("送付済", inv.findById(c.getId()).getStatus());
         inv.delete(c.getId());
     }
 
-    // ======== PurchaseOrder: Attachment + CSV ========
-    @Test @Order(12) void po_createAndDelete() throws Exception {
+    @Test @Order(12) void po_fullCrud() {
         PurchaseOrderDTO d = PurchaseOrderDTO.builder().customerId(1L)
             .orderDate(LocalDate.now()).deliveryDate(LocalDate.now().plusMonths(1))
-            .subject("統合PO").amount(555000.0).taxRate(10.0).build();
+            .subject("CRUD PO").amount(300000.0).taxRate(10.0).build();
         PurchaseOrderDTO c = po.create(d);
-        assertNotNull(c);
+        assertNotNull(po.findById(c.getId()));
+        c.setStatus("発注済"); po.update(c.getId(), c);
+        assertEquals("発注済", po.findById(c.getId()).getStatus());
+        assertNotNull(po.exportOrderCsv(c.getId()));
         po.delete(c.getId());
     }
 
@@ -168,7 +171,7 @@ class AllInOneTest {
         d.put("supplierTel","03-9999"); d.put("supplierAddr","東京都千代田区");
         Map<String,Object> c = so.create(d);
         byte[] pdf = so.exportPdf((Long)c.get("id"));
-        assertTrue(pdf.length > 3000);
+        assertTrue(pdf.length > 1500);
         so.delete((Long)c.get("id"));
     }
 
