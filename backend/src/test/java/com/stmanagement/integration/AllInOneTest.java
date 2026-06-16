@@ -219,12 +219,47 @@ class AllInOneTest {
         CustomerDTO d = new CustomerDTO(); d.setCompanyName("統合カスタマー");
         d.setPresidentName("社長"); d.setEmail("cust@t.com"); d.setPhone("03-1111");
         CustomerDTO c = cust.create(d);
-
         c.setCompanyName("更新カスタマー");
         cust.update(c.getId(), c);
         assertEquals("更新カスタマー", cust.findById(c.getId()).getCompanyName());
-
         cust.delete(c.getId());
+    }
+
+    // Additional coverage tests
+    @Test @Order(20) void ba_updateAndBranch() {
+        java.util.List<BankAccountDTO> list = ba.findByCustomerId(1L);
+        assertNotNull(list);
+        String branch = ba.nextBranchNo("BK000001");
+        assertNotNull(branch);
+        java.util.List<String> nos = ba.getExistingTorihikiNos("CUSTOMER");
+        assertNotNull(nos);
+    }
+
+    @Test @Order(21) void emp_exportAndFind() {
+        assertNotNull(emp.exportCsv());
+        assertNotNull(emp.findAll(null, null, false, 0, 10));
+    }
+
+    @Test @Order(22) void inv_exportAndFind() {
+        InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(9);
+        d.setAmount(300000.0); d.setTaxRate(10.0);
+        InvoiceDTO c = inv.create(d);
+        assertNotNull(inv.exportInvoiceCsv(c.getId()));
+        assertNotNull(inv.findAll(2026, 9, 1L, 0, 10));
+        inv.delete(c.getId());
+    }
+
+    @Test @Order(23) void po_findWithFilter() {
+        assertNotNull(po.findAll(1L, "下書き", 0, 10));
+    }
+
+    @Test @Order(24) void so_findAll() {
+        assertNotNull(so.findAll(0, 10));
+    }
+
+    @Test @Order(25) void att_generateMore() {
+        assertTrue(att.generateMonth(2026, 9, 1L) >= 0);
+        assertNotNull(att.findAll(null, null, null, 0, 10));
     }
 
     private BankAccountDTO baDto(String n) {
