@@ -262,6 +262,50 @@ class AllInOneTest {
         assertNotNull(att.findAll(null, null, null, 0, 10));
     }
 
+    @Test @Order(26) void ba_findAllFiltered() {
+        assertNotNull(ba.findAll("CUSTOMER", 1L, 0, 10));
+        assertNotNull(ba.findByEmployeeId(1L));
+        assertNotNull(ba.getExistingTorihikiNos("EMPLOYEE"));
+    }
+
+    @Test @Order(27) void emp_findAllKeyword() {
+        assertNotNull(emp.findAll("山田", "営業部", true, 0, 10));
+    }
+
+    @Test @Order(28) void inv_findAllFiltered() {
+        assertNotNull(inv.findAll(2026, 5, null, 0, 10));
+    }
+
+    @Test @Order(29) void po_exportCsv() {
+        PurchaseOrderDTO d = PurchaseOrderDTO.builder().customerId(1L)
+            .orderDate(LocalDate.now()).deliveryDate(LocalDate.now().plusMonths(1))
+            .subject("CSVテスト").amount(400000.0).taxRate(10.0).build();
+        PurchaseOrderDTO c = po.create(d);
+        assertNotNull(po.exportOrderCsv(c.getId()));
+        po.delete(c.getId());
+    }
+
+    @Test @Order(30) void so_updateWithDetails() {
+        Map<String,Object> d = new HashMap<>();
+        d.put("supplierName","詳細テスト"); d.put("orderDate",LocalDate.now().toString());
+        d.put("amount",3000000.0); d.put("taxRate",10.0);
+        Map<String,Object> c = so.create(d);
+        d.put("status","納品済"); d.put("supplierContact","担当者"); d.put("supplierDept","部署");
+        so.update((Long)c.get("id"), d);
+        Map<String,Object> found = so.findById((Long)c.get("id"));
+        assertEquals("納品済", found.get("status"));
+        so.delete((Long)c.get("id"));
+    }
+
+    @Test @Order(31) void att_createWithOvertime() {
+        AttendanceDTO d = new AttendanceDTO();
+        d.setEmployeeId(1L); d.setWorkDate(LocalDate.now().plusDays(1));
+        d.setWorkHours(8.0); d.setOvertimeHours(3.0); d.setWorkType("REMOTE"); d.setStatus("出勤");
+        AttendanceDTO c = att.create(d);
+        assertNotNull(c); assertEquals(11.0, c.getTotalHours());
+        att.delete(c.getId());
+    }
+
     private BankAccountDTO baDto(String n) {
         BankAccountDTO d = new BankAccountDTO();
         d.setBankName(n); d.setAccountType("普通"); d.setAccountNumber("8889991");
