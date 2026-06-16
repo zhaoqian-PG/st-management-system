@@ -1,6 +1,7 @@
 package com.stmanagement.service;
 
 import com.stmanagement.dto.InvoiceDTO;
+import com.stmanagement.dto.InvoiceDetailDTO;
 import com.stmanagement.model.*;
 import com.stmanagement.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -121,5 +122,56 @@ class InvoiceServiceTest {
         doc.setFilePath("uploads/nonexistent_99999.pdf");
         when(orderDocumentRepository.findById(1L)).thenReturn(Optional.of(doc));
         assertThrows(RuntimeException.class, () -> service.getDocumentFile(1L));
+    }
+
+    // saveDetails 間接テスト (create経由)
+    @Test void testCreate_withDetails_saveDetailsBranch() {
+        InvoiceDTO dto = new InvoiceDTO();
+        dto.setCustomerId(1L); dto.setYear(2026); dto.setMonth(6); dto.setAmount(500000.0); dto.setTaxRate(10.0);
+        // Add 3 details → saveDetails loop executes 3 times
+        List<InvoiceDetailDTO> details = new ArrayList<>();
+        InvoiceDetailDTO d1 = new InvoiceDetailDTO(); d1.setEmployeeName("山田"); d1.setDescription("設計");
+        d1.setQuantity(2.0); d1.setUnitPrice(250000.0); d1.setIsOvertime(false);
+        InvoiceDetailDTO d2 = new InvoiceDetailDTO(); d2.setEmployeeName("鈴木"); d2.setDescription("開発");
+        d2.setQuantity(3.0); d2.setUnitPrice(200000.0); d2.setIsOvertime(true);
+        InvoiceDetailDTO d3 = new InvoiceDetailDTO(); d3.setEmployeeName("田中"); d3.setDescription("テスト");
+        d3.setQuantity(1.0); d3.setUnitPrice(100000.0); d3.setIsOvertime(false);
+        details.add(d1); details.add(d2); details.add(d3);
+        dto.setDetails(details);
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(invoice);
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(detailRepository.save(any(InvoiceDetail.class))).thenReturn(new InvoiceDetail());
+        InvoiceDTO r = service.create(dto);
+        assertNotNull(r);
+        verify(detailRepository, times(3)).save(any(InvoiceDetail.class));
+    }
+
+    // saveDetails null branch (early return)
+    @Test void testCreate_withNullDetails_earlyReturn() {
+        InvoiceDTO dto = new InvoiceDTO();
+        dto.setCustomerId(1L); dto.setYear(2026); dto.setMonth(7); dto.setAmount(300000.0); dto.setTaxRate(10.0);
+        dto.setDetails(null);
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(invoice);
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        InvoiceDTO r = service.create(dto);
+        assertNotNull(r);
+        verify(detailRepository, never()).save(any(InvoiceDetail.class));
+    }
+
+    // saveDetails with null quantity/unitPrice
+    @Test void testCreate_withNullQuantity_saveDetailsNullBranch() {
+        InvoiceDTO dto = new InvoiceDTO();
+        dto.setCustomerId(1L); dto.setYear(2026); dto.setMonth(8); dto.setAmount(200000.0); dto.setTaxRate(10.0);
+        List<InvoiceDetailDTO> details = new ArrayList<>();
+        InvoiceDetailDTO d1 = new InvoiceDetailDTO(); d1.setEmployeeName("佐藤"); d1.setDescription("nullテスト");
+        d1.setQuantity(null); d1.setUnitPrice(null); d1.setIsOvertime(null);
+        details.add(d1);
+        dto.setDetails(details);
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(invoice);
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(detailRepository.save(any(InvoiceDetail.class))).thenReturn(new InvoiceDetail());
+        InvoiceDTO r = service.create(dto);
+        assertNotNull(r);
+        verify(detailRepository).save(any(InvoiceDetail.class));
     }
 }
