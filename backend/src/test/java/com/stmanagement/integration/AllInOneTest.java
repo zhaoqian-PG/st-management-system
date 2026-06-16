@@ -664,6 +664,45 @@ class AllInOneTest {
         assertEquals(0, att.generateMonth(2026, 5, null));
     }
 
+    // === getDocumentFile: 実ファイル読み取り + InvoiceDetail loop ===
+    @Test @Order(84) void inv_getDocumentFile_realFile() throws Exception {
+        InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(5);
+        d.setAmount(500000.0); d.setTaxRate(10.0);
+        InvoiceDTO c = inv.create(d);
+        OrderDocumentDTO doc = inv.uploadDocument(c.getId(),
+            new MockMultipartFile("f","実ファイル.pdf","application/pdf","hello world".getBytes()));
+        org.springframework.core.io.Resource r = inv.getDocumentFile(doc.getId());
+        assertNotNull(r); assertTrue(r.exists());
+        inv.deleteDocument(doc.getId()); inv.delete(c.getId());
+    }
+    @Test @Order(85) void inv_getDocumentFile_notExists() {
+        assertThrows(RuntimeException.class, () -> inv.getDocumentFile(99999L));
+    }
+    @Test @Order(86) void inv_exportCsv_withDetails_loop() {
+        InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(6);
+        d.setAmount(1000000.0); d.setTaxRate(10.0); d.setInvoiceDate(LocalDate.now()); d.setDueDate(LocalDate.now().plusMonths(1));
+        InvoiceDTO c = inv.create(d);
+        // Upload 2 documents to trigger detail loop in CSV
+        inv.uploadDocument(c.getId(), new MockMultipartFile("f","a.pdf","application/pdf","x".getBytes()));
+        inv.uploadDocument(c.getId(), new MockMultipartFile("f","b.pdf","application/pdf","y".getBytes()));
+        String csv = inv.exportInvoiceCsv(c.getId());
+        assertNotNull(csv); assertTrue(csv.contains("INV-2026"));
+        InvoiceDTO found = inv.findById(c.getId());
+        for (com.stmanagement.dto.OrderDocumentDTO doc : found.getDocuments()) {
+            inv.deleteDocument(doc.getId());
+        }
+        inv.delete(c.getId());
+    }
+    @Test @Order(87) void inv_exportCsv_nullInvoiceDateBranch() {
+        // No invoiceDate set → false branch for `if (inv.getInvoiceDate() != null)`
+        InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(7);
+        d.setAmount(333000.0); d.setTaxRate(10.0);
+        InvoiceDTO c = inv.create(d);
+        String csv = inv.exportInvoiceCsv(c.getId());
+        assertNotNull(csv);
+        inv.delete(c.getId());
+    }
+
     private BankAccountDTO baDto(String n) {
         BankAccountDTO d = new BankAccountDTO();
         d.setBankName(n); d.setAccountType("普通"); d.setAccountNumber("8889991");
