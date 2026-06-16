@@ -4,7 +4,9 @@
       "Bash(mvn spring-boot:run -q)",
       "Bash(curl -s http://localhost:8080/api/health)",
       "Bash(curl -s http://localhost:8080/test)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "Bash(mvn test *)",
+      "Bash(awk -F',' 'NR>1{missed+=$4; total+=$4+$5} END{printf \"Coverage: %.1f%%\\\\n\", \\(total-missed\\)*100/total}')"
     ]
   }
 }
