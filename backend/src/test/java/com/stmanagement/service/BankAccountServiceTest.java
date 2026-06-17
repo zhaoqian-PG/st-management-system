@@ -137,4 +137,36 @@ class BankAccountServiceTest {
         BankAccountDTO r = service.update(1L, dto);
         assertNotNull(r);
     }
+
+    @Test void testUnbindFromEmployee() {
+        BankAccount b = ba(); b.setEmployeeId(2L);
+        when(repo.findById(1L)).thenReturn(Optional.of(b));
+        when(repo.save(any(BankAccount.class))).thenReturn(b);
+        Employee e = new Employee(); e.setId(2L); e.setName("社員"); e.setTorihikiNo("BK000099");
+        when(employeeRepo.findById(2L)).thenReturn(Optional.of(e));
+        when(repo.findAll(any(Specification.class))).thenReturn(Collections.singletonList(b));
+        when(employeeRepo.save(any(Employee.class))).thenReturn(e);
+        service.unbindFromEmployee(1L);
+        verify(repo).save(any(BankAccount.class));
+    }
+
+    @Test void testSetDefaultForCustomer() {
+        BankAccount b1 = ba(); b1.setId(1L); b1.setCustomerId(2L); b1.setIsDefault(false);
+        BankAccount b2 = ba(); b2.setId(2L); b2.setCustomerId(2L); b2.setIsDefault(true);
+        when(repo.findByCustomerId(2L)).thenReturn(Arrays.asList(b1, b2));
+        when(repo.findById(1L)).thenReturn(Optional.of(b1));
+        when(repo.save(any(BankAccount.class))).thenAnswer(i -> i.getArgument(0));
+        service.setDefaultForCustomer(1L, 2L);
+        verify(repo, atLeast(3)).save(any(BankAccount.class));
+    }
+
+    @Test void testSetDefaultForEmployee() {
+        BankAccount b1 = ba(); b1.setId(1L); b1.setEmployeeId(2L); b1.setIsDefault(false);
+        BankAccount b2 = ba(); b2.setId(2L); b2.setEmployeeId(2L); b2.setIsDefault(true);
+        when(repo.findAll(any(Specification.class))).thenReturn(Arrays.asList(b1, b2));
+        when(repo.findById(1L)).thenReturn(Optional.of(b1));
+        when(repo.save(any(BankAccount.class))).thenAnswer(i -> i.getArgument(0));
+        service.setDefaultForEmployee(1L, 2L);
+        verify(repo, atLeast(3)).save(any(BankAccount.class));
+    }
 }
