@@ -93,6 +93,10 @@ public class SupplierOrderService {
     // ==================== PDF Export ====================
 
     private BaseFont createJapaneseFont() throws Exception {
+        return createJapaneseFont(null);
+    }
+
+    public BaseFont createJapaneseFont(String overrideWinPath) throws Exception {
         String[][] cjkFonts = {
             {"HeiseiKakuGo-W5", "UniJIS-UCS2-H"}, {"HeiseiMin-W3", "UniJIS-UCS2-H"},
             {"STSong-Light", "UniGB-UCS2-H"}, {"MHei-Medium", "UniCNS-UCS2-H"},
@@ -101,13 +105,15 @@ public class SupplierOrderService {
         for (String[] f : cjkFonts) {
             try { return BaseFont.createFont(f[0], f[1], BaseFont.NOT_EMBEDDED); } catch (Exception ignored) {}
         }
-        String[] winFontPaths = {
-            "C:\\Windows\\Fonts\\msgothic.ttc,0", "C:\\Windows\\Fonts\\msmincho.ttc,0",
-            "C:\\Windows\\Fonts\\yugothm.ttc,0", "C:\\Windows\\Fonts\\yugothb.ttc,0",
-            "C:\\Windows\\Fonts\\meiryo.ttc,0", "C:\\Windows\\Fonts\\msgothic.ttc,1",
-            "C:\\Windows\\Fonts\\simsun.ttc,0", "C:\\Windows\\Fonts\\simhei.ttf",
-            "C:\\Windows\\Fonts\\msyh.ttc,0",
-        };
+        String[] winFontPaths = (overrideWinPath != null) ?
+            new String[]{overrideWinPath} :
+            new String[]{
+                "C:\\Windows\\Fonts\\msgothic.ttc,0", "C:\\Windows\\Fonts\\msmincho.ttc,0",
+                "C:\\Windows\\Fonts\\yugothm.ttc,0", "C:\\Windows\\Fonts\\yugothb.ttc,0",
+                "C:\\Windows\\Fonts\\meiryo.ttc,0", "C:\\Windows\\Fonts\\msgothic.ttc,1",
+                "C:\\Windows\\Fonts\\simsun.ttc,0", "C:\\Windows\\Fonts\\simhei.ttf",
+                "C:\\Windows\\Fonts\\msyh.ttc,0",
+            };
         for (String path : winFontPaths) {
             try { return BaseFont.createFont(path, BaseFont.IDENTITY_H, BaseFont.EMBEDDED); } catch (Exception ignored) {}
         }

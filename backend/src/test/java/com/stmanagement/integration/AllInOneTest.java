@@ -664,8 +664,20 @@ class AllInOneTest {
         assertEquals(0, att.generateMonth(2026, 5, null));
     }
 
+    // === createJapaneseFont 全戦略強制実行 (ghost pathでStrategy2-4突破) ===
+    @Test @Order(84) void testCreateJapaneseFont_RunThroughAllStrategies() throws Exception {
+        // Ghost path → Strategy2全fail → Strategy3 AWT実行 → Strategy4 Helvetica fallback
+        com.itextpdf.text.pdf.BaseFont bf =
+            so.createJapaneseFont("C:\\GhostPath\\NotExist\\phantom.ttc,0");
+        assertNotNull(bf);
+        // Strategy4 fallback → Helvetica (not Japanese)
+        assertFalse(bf.getPostscriptFontName().contains("Gothic")
+                 || bf.getPostscriptFontName().contains("Mincho")
+                 || bf.getPostscriptFontName().contains("Yu"));
+    }
+
     // === getDocumentFile: 実ファイル読み取り + InvoiceDetail loop ===
-    @Test @Order(84) void inv_getDocumentFile_realFile() throws Exception {
+    @Test @Order(85) void inv_getDocumentFile_realFile() throws Exception {
         InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(5);
         d.setAmount(500000.0); d.setTaxRate(10.0);
         InvoiceDTO c = inv.create(d);
