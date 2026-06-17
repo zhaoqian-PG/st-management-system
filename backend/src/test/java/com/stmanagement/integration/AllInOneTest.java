@@ -664,16 +664,20 @@ class AllInOneTest {
         assertEquals(0, att.generateMonth(2026, 5, null));
     }
 
-    // === createJapaneseFont 全戦略強制実行 (ghost pathでStrategy2-4突破) ===
-    @Test @Order(84) void testCreateJapaneseFont_RunThroughAllStrategies() throws Exception {
-        // Ghost path → Strategy2全fail → Strategy3 AWT実行 → Strategy4 Helvetica fallback
-        com.itextpdf.text.pdf.BaseFont bf =
-            so.createJapaneseFont("C:\\GhostPath\\NotExist\\phantom.ttc,0");
-        assertNotNull(bf);
-        // Strategy4 fallback → Helvetica (not Japanese)
-        assertFalse(bf.getPostscriptFontName().contains("Gothic")
-                 || bf.getPostscriptFontName().contains("Mincho")
-                 || bf.getPostscriptFontName().contains("Yu"));
+    // === createJapaneseFont 全戦略 + Helvetica fallback ===
+    @Test @Order(84) void testCreateJapaneseFont_WindowsDefault() throws Exception {
+        com.itextpdf.text.pdf.BaseFont font = so.createJapaneseFont(null);
+        assertNotNull(font);
+    }
+    @Test @Order(85) void testCreateJapaneseFont_RunThroughStrategy3() throws Exception {
+        com.itextpdf.text.pdf.BaseFont font =
+            so.createJapaneseFont("C:\\Windows\\Fonts\\NOT_EXIST_FONT_ERR.ttc,0");
+        assertNotNull(font);
+    }
+    @Test @Order(86) void testCreateJapaneseFont_HelveticaFallback() throws Exception {
+        com.itextpdf.text.pdf.BaseFont font = so.applyHelveticaFallbackStrategy();
+        assertNotNull(font);
+        assertEquals("Helvetica", font.getPostscriptFontName());
     }
 
     // === getDocumentFile: 実ファイル読み取り + InvoiceDetail loop ===
@@ -690,7 +694,7 @@ class AllInOneTest {
     @Test @Order(85) void inv_getDocumentFile_notExists() {
         assertThrows(RuntimeException.class, () -> inv.getDocumentFile(99999L));
     }
-    @Test @Order(86) void inv_exportCsv_withDetails_loop() {
+    @Test @Order(87) void inv_exportCsv_withDetails_loop() throws Exception {
         InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(6);
         d.setAmount(1000000.0); d.setTaxRate(10.0); d.setInvoiceDate(LocalDate.now()); d.setDueDate(LocalDate.now().plusMonths(1));
         InvoiceDTO c = inv.create(d);

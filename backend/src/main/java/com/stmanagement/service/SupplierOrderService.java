@@ -131,7 +131,7 @@ public class SupplierOrderService {
     }
 
     @lombok.Generated
-    private BaseFont applyHelveticaFallbackStrategy() throws Exception {
+    public BaseFont applyHelveticaFallbackStrategy() throws Exception {
         log.warn("No Japanese font found, PDF will use ASCII-only fallback font");
         return BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
     }
