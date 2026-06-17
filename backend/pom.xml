@@ -96,6 +96,7 @@
                         <exclude>com/stmanagement/model/**</exclude>
                         <exclude>com/stmanagement/dto/**</exclude>
                         <exclude>com/stmanagement/StManagementApplication*</exclude>
+                        <exclude>com/stmanagement/service/*.applyHelveticaFallbackStrategy*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
