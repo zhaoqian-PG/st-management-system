@@ -307,4 +307,31 @@ class SupplierOrderServiceTest {
         byte[] pdf3 = service.exportPdf(12L);
         assertNotNull(pdf3); assertTrue(pdf3.length > 1000);
     }
+
+    // createJapaneseFont Strategy1 for全件 + Strategy2 try-catch + hasJapanese分岐
+    @Test void testCreateJapaneseFont_allCjkFontsTried_multiplePdfCalls() throws Exception {
+        when(repo.findById(1L)).thenReturn(Optional.of(order));
+        when(detailRepo.findByOrderId(1L)).thenReturn(Collections.emptyList());
+        for (int i = 0; i < 10; i++) {
+            byte[] pdf = service.exportPdf(1L);
+            assertNotNull(pdf); assertTrue(pdf.length > 500);
+        }
+    }
+    @Test void testExportPdf_hasJapanese_trueBranch() throws Exception {
+        SupplierOrder so = SupplierOrder.builder().id(20L).orderNumber("PO-SUP-2026-0300")
+            .supplierName("株式会社テスト").orderDate(java.time.LocalDate.of(2026,8,1))
+            .deliveryDate(java.time.LocalDate.of(2026,11,30)).subject("日本語テスト")
+            .amount(8880000.0).taxRate(10.0).taxAmount(888000.0).totalWithTax(9768000.0)
+            .status("発注済").remark("備考テスト").issuerName("太郎").issuerDept("営業部").issuerTel("090-1111")
+            .supplierContact("花子").supplierDept("開発部").supplierTel("03-9999").supplierAddr("東京都")
+            .build();
+        SupplierOrderDetail d1 = SupplierOrderDetail.builder().id(1L).orderId(20L)
+            .employeeName("A").itemName("設計").quantity(2.0).unitPrice(3000000.0).amount(6000000.0).build();
+        SupplierOrderDetail d2 = SupplierOrderDetail.builder().id(2L).orderId(20L)
+            .employeeName("B").itemName("開発").quantity(1.0).unitPrice(2880000.0).amount(2880000.0).build();
+        when(repo.findById(20L)).thenReturn(Optional.of(so));
+        when(detailRepo.findByOrderId(20L)).thenReturn(java.util.Arrays.asList(d1, d2));
+        byte[] pdf = service.exportPdf(20L);
+        assertNotNull(pdf); assertTrue(pdf.length > 2000);
+    }
 }
