@@ -680,6 +680,27 @@ class AllInOneTest {
         assertEquals("Helvetica", font.getPostscriptFontName());
     }
 
+    // Strategy2: fake→catch→real→success (複数パスでcatch+return両方)
+    @Test @Order(87) void testCreateJapaneseFont_Strategy2_catchAndReturn() throws Exception {
+        com.itextpdf.text.pdf.BaseFont font =
+            so.createJapaneseFont("C:\\fake.ttc,0|C:\\Windows\\Fonts\\msgothic.ttc,0");
+        assertNotNull(font);
+        assertFalse("Helvetica".equals(font.getPostscriptFontName()));
+    }
+
+    // Strategy3 catch: headlessでAWT破壊→catch(Exception ignored)発火
+    @Test @Order(88) void testCreateJapaneseFont_ForceStrategy3Catch() throws Exception {
+        String orig = System.setProperty("java.awt.headless", "true");
+        try {
+            com.itextpdf.text.pdf.BaseFont font =
+                so.createJapaneseFont("C:\\fake.ttc,0");
+            assertNotNull(font);
+        } finally {
+            if (orig == null) System.clearProperty("java.awt.headless");
+            else System.setProperty("java.awt.headless", orig);
+        }
+    }
+
     // === getDocumentFile: 実ファイル読み取り + InvoiceDetail loop ===
     @Test @Order(85) void inv_getDocumentFile_realFile() throws Exception {
         InvoiceDTO d = new InvoiceDTO(); d.setCustomerId(1L); d.setYear(2026); d.setMonth(5);

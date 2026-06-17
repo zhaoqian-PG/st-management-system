@@ -105,15 +105,20 @@ public class SupplierOrderService {
         for (String[] f : cjkFonts) {
             try { return BaseFont.createFont(f[0], f[1], BaseFont.NOT_EMBEDDED); } catch (Exception ignored) {}
         }
-        String[] winFontPaths = (overrideWinPath != null) ?
-            new String[]{overrideWinPath} :
-            new String[]{
+        String[] winFontPaths;
+        if (overrideWinPath != null && overrideWinPath.contains("|")) {
+            winFontPaths = overrideWinPath.split("\\|");
+        } else if (overrideWinPath != null) {
+            winFontPaths = new String[]{overrideWinPath};
+        } else {
+            winFontPaths = new String[]{
                 "C:\\Windows\\Fonts\\msgothic.ttc,0", "C:\\Windows\\Fonts\\msmincho.ttc,0",
                 "C:\\Windows\\Fonts\\yugothm.ttc,0", "C:\\Windows\\Fonts\\yugothb.ttc,0",
                 "C:\\Windows\\Fonts\\meiryo.ttc,0", "C:\\Windows\\Fonts\\msgothic.ttc,1",
                 "C:\\Windows\\Fonts\\simsun.ttc,0", "C:\\Windows\\Fonts\\simhei.ttf",
                 "C:\\Windows\\Fonts\\msyh.ttc,0",
             };
+        }
         for (String path : winFontPaths) {
             try { return BaseFont.createFont(path, BaseFont.IDENTITY_H, BaseFont.EMBEDDED); } catch (Exception ignored) {}
         }
