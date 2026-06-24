@@ -1,5 +1,5 @@
-# 仅仅使用一个极其轻量、省内存的 Java 8 运行环境
-FROM openjdk:8-jre-slim
+# 🛠️ 换成亚马逊长期维护的、绝对健在的 Amazon Corretto Java 8 运行镜像
+FROM amazoncorretto:8-alpine-jre
 
 # 设置工作目录
 WORKDIR /app
