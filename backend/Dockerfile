@@ -1,17 +1,14 @@
-# 🛠️ 使用专门针对 Java 8 (OpenJDK 8) 的官方 Maven 镜像
-FROM maven:3.8.4-openjdk-8
+# 仅仅使用一个极其轻量、省内存的 Java 8 运行环境
+FROM openjdk:8-jre-slim
 
-# 设置容器内的工作目录
+# 设置工作目录
 WORKDIR /app
 
-# 把当前 backend 目录下的所有文件复制到容器里
-COPY . .
+# 把你在本地打包好的 jar 包直接复制进去
+COPY target/*.jar app.jar
 
-# 在容器内部执行 Java 8 的编译打包
-RUN mvn clean package -DskipTests
-
-# 声明暴露后端端口（Spring Boot 默认是 8080）
+# 暴露端口
 EXPOSE 8080
 
-# 启动命令：运行 Java 8 打包出来的 jar 包
-CMD ["sh", "-c", "java -jar target/*.jar"]
+# 纯粹的运行命令，内存消耗极低
+CMD ["java", "-jar", "app.jar"]
