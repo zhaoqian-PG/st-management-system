@@ -1,0 +1,90 @@
+package com.stmanagement.model;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Entity
+@Table(name = "purchase_order")
+public class PurchaseOrder {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "order_number", length = 50, nullable = false, unique = true, insertable = false, updatable = false)
+    private String orderNumber;
+
+    @Column(name = "customer_id", nullable = false)
+    private Long customerId;
+
+    @Column(name = "order_date", nullable = false)
+    private LocalDate orderDate;
+
+    @Column(name = "delivery_date")
+    private LocalDate deliveryDate;
+
+    @Column(name = "recipient_dept", length = 100)
+    private String recipientDept;
+
+    @Column(name = "recipient_name", length = 100)
+    private String recipientName;
+
+    @Column(name = "recipient_addr", length = 500)
+    private String recipientAddr;
+
+    @Column(name = "recipient_tel", length = 20)
+    private String recipientTel;
+
+    @Column(name = "issuer_name", length = 100)
+    private String issuerName;
+
+    @Column(name = "issuer_dept", length = 100)
+    private String issuerDept;
+
+    @Column(name = "issuer_tel", length = 20)
+    private String issuerTel;
+
+    @Column(length = 500)
+    private String subject;
+
+    @Column(nullable = false)
+    private BigDecimal amount;
+
+    @Column(name = "tax_rate")
+    private BigDecimal taxRate;
+
+    @Column(name = "tax_amount")
+    private BigDecimal taxAmount;
+
+    @Column(name = "total_with_tax")
+    private BigDecimal totalWithTax;
+
+    @Column(length = 20, nullable = false)
+    private String status;
+
+    @Column(columnDefinition = "TEXT")
+    private String remark;
+
+    @Column(name = "attachment_path", length = 500)
+    private String attachmentPath;
+
+    @Column(name = "create_time", nullable = false, updatable = false)
+    private LocalDateTime createTime;
+
+    @Column(name = "update_time", nullable = false)
+    private LocalDateTime updateTime;
+
+    @PrePersist protected void onCreate() { createTime = LocalDateTime.now(); updateTime = LocalDateTime.now(); }
+    @PreUpdate protected void onUpdate() { updateTime = LocalDateTime.now(); }
+}

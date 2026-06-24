@@ -1,0 +1,86 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Maven Clean Build",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["clean", "compile", "-f", "backend/pom.xml"],
+      "group": "build",
+      "problemMatcher": "$maven"
+    },
+    {
+      "label": "Maven Package",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["clean", "package", "-DskipTests", "-f", "backend/pom.xml"],
+      "group": "build",
+      "problemMatcher": "$maven"
+    },
+    {
+      "label": "Start Backend",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["spring-boot:run", "-f", "backend/pom.xml"],
+      "group": "test",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 0,
+          "location": 0,
+          "message": 0
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Starting.*$",
+          "endsPattern": "^.*Started.*$"
+        }
+      }
+    },
+    {
+      "label": "Start Frontend",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": "test",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 0,
+          "location": 0,
+          "message": 0
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*VITE.*$",
+          "endsPattern": "^.*Local:.*$"
+        }
+      }
+    },
+    {
+      "label": "Install Frontend Deps",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      }
+    },
+    {
+      "label": "Build Frontend",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}
