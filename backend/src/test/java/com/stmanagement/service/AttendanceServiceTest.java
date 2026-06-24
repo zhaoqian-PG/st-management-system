@@ -15,7 +15,6 @@ import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 
 import javax.persistence.EntityManager;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
@@ -39,8 +38,8 @@ class AttendanceServiceTest {
     void setUp() {
         emp = new Employee(); emp.setId(1L); emp.setName("山田 太郎"); emp.setDepartment("営業部");
         att = new Attendance(); att.setId(1L); att.setEmployeeId(1L);
-        att.setWorkDate(LocalDate.of(2026, 5, 1)); att.setWorkHours(new BigDecimal("8.0"));
-        att.setOvertimeHours(new BigDecimal("2.0")); att.setTotalHours(new BigDecimal("10.0"));
+        att.setWorkDate(LocalDate.of(2026, 5, 1)); att.setWorkHours(8.0);
+        att.setOvertimeHours(2.0); att.setTotalHours(10.0);
         att.setWorkType("NORMAL"); att.setStatus("出勤");
         att.setClockIn(LocalTime.of(9, 0)); att.setClockOut(LocalTime.of(18, 0));
     }
@@ -108,7 +107,7 @@ class AttendanceServiceTest {
         AttendanceDTO result = service.findById(1L);
 
         assertNotNull(result);
-        assertEquals(new BigDecimal("8.0"), result.getWorkHours());
+        assertEquals(8.0, result.getWorkHours());
     }
 
     @Test
@@ -121,7 +120,7 @@ class AttendanceServiceTest {
     void testCreate() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 1));
-        dto.setWorkHours(new BigDecimal("8.0")); dto.setWorkType("NORMAL"); dto.setStatus("出勤");
+        dto.setWorkHours(8.0); dto.setWorkType("NORMAL"); dto.setStatus("出勤");
 
         when(attendanceRepo.findByEmployeeIdAndWorkDateBetween(anyLong(), any(), any()))
                 .thenReturn(Collections.emptyList());
@@ -139,7 +138,7 @@ class AttendanceServiceTest {
     void testUpdate() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 2));
-        dto.setWorkHours(new BigDecimal("7.0")); dto.setOvertimeHours(new BigDecimal("1.0"));
+        dto.setWorkHours(7.0); dto.setOvertimeHours(1.0);
         dto.setWorkType("REMOTE"); dto.setStatus("出勤");
 
         when(attendanceRepo.findById(1L)).thenReturn(Optional.of(att));
@@ -203,7 +202,7 @@ class AttendanceServiceTest {
     @Test void testCreate_Duplicate() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 1));
-        dto.setWorkHours(new BigDecimal("8.0")); dto.setWorkType("NORMAL"); dto.setStatus("出勤");
+        dto.setWorkHours(8.0); dto.setWorkType("NORMAL"); dto.setStatus("出勤");
 
         when(attendanceRepo.findByEmployeeIdAndWorkDateBetween(anyLong(), any(), any()))
                 .thenReturn(Collections.singletonList(att)); // 重複あり
@@ -216,7 +215,7 @@ class AttendanceServiceTest {
     @Test void testUpdate_withClockInAndClockOut_autoCalc() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 2));
-        dto.setWorkHours(new BigDecimal("7.0")); dto.setOvertimeHours(new BigDecimal("1.0"));
+        dto.setWorkHours(7.0); dto.setOvertimeHours(1.0);
         dto.setWorkType("REMOTE"); dto.setStatus("出勤");
         dto.setClockIn("09:00"); dto.setClockOut("18:00"); // 両方あり → 自動計算
 
@@ -234,10 +233,10 @@ class AttendanceServiceTest {
     @Test void testUpdate_withClockInOnly_noClockOut() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 2));
-        dto.setWorkHours(new BigDecimal("7.0")); dto.setOvertimeHours(BigDecimal.ZERO);
+        dto.setWorkHours(7.0); dto.setOvertimeHours(0.0);
         dto.setWorkType("NORMAL"); dto.setStatus("出勤");
         dto.setClockIn("09:00"); // clockIn のみ、clockOut なし
-        dto.setTotalHours(new BigDecimal("7.0"));
+        dto.setTotalHours(7.0);
 
         when(attendanceRepo.findById(1L)).thenReturn(Optional.of(att));
         when(attendanceRepo.save(any(Attendance.class))).thenReturn(att);
@@ -251,9 +250,9 @@ class AttendanceServiceTest {
     @Test void testUpdate_withoutClockInOut_usesProvidedTotalHours() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 2));
-        dto.setWorkHours(new BigDecimal("7.0")); dto.setOvertimeHours(BigDecimal.ZERO);
+        dto.setWorkHours(7.0); dto.setOvertimeHours(0.0);
         dto.setWorkType("NORMAL"); dto.setStatus("出勤");
-        dto.setTotalHours(new BigDecimal("7.5")); // 手動設定
+        dto.setTotalHours(7.5); // 手動設定
         // clockIn/clockOut なし → else 分岐
 
         when(attendanceRepo.findById(1L)).thenReturn(Optional.of(att));
@@ -268,7 +267,7 @@ class AttendanceServiceTest {
     @Test void testUpdate_nullOvertimeHours_defaultsToZero() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 2));
-        dto.setWorkHours(new BigDecimal("7.0")); dto.setOvertimeHours(null); // null → 0.0
+        dto.setWorkHours(7.0); dto.setOvertimeHours(null); // null → 0.0
         dto.setWorkType("NORMAL"); dto.setStatus("出勤");
 
         when(attendanceRepo.findById(1L)).thenReturn(Optional.of(att));
@@ -283,10 +282,10 @@ class AttendanceServiceTest {
     @Test void testUpdate_withClockOutOnly_noClockIn() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 2));
-        dto.setWorkHours(new BigDecimal("7.0")); dto.setOvertimeHours(BigDecimal.ZERO);
+        dto.setWorkHours(7.0); dto.setOvertimeHours(0.0);
         dto.setWorkType("NORMAL"); dto.setStatus("出勤");
         dto.setClockOut("18:00"); // clockOut のみ、clockIn なし
-        dto.setTotalHours(new BigDecimal("7.0"));
+        dto.setTotalHours(7.0);
 
         when(attendanceRepo.findById(1L)).thenReturn(Optional.of(att));
         when(attendanceRepo.save(any(Attendance.class))).thenReturn(att);
@@ -300,11 +299,11 @@ class AttendanceServiceTest {
     @Test void testUpdate_withEmptyStringClockIn_clearsToNull() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 2));
-        dto.setWorkHours(new BigDecimal("7.0")); dto.setOvertimeHours(BigDecimal.ZERO);
+        dto.setWorkHours(7.0); dto.setOvertimeHours(0.0);
         dto.setWorkType("NORMAL"); dto.setStatus("出勤");
         dto.setClockIn(""); // 空文字列 → else 分岐 (setClockIn(null))
         dto.setClockOut(""); // 空文字列 → else 分岐
-        dto.setTotalHours(new BigDecimal("7.0"));
+        dto.setTotalHours(7.0);
 
         when(attendanceRepo.findById(1L)).thenReturn(Optional.of(att));
         when(attendanceRepo.save(any(Attendance.class))).thenReturn(att);
@@ -388,7 +387,7 @@ class AttendanceServiceTest {
     @Test void testToEntity_nullOvertime_defaultsToZero() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 1));
-        dto.setWorkHours(new BigDecimal("8.0")); dto.setOvertimeHours(null); // null → toEntity 内で 0.0
+        dto.setWorkHours(8.0); dto.setOvertimeHours(null); // null → toEntity 内で 0.0
         dto.setWorkType("NORMAL"); dto.setStatus("出勤");
 
         when(attendanceRepo.findByEmployeeIdAndWorkDateBetween(anyLong(), any(), any()))
@@ -404,7 +403,7 @@ class AttendanceServiceTest {
     @Test void testToEntity_withClockInAndClockOut() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 1));
-        dto.setWorkHours(new BigDecimal("8.0")); dto.setOvertimeHours(BigDecimal.ZERO);
+        dto.setWorkHours(8.0); dto.setOvertimeHours(0.0);
         dto.setClockIn("09:00"); dto.setClockOut("18:00");
         dto.setWorkType("NORMAL"); dto.setStatus("出勤");
 
@@ -443,8 +442,8 @@ class AttendanceServiceTest {
     @Test void testExportCsv_variousWorkTypes() {
         // REMOTE work type → getWorkTypeLabel returns "在宅"
         Attendance remote = new Attendance(); remote.setId(2L); remote.setEmployeeId(1L);
-        remote.setWorkDate(LocalDate.of(2026, 5, 2)); remote.setWorkHours(new BigDecimal("7.0"));
-        remote.setOvertimeHours(BigDecimal.ZERO); remote.setTotalHours(new BigDecimal("7.0"));
+        remote.setWorkDate(LocalDate.of(2026, 5, 2)); remote.setWorkHours(7.0);
+        remote.setOvertimeHours(0.0); remote.setTotalHours(7.0);
         remote.setWorkType("REMOTE"); remote.setStatus("出勤");
 
         when(attendanceRepo.findAll(any(Specification.class)))
@@ -460,13 +459,13 @@ class AttendanceServiceTest {
     @Test void testExportCsv_holidayAndLeaveTypes() {
         // HOLIDAY_WORK and LEAVE to cover all switch branches
         Attendance holiday = new Attendance(); holiday.setId(3L); holiday.setEmployeeId(1L);
-        holiday.setWorkDate(LocalDate.of(2026, 5, 3)); holiday.setWorkHours(new BigDecimal("8.0"));
-        holiday.setOvertimeHours(BigDecimal.ZERO); holiday.setTotalHours(new BigDecimal("8.0"));
+        holiday.setWorkDate(LocalDate.of(2026, 5, 3)); holiday.setWorkHours(8.0);
+        holiday.setOvertimeHours(0.0); holiday.setTotalHours(8.0);
         holiday.setWorkType("HOLIDAY_WORK"); holiday.setStatus("出勤");
 
         Attendance leave = new Attendance(); leave.setId(4L); leave.setEmployeeId(1L);
-        leave.setWorkDate(LocalDate.of(2026, 5, 4)); leave.setWorkHours(BigDecimal.ZERO);
-        leave.setOvertimeHours(BigDecimal.ZERO); leave.setTotalHours(BigDecimal.ZERO);
+        leave.setWorkDate(LocalDate.of(2026, 5, 4)); leave.setWorkHours(0.0);
+        leave.setOvertimeHours(0.0); leave.setTotalHours(0.0);
         leave.setWorkType("LEAVE"); leave.setStatus("休暇");
         leave.setRemark("有給休暇");
 
@@ -483,8 +482,8 @@ class AttendanceServiceTest {
 
     @Test void testExportCsv_withClockInOutAndNullRemark() {
         Attendance withClock = new Attendance(); withClock.setId(5L); withClock.setEmployeeId(1L);
-        withClock.setWorkDate(LocalDate.of(2026, 5, 5)); withClock.setWorkHours(new BigDecimal("8.0"));
-        withClock.setOvertimeHours(BigDecimal.ZERO); withClock.setTotalHours(new BigDecimal("8.0"));
+        withClock.setWorkDate(LocalDate.of(2026, 5, 5)); withClock.setWorkHours(8.0);
+        withClock.setOvertimeHours(0.0); withClock.setTotalHours(8.0);
         withClock.setWorkType("NORMAL"); withClock.setStatus("出勤");
         withClock.setClockIn(LocalTime.of(9, 0)); withClock.setClockOut(LocalTime.of(18, 0));
         withClock.setRemark(null); // null remark
@@ -558,8 +557,8 @@ class AttendanceServiceTest {
 
     @Test void testExportCsv_unknownWorkType_fallsToDefault() {
         Attendance unknown = new Attendance(); unknown.setId(6L); unknown.setEmployeeId(1L);
-        unknown.setWorkDate(LocalDate.of(2026, 5, 10)); unknown.setWorkHours(new BigDecimal("8.0"));
-        unknown.setOvertimeHours(BigDecimal.ZERO); unknown.setTotalHours(new BigDecimal("8.0"));
+        unknown.setWorkDate(LocalDate.of(2026, 5, 10)); unknown.setWorkHours(8.0);
+        unknown.setOvertimeHours(0.0); unknown.setTotalHours(8.0);
         unknown.setWorkType("CUSTOM_TYPE"); unknown.setStatus("出勤"); // 未知タイプ
 
         when(attendanceRepo.findAll(any(Specification.class)))
@@ -573,8 +572,8 @@ class AttendanceServiceTest {
 
     @Test void testExportCsv_nullWorkType_returnsEmpty() {
         Attendance nullType = new Attendance(); nullType.setId(7L); nullType.setEmployeeId(1L);
-        nullType.setWorkDate(LocalDate.of(2026, 5, 11)); nullType.setWorkHours(new BigDecimal("8.0"));
-        nullType.setOvertimeHours(BigDecimal.ZERO); nullType.setTotalHours(new BigDecimal("8.0"));
+        nullType.setWorkDate(LocalDate.of(2026, 5, 11)); nullType.setWorkHours(8.0);
+        nullType.setOvertimeHours(0.0); nullType.setTotalHours(8.0);
         nullType.setWorkType(null); nullType.setStatus("出勤"); // null workType
 
         when(attendanceRepo.findAll(any(Specification.class)))
@@ -601,9 +600,9 @@ class AttendanceServiceTest {
 
         Map<String, Object> result = service.getMonthlySummary(2026, 5, 1L);
         assertNotNull(result);
-        assertEquals(new BigDecimal("0.0"), result.get("workHours"), "null workHours → 0.0");
-        assertEquals(new BigDecimal("0.0"), result.get("overtimeHours"), "null overtime → 0.0");
-        assertEquals(new BigDecimal("0.0"), result.get("totalHours"), "null total → 0.0");
+        assertEquals(0.0, result.get("workHours"), "null workHours → 0.0");
+        assertEquals(0.0, result.get("overtimeHours"), "null overtime → 0.0");
+        assertEquals(0.0, result.get("totalHours"), "null total → 0.0");
     }
 
     @Test void testGetAllEmployeeMonthlySummary_nullHours() {
@@ -620,9 +619,9 @@ class AttendanceServiceTest {
         List<Map<String, Object>> result = service.getAllEmployeeMonthlySummary(2026, 5);
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(new BigDecimal("0.0"), result.get(0).get("workHours"));
-        assertEquals(new BigDecimal("0.0"), result.get(0).get("overtimeHours"));
-        assertEquals(new BigDecimal("0.0"), result.get(0).get("totalHours"));
+        assertEquals(0.0, result.get(0).get("workHours"));
+        assertEquals(0.0, result.get(0).get("overtimeHours"));
+        assertEquals(0.0, result.get(0).get("totalHours"));
     }
 
     // ──────────── toEntity: 空文字列 clockIn/Out 分岐 (create経由) ────────────
@@ -630,7 +629,7 @@ class AttendanceServiceTest {
     @Test void testCreate_emptyClockInOut_toEntityBranch() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 7, 3));
-        dto.setWorkHours(new BigDecimal("8.0")); dto.setOvertimeHours(BigDecimal.ZERO);
+        dto.setWorkHours(8.0); dto.setOvertimeHours(0.0);
         dto.setClockIn("");  // 空文字列 → toEntity内 T∧F → null
         dto.setClockOut(""); // 空文字列 → toEntity内 T∧F → null
         dto.setWorkType("NORMAL"); dto.setStatus("出勤");
@@ -653,8 +652,8 @@ class AttendanceServiceTest {
         empNoDept.setLeaveDate(null);
 
         Attendance att2 = new Attendance(); att2.setId(10L); att2.setEmployeeId(2L);
-        att2.setWorkDate(LocalDate.of(2026, 5, 1)); att2.setWorkHours(new BigDecimal("8.0"));
-        att2.setOvertimeHours(BigDecimal.ZERO); att2.setTotalHours(new BigDecimal("8.0"));
+        att2.setWorkDate(LocalDate.of(2026, 5, 1)); att2.setWorkHours(8.0);
+        att2.setOvertimeHours(0.0); att2.setTotalHours(8.0);
         att2.setWorkType("NORMAL"); att2.setStatus("出勤");
 
         when(employeeRepo.findAll()).thenReturn(Collections.singletonList(empNoDept));
@@ -673,8 +672,8 @@ class AttendanceServiceTest {
         empNoDept.setDepartment(null);
 
         Attendance att3 = new Attendance(); att3.setId(11L); att3.setEmployeeId(3L);
-        att3.setWorkDate(LocalDate.of(2026, 5, 1)); att3.setWorkHours(new BigDecimal("8.0"));
-        att3.setOvertimeHours(BigDecimal.ZERO); att3.setTotalHours(new BigDecimal("8.0"));
+        att3.setWorkDate(LocalDate.of(2026, 5, 1)); att3.setWorkHours(8.0);
+        att3.setOvertimeHours(0.0); att3.setTotalHours(8.0);
         att3.setWorkType("NORMAL"); att3.setStatus("出勤");
 
         when(attendanceRepo.findAll(any(Specification.class)))
@@ -690,7 +689,7 @@ class AttendanceServiceTest {
     @Test void testUpdate_notFound_throwsException() {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 1));
-        dto.setWorkHours(new BigDecimal("8.0")); dto.setWorkType("NORMAL"); dto.setStatus("出勤");
+        dto.setWorkHours(8.0); dto.setWorkType("NORMAL"); dto.setStatus("出勤");
 
         when(attendanceRepo.findById(99L)).thenReturn(Optional.empty());
         assertThrows(RuntimeException.class, () -> service.update(99L, dto),

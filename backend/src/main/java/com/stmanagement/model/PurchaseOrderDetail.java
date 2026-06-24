@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -31,13 +30,13 @@ public class PurchaseOrderDetail {
     private String itemName;
 
     @Column(nullable = false)
-    private BigDecimal quantity;
+    private Double quantity;
 
     @Column(name = "unit_price", nullable = false)
-    private BigDecimal unitPrice;
+    private Double unitPrice;
 
     @Column(nullable = false)
-    private BigDecimal amount;
+    private Double amount;
 
     @Column(length = 500)
     private String remark;

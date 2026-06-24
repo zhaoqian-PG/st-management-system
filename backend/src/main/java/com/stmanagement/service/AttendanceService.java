@@ -14,8 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.criteria.Predicate;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,7 +66,7 @@ public class AttendanceService {
         Attendance a = attendanceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("勤務記録が見つかりません: " + id));
         a.setWorkDate(dto.getWorkDate()); a.setWorkHours(dto.getWorkHours());
-        a.setOvertimeHours(dto.getOvertimeHours() != null ? dto.getOvertimeHours() : BigDecimal.ZERO);
+        a.setOvertimeHours(dto.getOvertimeHours() != null ? dto.getOvertimeHours() : 0.0);
         if (dto.getClockIn() != null && !dto.getClockIn().isEmpty())
             a.setClockIn(java.time.LocalTime.parse(dto.getClockIn()));
         else a.setClockIn(null);
@@ -78,8 +76,7 @@ public class AttendanceService {
         // Auto-calc total hours from clock times (subtract 1h lunch)
         if (a.getClockIn() != null && a.getClockOut() != null) {
             long mins = java.time.Duration.between(a.getClockIn(), a.getClockOut()).toMinutes() - 60;
-            a.setTotalHours(BigDecimal.valueOf(Math.max(0, mins))
-                    .divide(BigDecimal.valueOf(60), 1, RoundingMode.HALF_UP));
+            a.setTotalHours(Math.round(Math.max(0, mins) / 6.0) / 10.0);
         } else {
             a.setTotalHours(dto.getTotalHours());
         }
@@ -99,24 +96,18 @@ public class AttendanceService {
             List<Attendance> list = attendanceRepository
                     .findByEmployeeIdAndWorkDateBetween(emp.getId(), start, end);
             if (list.isEmpty()) continue;
-            BigDecimal workTotal = list.stream()
-                    .map(a -> a.getWorkHours() != null ? a.getWorkHours() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal overtimeTotal = list.stream()
-                    .map(a -> a.getOvertimeHours() != null ? a.getOvertimeHours() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal totalH = list.stream()
-                    .map(a -> a.getTotalHours() != null ? a.getTotalHours() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            double workTotal = list.stream().mapToDouble(a -> a.getWorkHours() != null ? a.getWorkHours() : 0).sum();
+            double overtimeTotal = list.stream().mapToDouble(a -> a.getOvertimeHours() != null ? a.getOvertimeHours() : 0).sum();
+            double totalH = list.stream().mapToDouble(a -> a.getTotalHours() != null ? a.getTotalHours() : 0).sum();
             long workDays = list.stream().filter(a -> "出勤".equals(a.getStatus())).count();
             Map<String, Object> row = new HashMap<>();
             row.put("employeeId", emp.getId());
             row.put("employeeCode", emp.getEmployeeCode());
             row.put("employeeName", emp.getName());
             row.put("department", emp.getDepartment());
-            row.put("workHours", workTotal.setScale(1, RoundingMode.HALF_UP));
-            row.put("overtimeHours", overtimeTotal.setScale(1, RoundingMode.HALF_UP));
-            row.put("totalHours", totalH.setScale(1, RoundingMode.HALF_UP));
+            row.put("workHours", Math.round(workTotal * 10.0) / 10.0);
+            row.put("overtimeHours", Math.round(overtimeTotal * 10.0) / 10.0);
+            row.put("totalHours", Math.round(totalH * 10.0) / 10.0);
             row.put("workDays", workDays);
             row.put("totalRecords", list.size());
             result.add(row);
@@ -129,20 +120,14 @@ public class AttendanceService {
         LocalDate end = start.plusMonths(1).minusDays(1);
         List<Attendance> list = attendanceRepository
                 .findByEmployeeIdAndWorkDateBetween(employeeId, start, end);
-        BigDecimal workTotal = list.stream()
-                .map(a -> a.getWorkHours() != null ? a.getWorkHours() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal overtimeTotal = list.stream()
-                .map(a -> a.getOvertimeHours() != null ? a.getOvertimeHours() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalH = list.stream()
-                .map(a -> a.getTotalHours() != null ? a.getTotalHours() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        double workTotal = list.stream().mapToDouble(a -> a.getWorkHours() != null ? a.getWorkHours() : 0).sum();
+        double overtimeTotal = list.stream().mapToDouble(a -> a.getOvertimeHours() != null ? a.getOvertimeHours() : 0).sum();
+        double totalH = list.stream().mapToDouble(a -> a.getTotalHours() != null ? a.getTotalHours() : 0).sum();
         long workDays = list.stream().filter(a -> "出勤".equals(a.getStatus())).count();
         Map<String, Object> summary = new java.util.HashMap<>();
-        summary.put("workHours", workTotal.setScale(1, RoundingMode.HALF_UP));
-        summary.put("overtimeHours", overtimeTotal.setScale(1, RoundingMode.HALF_UP));
-        summary.put("totalHours", totalH.setScale(1, RoundingMode.HALF_UP));
+        summary.put("workHours", Math.round(workTotal * 10.0) / 10.0);
+        summary.put("overtimeHours", Math.round(overtimeTotal * 10.0) / 10.0);
+        summary.put("totalHours", Math.round(totalH * 10.0) / 10.0);
         summary.put("workDays", workDays);
         summary.put("totalRecords", list.size());
         return summary;
@@ -163,7 +148,7 @@ public class AttendanceService {
             if (existing.stream().noneMatch(a -> a.getWorkDate().equals(date))) {
                 Attendance a = new Attendance();
                 a.setEmployeeId(employeeId); a.setWorkDate(date);
-                a.setWorkHours(new BigDecimal("8.0")); a.setOvertimeHours(BigDecimal.ZERO);
+                a.setWorkHours(8.0); a.setOvertimeHours(0.0);
                 a.setWorkType("NORMAL"); a.setStatus("出勤");
                 attendanceRepository.save(a); count++;
             }
@@ -192,27 +177,27 @@ public class AttendanceService {
         sb.append("社員別月次勤務集計 ").append(year).append("年").append(month).append("月\n\n");
         sb.append("社員番号,氏名,部署,勤務時間(h),残業時間(h),総労働(h),勤務日数,件数\n");
         List<Employee> employees = employeeRepository.findAll();
-        BigDecimal grandWork = BigDecimal.ZERO, grandOvertime = BigDecimal.ZERO, grandTotal = BigDecimal.ZERO;
+        double grandWork = 0, grandOvertime = 0, grandTotal = 0;
         int grandDays = 0, grandRecords = 0;
         for (Employee emp : employees) {
             if (emp.getLeaveDate() != null) continue;
             Map<String, Object> row = getMonthlySummary(year, month, emp.getId());
             long records = ((Number) row.get("totalRecords")).longValue();
             if (records == 0) continue;
-            BigDecimal wh = (BigDecimal) row.get("workHours");
-            BigDecimal oh = (BigDecimal) row.get("overtimeHours");
-            BigDecimal th = (BigDecimal) row.get("totalHours");
+            double wh = ((Number) row.get("workHours")).doubleValue();
+            double oh = ((Number) row.get("overtimeHours")).doubleValue();
+            double th = ((Number) row.get("totalHours")).doubleValue();
             long wd = ((Number) row.get("workDays")).longValue();
             sb.append(emp.getEmployeeCode()).append(",").append(emp.getName()).append(",");
             sb.append(emp.getDepartment() != null ? emp.getDepartment() : "").append(",");
             sb.append(wh).append(",").append(oh).append(",").append(th).append(",").append(wd).append(",");
             sb.append(records).append("\n");
-            grandWork = grandWork.add(wh); grandOvertime = grandOvertime.add(oh); grandTotal = grandTotal.add(th);
+            grandWork += wh; grandOvertime += oh; grandTotal += th;
             grandDays += wd; grandRecords += records;
         }
-        sb.append("\n合計,,,").append(grandWork.setScale(1, RoundingMode.HALF_UP)).append(",");
-        sb.append(grandOvertime.setScale(1, RoundingMode.HALF_UP)).append(",");
-        sb.append(grandTotal.setScale(1, RoundingMode.HALF_UP)).append(",");
+        sb.append("\n合計,,,").append(Math.round(grandWork * 10.0) / 10.0).append(",");
+        sb.append(Math.round(grandOvertime * 10.0) / 10.0).append(",");
+        sb.append(Math.round(grandTotal * 10.0) / 10.0).append(",");
         sb.append(grandDays).append(",").append(grandRecords).append("\n");
         return sb.toString();
     }
@@ -239,12 +224,12 @@ public class AttendanceService {
         sb.append("社員番号,").append(code).append(",氏名,").append(name).append(",部署,").append(dept).append("\n\n");
         sb.append("日付,曜日,出勤打刻,退勤打刻,休憩(h),所定勤務(h),残業(h),深夜(h),実働(h),勤務区分,状態,備考\n");
 
-        BigDecimal totalWork = BigDecimal.ZERO, totalOvertime = BigDecimal.ZERO, totalActual = BigDecimal.ZERO;
+        double totalWork = 0, totalOvertime = 0, totalActual = 0;
         for (Attendance a : list) {
             String wd = weekdays[a.getWorkDate().getDayOfWeek().getValue() % 7];
-            BigDecimal workH = a.getWorkHours() != null ? a.getWorkHours() : BigDecimal.ZERO;
-            BigDecimal overtimeH = a.getOvertimeHours() != null ? a.getOvertimeHours() : BigDecimal.ZERO;
-            BigDecimal actualH = a.getTotalHours() != null ? a.getTotalHours() : workH;
+            double workH = a.getWorkHours() != null ? a.getWorkHours() : 0;
+            double overtimeH = a.getOvertimeHours() != null ? a.getOvertimeHours() : 0;
+            double actualH = a.getTotalHours() != null ? a.getTotalHours() : workH;
             double breakH = (a.getClockIn() != null && a.getClockOut() != null) ? 1.0 : 0.0;
 
             sb.append(a.getWorkDate()).append(",").append(wd).append(",");
@@ -254,13 +239,11 @@ public class AttendanceService {
             sb.append("0,").append(actualH).append(",");
             sb.append(getWorkTypeLabel(a.getWorkType())).append(",");
             sb.append(a.getStatus()).append(",\"").append(a.getRemark() != null ? a.getRemark() : "").append("\"\n");
-            totalWork = totalWork.add(workH);
-            totalOvertime = totalOvertime.add(overtimeH);
-            totalActual = totalActual.add(actualH);
+            totalWork += workH; totalOvertime += overtimeH; totalActual += actualH;
         }
-        sb.append("\n月度合計,,,,,").append(totalWork.setScale(1, RoundingMode.HALF_UP)).append(",");
-        sb.append(totalOvertime.setScale(1, RoundingMode.HALF_UP)).append(",,");
-        sb.append(totalActual.setScale(1, RoundingMode.HALF_UP)).append(",,,\n");
+        sb.append("\n月度合計,,,,,").append(Math.round(totalWork * 10.0) / 10.0).append(",");
+        sb.append(Math.round(totalOvertime * 10.0) / 10.0).append(",,");
+        sb.append(Math.round(totalActual * 10.0) / 10.0).append(",,,\n");
         return sb.toString();
     }
 
@@ -288,7 +271,7 @@ public class AttendanceService {
 
     private Attendance toEntity(AttendanceDTO dto) {
         return Attendance.builder().employeeId(dto.getEmployeeId()).workDate(dto.getWorkDate())
-                .workHours(dto.getWorkHours()).overtimeHours(dto.getOvertimeHours() != null ? dto.getOvertimeHours() : BigDecimal.ZERO)
+                .workHours(dto.getWorkHours()).overtimeHours(dto.getOvertimeHours() != null ? dto.getOvertimeHours() : 0.0)
                 .clockIn(dto.getClockIn() != null && !dto.getClockIn().isEmpty() ? java.time.LocalTime.parse(dto.getClockIn()) : null)
                 .clockOut(dto.getClockOut() != null && !dto.getClockOut().isEmpty() ? java.time.LocalTime.parse(dto.getClockOut()) : null)
                 .totalHours(dto.getTotalHours())

@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -26,10 +25,10 @@ public class SupplierOrder {
     @Column(name = "supplier_tel", length = 20) private String supplierTel;
     @Column(name = "supplier_addr", length = 500) private String supplierAddr;
     @Column(length = 500) private String subject;
-    @Column(nullable = false) private BigDecimal amount;
-    @Column(name = "tax_rate") private BigDecimal taxRate;
-    @Column(name = "tax_amount") private BigDecimal taxAmount;
-    @Column(name = "total_with_tax") private BigDecimal totalWithTax;
+    @Column(nullable = false) private Double amount;
+    @Column(name = "tax_rate") private Double taxRate;
+    @Column(name = "tax_amount") private Double taxAmount;
+    @Column(name = "total_with_tax") private Double totalWithTax;
     @Column(length = 20, nullable = false) private String status;
     @Column(columnDefinition = "TEXT") private String remark;
     @Column(name = "create_time", nullable = false, updatable = false) private LocalDateTime createTime;

@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -34,13 +33,13 @@ public class InvoiceDetail {
     private String description;
 
     @Column(nullable = false)
-    private BigDecimal quantity;
+    private Double quantity;
 
     @Column(name = "unit_price", nullable = false)
-    private BigDecimal unitPrice;
+    private Double unitPrice;
 
     @Column(nullable = false)
-    private BigDecimal amount;
+    private Double amount;
 
     @Column(name = "is_overtime", nullable = false)
     private Boolean isOvertime;

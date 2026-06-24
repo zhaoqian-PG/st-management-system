@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -128,21 +127,21 @@ class AttendanceSpecIT {
 
         // Attendance 6件 投入 (年・月・社員 を意図的に分散)
         allRecords.clear();
-        allRecords.add(saveAttendance(emp1Id, LocalDate.of(2026, 5, 1), new BigDecimal("8.0")));
-        allRecords.add(saveAttendance(emp1Id, LocalDate.of(2026, 5, 15), new BigDecimal("8.0")));
-        allRecords.add(saveAttendance(emp1Id, LocalDate.of(2026, 6, 1), new BigDecimal("7.0")));
-        allRecords.add(saveAttendance(emp2Id, LocalDate.of(2026, 5, 1), new BigDecimal("8.0")));
-        allRecords.add(saveAttendance(emp2Id, LocalDate.of(2026, 6, 15), new BigDecimal("8.0")));
-        allRecords.add(saveAttendance(emp3Id, LocalDate.of(2026, 3, 1), new BigDecimal("8.0")));
+        allRecords.add(saveAttendance(emp1Id, LocalDate.of(2026, 5, 1), 8.0));
+        allRecords.add(saveAttendance(emp1Id, LocalDate.of(2026, 5, 15), 8.0));
+        allRecords.add(saveAttendance(emp1Id, LocalDate.of(2026, 6, 1), 7.0));
+        allRecords.add(saveAttendance(emp2Id, LocalDate.of(2026, 5, 1), 8.0));
+        allRecords.add(saveAttendance(emp2Id, LocalDate.of(2026, 6, 15), 8.0));
+        allRecords.add(saveAttendance(emp3Id, LocalDate.of(2026, 3, 1), 8.0));
         em.flush();
     }
 
-    private Attendance saveAttendance(Long empId, LocalDate date, BigDecimal hours) {
+    private Attendance saveAttendance(Long empId, LocalDate date, Double hours) {
         Attendance a = Attendance.builder()
                 .employeeId(empId)
                 .workDate(date)
                 .workHours(hours)
-                .overtimeHours(BigDecimal.ZERO)
+                .overtimeHours(0.0)
                 .workType("NORMAL")
                 .status("出勤")
                 .build();
@@ -477,7 +476,7 @@ class AttendanceSpecIT {
     void monthlySummary_basic() {
         Map<String, Object> summary = service.getMonthlySummary(2026, 5, emp1Id);
         assertNotNull(summary);
-        assertEquals(new BigDecimal("16.0"), summary.get("workHours"),
+        assertEquals(16.0, summary.get("workHours"),
                 "emp1の5月の所定勤務は 8+8=16.0");
         assertEquals(2L, summary.get("totalRecords"),
                 "emp1の5月のレコードは2件");
@@ -488,7 +487,7 @@ class AttendanceSpecIT {
     void monthlySummary_noData() {
         Map<String, Object> summary = service.getMonthlySummary(2025, 1, emp1Id);
         assertNotNull(summary);
-        assertEquals(new BigDecimal("0.0"), summary.get("workHours"));
+        assertEquals(0.0, summary.get("workHours"));
         assertEquals(0L, summary.get("totalRecords"));
     }
 
@@ -555,8 +554,8 @@ class AttendanceSpecIT {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(emp1Id);
         dto.setWorkDate(LocalDate.of(2026, 7, 1));
-        dto.setWorkHours(new BigDecimal("8.0"));
-        dto.setOvertimeHours(BigDecimal.ZERO);
+        dto.setWorkHours(8.0);
+        dto.setOvertimeHours(0.0);
         dto.setWorkType("NORMAL");
         dto.setStatus("出勤");
 
@@ -573,7 +572,7 @@ class AttendanceSpecIT {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(emp1Id);
         dto.setWorkDate(LocalDate.of(2026, 5, 1)); // 既存レコードと重複
-        dto.setWorkHours(new BigDecimal("8.0"));
+        dto.setWorkHours(8.0);
         dto.setWorkType("NORMAL");
         dto.setStatus("出勤");
 
@@ -587,8 +586,8 @@ class AttendanceSpecIT {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(emp1Id);
         dto.setWorkDate(LocalDate.of(2026, 7, 2));
-        dto.setWorkHours(new BigDecimal("8.0"));
-        dto.setOvertimeHours(BigDecimal.ZERO);
+        dto.setWorkHours(8.0);
+        dto.setOvertimeHours(0.0);
         dto.setClockIn("09:00");
         dto.setClockOut("18:00");
         dto.setWorkType("NORMAL");
@@ -610,8 +609,8 @@ class AttendanceSpecIT {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(emp1Id);
         dto.setWorkDate(LocalDate.of(2026, 5, 1));
-        dto.setWorkHours(new BigDecimal("8.0"));
-        dto.setOvertimeHours(BigDecimal.ZERO);
+        dto.setWorkHours(8.0);
+        dto.setOvertimeHours(0.0);
         dto.setClockIn("09:00");
         dto.setClockOut("17:00"); // 9-17 = 480min - 60min = 420min → 7.0h
         dto.setWorkType("NORMAL");
@@ -620,7 +619,7 @@ class AttendanceSpecIT {
         AttendanceDTO result = service.update(existingId, dto);
         assertNotNull(result);
         // auto-calc: (480-60) / 6.0 / 10.0 = 7.0
-        assertEquals(new BigDecimal("7.0"), result.getTotalHours(),
+        assertEquals(7.0, result.getTotalHours(),
                 "9:00-17:00 → 休憩1h → 実働7.0h");
     }
 
@@ -632,9 +631,9 @@ class AttendanceSpecIT {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(emp1Id);
         dto.setWorkDate(LocalDate.of(2026, 5, 1));
-        dto.setWorkHours(new BigDecimal("8.0"));
-        dto.setOvertimeHours(BigDecimal.ZERO);
-        dto.setTotalHours(new BigDecimal("8.0"));
+        dto.setWorkHours(8.0);
+        dto.setOvertimeHours(0.0);
+        dto.setTotalHours(8.0);
         dto.setWorkType("NORMAL");
         dto.setStatus("出勤");
 
@@ -648,7 +647,7 @@ class AttendanceSpecIT {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setEmployeeId(emp1Id);
         dto.setWorkDate(LocalDate.of(2026, 5, 1));
-        dto.setWorkHours(new BigDecimal("8.0"));
+        dto.setWorkHours(8.0);
         dto.setWorkType("NORMAL");
         dto.setStatus("出勤");
 

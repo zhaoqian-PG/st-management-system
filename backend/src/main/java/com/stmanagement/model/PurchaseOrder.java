@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -59,16 +58,16 @@ public class PurchaseOrder {
     private String subject;
 
     @Column(nullable = false)
-    private BigDecimal amount;
+    private Double amount;
 
     @Column(name = "tax_rate")
-    private BigDecimal taxRate;
+    private Double taxRate;
 
     @Column(name = "tax_amount")
-    private BigDecimal taxAmount;
+    private Double taxAmount;
 
     @Column(name = "total_with_tax")
-    private BigDecimal totalWithTax;
+    private Double totalWithTax;
 
     @Column(length = 20, nullable = false)
     private String status;

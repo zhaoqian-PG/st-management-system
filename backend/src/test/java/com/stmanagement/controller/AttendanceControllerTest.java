@@ -11,7 +11,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,7 +32,7 @@ class AttendanceControllerTest {
     void testList() throws Exception {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setId(1L); dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 1));
-        dto.setWorkHours(new BigDecimal("8.0")); dto.setStatus("出勤");
+        dto.setWorkHours(8.0); dto.setStatus("出勤");
         when(service.findAll(any(), any(), any(), anyInt(), anyInt()))
                 .thenReturn(new PageImpl<>(Collections.singletonList(dto)));
 
@@ -45,7 +44,7 @@ class AttendanceControllerTest {
     void testGetById() throws Exception {
         AttendanceDTO dto = new AttendanceDTO();
         dto.setId(1L); dto.setEmployeeId(1L); dto.setWorkDate(LocalDate.of(2026, 5, 1));
-        dto.setWorkHours(new BigDecimal("8.0")); dto.setStatus("出勤");
+        dto.setWorkHours(8.0); dto.setStatus("出勤");
         when(service.findById(1L)).thenReturn(dto);
 
         mockMvc.perform(get("/api/attendance/1"))
@@ -57,7 +56,7 @@ class AttendanceControllerTest {
     void testCreate() throws Exception {
         AttendanceDTO input = new AttendanceDTO();
         input.setEmployeeId(1L); input.setWorkDate(LocalDate.of(2026, 5, 1));
-        input.setWorkHours(new BigDecimal("8.0")); input.setWorkType("NORMAL"); input.setStatus("出勤");
+        input.setWorkHours(8.0); input.setWorkType("NORMAL"); input.setStatus("出勤");
 
         AttendanceDTO saved = new AttendanceDTO();
         saved.setId(1L); saved.setEmployeeId(1L); saved.setStatus("出勤");
@@ -73,7 +72,7 @@ class AttendanceControllerTest {
     void testUpdate() throws Exception {
         AttendanceDTO input = new AttendanceDTO();
         input.setEmployeeId(1L); input.setWorkDate(LocalDate.of(2026, 5, 2));
-        input.setWorkHours(new BigDecimal("7.0")); input.setStatus("出勤");
+        input.setWorkHours(7.0); input.setStatus("出勤");
         when(service.update(eq(1L), any())).thenReturn(new AttendanceDTO());
 
         mockMvc.perform(put("/api/attendance/1")
