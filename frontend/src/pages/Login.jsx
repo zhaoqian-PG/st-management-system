@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, message, Alert } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import api from '../api';
 
 export default function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
@@ -10,7 +10,7 @@ export default function Login({ onLogin }) {
   const handleSubmit = async (values) => {
     setLoading(true); setError(null);
     try {
-      const res = await axios.post('/api/auth/login', values);
+      const res = await api.post('/api/auth/login', values);
       const { username, role, employeeId } = res.data.data;
       localStorage.setItem('username', username);
       localStorage.setItem('userRole', role);

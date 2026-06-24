@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, Upload, DatePicker } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import { invoiceApi } from '../services/invoiceApi';
-import axios from 'axios';
+import api from '../api';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -39,8 +39,8 @@ export default function Invoice() {
   }, [page, year, month, customerId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-  useEffect(() => { axios.get('/api/customer?size=200').then(r => setCustomers(r.data.data.content || [])).catch(() => {}); }, []);
-  useEffect(() => { axios.get('/api/employee?size=200').then(r => setEmployees(r.data.data.content || [])).catch(() => {}); }, []);
+  useEffect(() => { api.get('/api/customer?size=200').then(r => setCustomers(r.data.data.content || [])).catch(() => {}); }, []);
+  useEffect(() => { api.get('/api/employee?size=200').then(r => setEmployees(r.data.data.content || [])).catch(() => {}); }, []);
 
   const handleSelect = async (record) => {
     setSelectedInvoice(record);
@@ -54,14 +54,14 @@ export default function Invoice() {
       // Fetch attendance for employees in invoice details
       const detailNames = dtls.filter(d => d.employeeName).map(d => d.employeeName);
       if (detailNames.length > 0) {
-        const mr = await axios.get('/api/attendance/monthly-summary', { params: { year: record.year, month: record.month } });
+        const mr = await api.get('/api/attendance/monthly-summary', { params: { year: record.year, month: record.month } });
         const allSummaries = mr.data.data || [];
         const filtered = allSummaries.filter(s => detailNames.includes(s.employeeName));
         setAttendanceSummary(filtered.length > 0 ? filtered : null);
       } else setAttendanceSummary(null);
 
       // Fetch customer bank accounts
-      try { const br = await axios.get(`/api/bank-accounts/customer/${record.customerId}`); setCustomerBanks(br.data.data || []); } catch { setCustomerBanks([]); }
+      try { const br = await api.get(`/api/bank-accounts/customer/${record.customerId}`); setCustomerBanks(br.data.data || []); } catch { setCustomerBanks([]); }
     } catch { setDocuments([]); setInvoiceDetails([]); setAttendanceSummary(null); setCustomerBanks([]); }
   };
 
@@ -98,7 +98,7 @@ export default function Invoice() {
   const importFromAttendance = async () => {
     if (!form.getFieldValue('year') || !form.getFieldValue('month')) { message.warning('年月を選択してください'); return; }
     try {
-      const r = await axios.get('/api/attendance/monthly-summary', { params: { year: form.getFieldValue('year'), month: form.getFieldValue('month') } });
+      const r = await api.get('/api/attendance/monthly-summary', { params: { year: form.getFieldValue('year'), month: form.getFieldValue('month') } });
       const rows = (r.data.data || []).map(e => ({
         employeeName: e.employeeName, employeeId: e.employeeId,
         description: `${e.employeeName} 勤務分`, quantity: e.workHours, unitPrice: 0,
@@ -228,7 +228,7 @@ export default function Invoice() {
           <Input placeholder="例: システム開発費用" maxLength={500} /></Form.Item>
         <Form.Item name="customerId" label="請求先" rules={[{ required: true }]}>
           <Select placeholder="選択" showSearch filterOption={(i,o)=>o.children.toLowerCase().includes(i.toLowerCase())}
-            onChange={async (val) => { try { const r = await axios.get(`/api/bank-accounts/customer/${val}`); setCustomerBanks(r.data.data || []); } catch { setCustomerBanks([]); } }}>
+            onChange={async (val) => { try { const r = await api.get(`/api/bank-accounts/customer/${val}`); setCustomerBanks(r.data.data || []); } catch { setCustomerBanks([]); } }}>
             {customers.map(c => <Option key={c.id} value={c.id}>{c.companyName} ({c.customerCode})</Option>)}</Select></Form.Item>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
           <Form.Item name="year" label="年度" rules={[{ required: true }]}>

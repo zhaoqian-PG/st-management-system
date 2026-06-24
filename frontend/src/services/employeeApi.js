@@ -1,14 +1,14 @@
-import axios from 'axios';
+import api from '../api';
 
 const BASE = '/api/employee';
 
 export const employeeApi = {
-  list(params) { return axios.get(BASE, { params }); },
-  getById(id) { return axios.get(`${BASE}/${id}`); },
-  create(data) { return axios.post(BASE, data); },
-  update(id, data) { return axios.put(`${BASE}/${id}`, data); },
-  delete(id) { return axios.delete(`${BASE}/${id}`); },
-  upload(id, formData) { return axios.post(`${BASE}/${id}/upload`, formData); },
-  batchImport(formData) { return axios.post(`${BASE}/batch-import`, formData); },
-  deleteAttachment(attId) { return axios.delete(`${BASE}/attachments/${attId}`); },
+  list(params) { return api.get(BASE, { params }); },
+  getById(id) { return api.get(`${BASE}/${id}`); },
+  create(data) { return api.post(BASE, data); },
+  update(id, data) { return api.put(`${BASE}/${id}`, data); },
+  delete(id) { return api.delete(`${BASE}/${id}`); },
+  upload(id, formData) { return api.post(`${BASE}/${id}/upload`, formData); },
+  batchImport(formData) { return api.post(`${BASE}/batch-import`, formData); },
+  deleteAttachment(attId) { return api.delete(`${BASE}/attachments/${attId}`); },
 };

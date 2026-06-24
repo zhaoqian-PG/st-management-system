@@ -1,13 +1,13 @@
-import axios from 'axios';
+import api from '../api';
 const BASE = '/api/supplier-order';
 export const supplierOrderApi = {
-  list(params) { return axios.get(BASE, { params }); },
-  getById(id) { return axios.get(`${BASE}/${id}`); },
-  create(data) { return axios.post(BASE, data); },
-  update(id, data) { return axios.put(`${BASE}/${id}`, data); },
-  delete(id) { return axios.delete(`${BASE}/${id}`); },
+  list(params) { return api.get(BASE, { params }); },
+  getById(id) { return api.get(`${BASE}/${id}`); },
+  create(data) { return api.post(BASE, data); },
+  update(id, data) { return api.put(`${BASE}/${id}`, data); },
+  delete(id) { return api.delete(`${BASE}/${id}`); },
   async downloadPdf(id) {
-    const response = await axios.get(`${BASE}/export/${id}`, { responseType: 'blob' });
+    const response = await api.get(`${BASE}/export/${id}`, { responseType: 'blob' });
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
     const link = document.createElement('a');
     link.href = url;

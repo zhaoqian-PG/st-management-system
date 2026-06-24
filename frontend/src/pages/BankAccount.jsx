@@ -7,7 +7,7 @@ import {
   PlusOutlined, EyeOutlined, EyeInvisibleOutlined,
   EditOutlined, DeleteOutlined, SafetyOutlined,
 } from '@ant-design/icons';
-import axios from 'axios';
+import api from '../api';
 import { bankAccountApi } from '../services/bankAccountApi';
 
 const { Option } = Select;
@@ -30,7 +30,7 @@ export default function BankAccount() {
 
   const fetchTorihikiNos = async (category) => {
     try {
-      const r = await axios.get(`/api/bank-accounts/torihiki-nos/${category}`);
+      const r = await api.get(`/api/bank-accounts/torihiki-nos/${category}`);
       setTorihikiNos(r.data.data || []);
     } catch { setTorihikiNos([]); }
   };
@@ -60,7 +60,7 @@ export default function BankAccount() {
   const handleTorihikiChange = async (value) => {
     if (!value) { setNextBranch('001'); return; }
     try {
-      const r = await axios.get(`/api/bank-accounts/next-branch/${value}`);
+      const r = await api.get(`/api/bank-accounts/next-branch/${value}`);
       setNextBranch(r.data.data);
     } catch { setNextBranch('???'); }
   };

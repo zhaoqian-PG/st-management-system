@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, Popconfirm, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SendOutlined, FilePdfOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { supplierOrderApi } from '../services/supplierOrderApi';
-import axios from 'axios';
+import api from '../api';
 import dayjs from 'dayjs';
 
 const { Option } = Select; const PAGE_SIZE = 10;
@@ -20,7 +20,7 @@ export default function SupplierOrder() {
     catch { message.error('データの取得に失敗しました'); } finally { setLoading(false); }
   }, [page]);
   useEffect(() => { fetchData(); }, [fetchData]);
-  useEffect(() => { axios.get('/api/employee?size=200').then(r => setEmployees(r.data.data.content||[])).catch(()=>{}); }, []);
+  useEffect(() => { api.get('/api/employee?size=200').then(r => setEmployees(r.data.data.content||[])).catch(()=>{}); }, []);
 
   const onEmployeeSelect = (empId) => {
     const emp = employees.find(e => e.id === empId);

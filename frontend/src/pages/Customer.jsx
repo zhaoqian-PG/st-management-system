@@ -3,7 +3,7 @@ import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, R
 import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { customerApi } from '../services/customerApi';
 import { bankAccountApi } from '../services/bankAccountApi';
-import axios from 'axios';
+import api from '../api';
 
 const PAGE_SIZE = 10;
 
@@ -55,7 +55,7 @@ export default function Customer() {
   };
 
   const fetchTorihikiNos = async () => {
-    try { const r = await axios.get('/api/bank-accounts/torihiki-nos/CUSTOMER'); setAvailableTorihikiNos(r.data.data || []); }
+    try { const r = await api.get('/api/bank-accounts/torihiki-nos/CUSTOMER'); setAvailableTorihikiNos(r.data.data || []); }
     catch { setAvailableTorihikiNos([]); }
   };
 
@@ -103,7 +103,7 @@ export default function Customer() {
   const handleBindBank = async () => {
     if (!selectedTorihikiNo) return;
     try {
-      const r = await axios.get(`/api/bank-accounts/unlinked/CUSTOMER/${selectedTorihikiNo}`);
+      const r = await api.get(`/api/bank-accounts/unlinked/CUSTOMER/${selectedTorihikiNo}`);
       const all = r.data.data || [];
       const seen = new Set(linkedAccounts.map(a => a.id));
       const newBanks = [...linkedAccounts, ...all.filter(b => !seen.has(b.id))];

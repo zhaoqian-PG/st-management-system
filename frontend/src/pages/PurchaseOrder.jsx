@@ -3,7 +3,7 @@ import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, D
 import { PlusOutlined, EditOutlined, DeleteOutlined, ShoppingOutlined, UploadOutlined, DownloadOutlined, SendOutlined, PrinterOutlined, FileTextOutlined } from '@ant-design/icons';
 import { purchaseOrderApi } from '../services/purchaseOrderApi';
 import { supplierOrderApi } from '../services/supplierOrderApi';
-import axios from 'axios';
+import api from '../api';
 import dayjs from 'dayjs';
 
 const { Option } = Select; const PAGE_SIZE = 10;
@@ -31,8 +31,8 @@ export default function PurchaseOrder() {
     catch { message.error('データの取得に失敗しました'); } finally { setLoading(false); }
   }, [page]);
   useEffect(() => { fetchData(); }, [fetchData]);
-  useEffect(() => { axios.get('/api/customer?size=200').then(r => setCustomers(r.data.data.content||[])).catch(()=>{}); }, []);
-  useEffect(() => { axios.get('/api/employee?size=200').then(r => setEmployees(r.data.data.content||[])).catch(()=>{}); }, []);
+  useEffect(() => { api.get('/api/customer?size=200').then(r => setCustomers(r.data.data.content||[])).catch(()=>{}); }, []);
+  useEffect(() => { api.get('/api/employee?size=200').then(r => setEmployees(r.data.data.content||[])).catch(()=>{}); }, []);
 
   const onEmployeeSelect = (empId, target) => {
     const emp = employees.find(e => e.id === empId);
@@ -50,7 +50,7 @@ export default function PurchaseOrder() {
     form.setFieldsValue(vals);
   };
   const onSoEmployeeSelect = (empId) => onEmployeeSelect(empId, 'issuerSo');
-  const handleDeleteAttachment = async (attachId) => { try { await axios.delete(`/api/purchase-order/attachment/${attachId}`); message.success('添付ファイルを削除しました'); const res = await purchaseOrderApi.getById(selectedOrder.id); setSelectedOrder(res.data.data); setOrderDetails(res.data.data.details||[]); } catch { message.error('削除に失敗しました'); } };
+  const handleDeleteAttachment = async (attachId) => { try { await api.delete(`/api/purchase-order/attachment/${attachId}`); message.success('添付ファイルを削除しました'); const res = await purchaseOrderApi.getById(selectedOrder.id); setSelectedOrder(res.data.data); setOrderDetails(res.data.data.details||[]); } catch { message.error('削除に失敗しました'); } };
   const handleSelect = async (r) => { setSelectedOrder(r); try { const res = await purchaseOrderApi.getById(r.id); const full = res.data.data; setSelectedOrder(full); setOrderDetails(full.details||[]); } catch {} };
   const handleCreate = () => { setEditingRecord(null); setDetails([]); form.resetFields(); form.setFieldsValue({ orderDate: dayjs(), deliveryDate: null, taxRate: 10, issuerName: '', issuerDept: '', issuerTel: '', recipientName: '', recipientDept: '', recipientTel: '', recipientAddr: '' }); setModalVisible(true); };
   const handleEdit = async (r) => { setEditingRecord(r); form.setFieldsValue({ ...r, orderDate: r.orderDate?dayjs(r.orderDate):null, deliveryDate: r.deliveryDate?dayjs(r.deliveryDate):null }); try { const res = await purchaseOrderApi.getById(r.id); setDetails(res.data.data.details||[]); } catch {} setModalVisible(true); };
@@ -160,7 +160,7 @@ export default function PurchaseOrder() {
         <div style={{borderTop:'1px solid #f0f0f0',paddingTop:12,marginTop:12}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
             <strong style={{fontSize:14}}>📎 添付ファイル</strong>
-            <Upload showUploadList={false} beforeUpload={async (f) => { const fd=new FormData(); fd.append('file',f); try { await axios.post(`/api/purchase-order/${selectedOrder.id}/upload`,fd); message.success('アップロードしました'); const res = await purchaseOrderApi.getById(selectedOrder.id); setSelectedOrder(res.data.data); setOrderDetails(res.data.data.details||[]); } catch { message.error('アップロードに失敗しました'); } return false; }}>
+            <Upload showUploadList={false} beforeUpload={async (f) => { const fd=new FormData(); fd.append('file',f); try { await api.post(`/api/purchase-order/${selectedOrder.id}/upload`,fd); message.success('アップロードしました'); const res = await purchaseOrderApi.getById(selectedOrder.id); setSelectedOrder(res.data.data); setOrderDetails(res.data.data.details||[]); } catch { message.error('アップロードに失敗しました'); } return false; }}>
               <Button size="small" icon={<UploadOutlined />}>アップロード</Button>
             </Upload>
           </div>

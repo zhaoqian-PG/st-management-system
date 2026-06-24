@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, TimePicker, Statistic } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CalendarOutlined, DownloadOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { attendanceApi } from '../services/attendanceApi';
-import axios from 'axios';
+import api from '../api';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -28,11 +28,11 @@ export default function Attendance() {
 
   const fetchSummary = async () => {
     if (!employeeId || employeeId <= 0) return;
-    try { const r = await axios.get('/api/attendance/summary', { params: { year, month, employeeId } }); setSummary(r.data.data); } catch {}
+    try { const r = await api.get('/api/attendance/summary', { params: { year, month, employeeId } }); setSummary(r.data.data); } catch {}
   };
 
   const fetchMonthlySummary = async () => {
-    try { const r = await axios.get('/api/attendance/monthly-summary', { params: { year, month } }); setMonthlySummary(r.data.data || []); } catch {}
+    try { const r = await api.get('/api/attendance/monthly-summary', { params: { year, month } }); setMonthlySummary(r.data.data || []); } catch {}
   };
 
   const fetchData = useCallback(async () => {
@@ -46,7 +46,7 @@ export default function Attendance() {
 
   useEffect(() => { fetchData(); fetchSummary(); fetchMonthlySummary(); }, [fetchData]);
   useEffect(() => {
-    axios.get('/api/employee?size=200').then(r => {
+    api.get('/api/employee?size=200').then(r => {
       const empList = r.data.data.content || [];
       // If USER role, filter to only show their own data
       if (role === 'USER') {
@@ -62,7 +62,7 @@ export default function Attendance() {
     try {
       const params = { year, month };
       if (employeeId) params.employeeId = employeeId;
-      const res = await axios.post('/api/attendance/generate', null, { params });
+      const res = await api.post('/api/attendance/generate', null, { params });
       message.success(res.data.message);
       fetchData(); fetchMonthlySummary();
     } catch { message.error('生成に失敗しました'); }

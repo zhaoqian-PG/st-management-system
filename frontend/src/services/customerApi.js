@@ -1,21 +1,21 @@
-import axios from 'axios';
+import api from '../api';
 
 const BASE = '/api/customer';
 
 export const customerApi = {
   list(params) {
-    return axios.get(BASE, { params });
+    return api.get(BASE, { params });
   },
   getById(id) {
-    return axios.get(`${BASE}/${id}`);
+    return api.get(`${BASE}/${id}`);
   },
   create(data) {
-    return axios.post(BASE, data);
+    return api.post(BASE, data);
   },
   update(id, data) {
-    return axios.put(`${BASE}/${id}`, data);
+    return api.put(`${BASE}/${id}`, data);
   },
   delete(id) {
-    return axios.delete(`${BASE}/${id}`);
+    return api.delete(`${BASE}/${id}`);
   },
 };

@@ -3,7 +3,7 @@ import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, D
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, UploadOutlined, DownloadOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { employeeApi } from '../services/employeeApi';
 import { bankAccountApi } from '../services/bankAccountApi';
-import axios from 'axios';
+import api from '../api';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -55,7 +55,7 @@ export default function Employee() {
   };
 
   const fetchTorihikiNos = async () => {
-    try { const r = await axios.get('/api/bank-accounts/torihiki-nos/EMPLOYEE'); setAvailableTorihikiNos(r.data.data || []); }
+    try { const r = await api.get('/api/bank-accounts/torihiki-nos/EMPLOYEE'); setAvailableTorihikiNos(r.data.data || []); }
     catch { setAvailableTorihikiNos([]); }
   };
 
@@ -121,7 +121,7 @@ export default function Employee() {
   const handleBindBank = async () => {
     if (!selectedTorihikiNo) return;
     try {
-      const r = await axios.get(`/api/bank-accounts/unlinked/EMPLOYEE/${selectedTorihikiNo}`);
+      const r = await api.get(`/api/bank-accounts/unlinked/EMPLOYEE/${selectedTorihikiNo}`);
       const all = r.data.data || [];
       const seen = new Set(linkedBanks.map(b => b.id));
       const newBanks = [...linkedBanks, ...all.filter(b => !seen.has(b.id))];

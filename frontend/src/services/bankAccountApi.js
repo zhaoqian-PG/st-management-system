@@ -1,61 +1,61 @@
-import axios from 'axios';
+import api from '../api';
 
 const API_BASE = '/api/bank-accounts';
 
 export const bankAccountApi = {
   // 一覧取得（顧客IDでフィルター可能）
   list(params = {}) {
-    return axios.get(API_BASE, { params });
+    return api.get(API_BASE, { params });
   },
 
   // 詳細取得
   getById(id) {
-    return axios.get(`${API_BASE}/${id}`);
+    return api.get(`${API_BASE}/${id}`);
   },
 
   // 顧客別一覧
   getByCustomerId(customerId) {
-    return axios.get(`${API_BASE}/customer/${customerId}`);
+    return api.get(`${API_BASE}/customer/${customerId}`);
   },
 
   // 新規登録
   create(data) {
-    return axios.post(API_BASE, data);
+    return api.post(API_BASE, data);
   },
 
   // 更新
   update(id, data) {
-    return axios.put(`${API_BASE}/${id}`, data);
+    return api.put(`${API_BASE}/${id}`, data);
   },
 
   // 削除
   delete(id) {
-    return axios.delete(`${API_BASE}/${id}`);
+    return api.delete(`${API_BASE}/${id}`);
   },
 
   // 顧客に紐付け
   bindToCustomer(id, customerId) {
-    return axios.put(`${API_BASE}/${id}/bind/${customerId}`);
+    return api.put(`${API_BASE}/${id}/bind/${customerId}`);
   },
 
   // 紐付け解除
   unbindFromCustomer(id) {
-    return axios.put(`${API_BASE}/${id}/unbind`);
+    return api.put(`${API_BASE}/${id}/unbind`);
   },
   // 社員紐付け
   bindToEmployee(id, employeeId) {
-    return axios.put(`${API_BASE}/${id}/bind-employee/${employeeId}`);
+    return api.put(`${API_BASE}/${id}/bind-employee/${employeeId}`);
   },
   unbindFromEmployee(id) {
-    return axios.put(`${API_BASE}/${id}/unbind-employee`);
+    return api.put(`${API_BASE}/${id}/unbind-employee`);
   },
   getByEmployeeId(employeeId) {
-    return axios.get(`${API_BASE}/employee/${employeeId}`);
+    return api.get(`${API_BASE}/employee/${employeeId}`);
   },
   setDefaultForEmployee(id, employeeId) {
-    return axios.put(`${API_BASE}/${id}/set-default-employee/${employeeId}`);
+    return api.put(`${API_BASE}/${id}/set-default-employee/${employeeId}`);
   },
   setDefaultForCustomer(id, customerId) {
-    return axios.put(`${API_BASE}/${id}/set-default-customer/${customerId}`);
+    return api.put(`${API_BASE}/${id}/set-default-customer/${customerId}`);
   },
 };

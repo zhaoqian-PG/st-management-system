@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Spin, ConfigProvider } from 'antd';
 import jaJP from 'antd/locale/ja_JP';
-import axios from 'axios';
+import api from './api';
 import Layout from './components/Layout';
 import PlaceholderPage from './components/PlaceholderPage';
 import Employee from './pages/Employee';
@@ -23,7 +23,7 @@ function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get(`${API_BASE}/health`).then(res => setHealth(res.data)).catch(err => setError(err.message));
+    api.get(`${API_BASE}/health`).then(res => setHealth(res.data)).catch(err => setError(err.message));
     if (localStorage.getItem('userRole')) setLoggedIn(true);
   }, []);
 
