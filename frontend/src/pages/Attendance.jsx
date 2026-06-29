@@ -153,6 +153,7 @@ export default function Attendance() {
         </Card>
       )}
       <Table columns={columns} dataSource={data} rowKey="id" loading={loading}
+        scroll={{ x: 'max-content' }}
         pagination={{ current: page, pageSize: PAGE_SIZE, total, showSizeChanger: false, showTotal: t => `全 ${t} 件`, onChange: p => setPage(p) }} />
     </Card>
     <Modal title={editingRecord ? '勤務情報編集' : '勤務新規登録'} open={modalVisible} onOk={handleSubmit} onCancel={() => setModalVisible(false)}
